@@ -1,0 +1,15 @@
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\bin\Debug\net9.0\Domain.deps.json
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\bin\Debug\net9.0\Domain.runtimeconfig.json
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\bin\Debug\net9.0\Domain.dll
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\bin\Debug\net9.0\Domain.pdb
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\obj\Debug\net9.0\Domain.csproj.AssemblyReference.cache
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\obj\Debug\net9.0\Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\obj\Debug\net9.0\Domain.AssemblyInfoInputs.cache
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\obj\Debug\net9.0\Domain.AssemblyInfo.cs
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\obj\Debug\net9.0\Domain.csproj.CoreCompileInputs.cache
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\obj\Debug\net9.0\Domain.sourcelink.json
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\obj\Debug\net9.0\Domain.dll
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\obj\Debug\net9.0\refint\Domain.dll
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\obj\Debug\net9.0\Domain.pdb
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\obj\Debug\net9.0\Domain.genruntimeconfig.cache
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\obj\Debug\net9.0\ref\Domain.dll
