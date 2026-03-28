@@ -1,0 +1,194 @@
+@page
+@model Project.Pages.Admin.Auth.UsuariosModel
+@{
+    ViewData["Title"] = "Usuários";
+    Layout = "_LayoutAdmin";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+    :root { --auth-brand: #9f0a10; --auth-brand-dark: #76070c; --auth-text: #1f2937; --auth-muted: #6b7280; --auth-border: #ececec; }
+    .users-card { background: #fff; border: 1px solid var(--auth-border); border-radius: 1.1rem; box-shadow: 0 10px 28px rgba(0, 0, 0, .05); overflow: hidden; }
+    .users-card-header { padding: 1.2rem 1.2rem 1rem; border-bottom: 1px solid var(--auth-border); background: linear-gradient(180deg, #fff 0%, #fff8f8 100%); }
+    .users-card-title { margin: 0; font-size: 1.08rem; font-weight: 800; color: var(--auth-text); }
+    .users-card-subtitle { margin: .2rem 0 0; color: var(--auth-muted); font-size: .9rem; }
+    .users-card-body { padding: 1.2rem; }
+    .users-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .users-search-form { display: flex; gap: .75rem; width: 100%; flex: 1; }
+    .users-search-form input { flex: 1; min-height: 50px; border-radius: .95rem; border: 1px solid #dfdfdf; padding: .75rem 1rem; }
+    .users-search-form input:focus, .users-input input:focus { outline: none; border-color: rgba(159, 10, 16, .45); box-shadow: 0 0 0 4px rgba(159, 10, 16, .10); }
+    .users-stat { font-size: .92rem; color: var(--auth-muted); }
+    .list-card { margin-top: 1rem; border: 1px solid var(--auth-border); border-radius: 1rem; overflow: hidden; background: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, .05); }
+    .users-table { margin: 0; vertical-align: middle; }
+    .users-table thead th { background: #f8f8f8; color: var(--auth-text); font-size: .76rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--auth-border); padding: 1rem .9rem; white-space: nowrap; }
+    .users-table tbody td { padding: 1rem .9rem; border-color: #f1f1f1; color: var(--auth-text); }
+    .user-identity { display: flex; gap: .85rem; align-items: flex-start; min-width: 220px; }
+    .user-avatar { width: 48px; height: 48px; border-radius: 999px; background: linear-gradient(135deg, var(--auth-brand-dark) 0%, var(--auth-brand) 100%); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0; }
+    .user-name { font-size: 1rem; font-weight: 800; color: var(--auth-text); margin: 0 0 .15rem; }
+    .user-username { margin: 0; font-size: .88rem; color: var(--auth-muted); }
+    .user-status { display: inline-flex; align-items: center; gap: .4rem; padding: .38rem .7rem; border-radius: 999px; font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+    .user-status.active { background: #ebfaf1; color: #1f9d55; }
+    .user-status.inactive { background: #fff1f2; color: #b42318; }
+    .users-muted { color: var(--auth-muted); font-size: .9rem; }
+    .users-empty { border: 1px dashed #d8d8d8; border-radius: 1rem; padding: 2rem 1.25rem; text-align: center; color: var(--auth-muted); background: #fcfcfc; }
+    .users-modal-overlay { position: fixed; inset: 0; background: rgba(17, 24, 39, .52); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1.25rem; z-index: 1200; }
+    .users-modal { width: min(100%, 760px); max-height: calc(100vh - 2.5rem); overflow: auto; background: #fff; border: 1px solid rgba(159, 10, 16, .12); border-radius: 1.25rem; box-shadow: 0 28px 70px rgba(17, 24, 39, .26); }
+    .users-modal-header { padding: 1.15rem 1.2rem 1rem; border-bottom: 1px solid var(--auth-border); background: linear-gradient(180deg, #fff 0%, #fff8f8 100%); display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+    .users-modal-header h2 { margin: 0; font-size: 1.12rem; font-weight: 800; color: var(--auth-text); }
+    .users-modal-header p { margin: .2rem 0 0; color: var(--auth-muted); font-size: .9rem; }
+    .users-modal-close { width: 42px; height: 42px; border-radius: 999px; border: 1px solid var(--auth-border); background: #fff; color: var(--auth-text); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 1.1rem; }
+    .users-modal-body { padding: 1.2rem; }
+    .users-form-grid { display: grid; gap: 1rem; }
+    .users-form-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .users-label { display: block; margin-bottom: .4rem; font-size: .84rem; font-weight: 700; color: #374151; }
+    .users-input, .users-checkbox-wrap { width: 100%; }
+    .users-input input { width: 100%; min-height: 50px; border-radius: .9rem; border: 1px solid #dfdfdf; padding: .75rem .95rem; transition: .2s ease; }
+    .users-role-box { border: 1px solid var(--auth-border); border-radius: 1rem; background: #fafafa; padding: .9rem; }
+    .users-role-list { display: grid; gap: .65rem; max-height: 220px; overflow: auto; }
+    .users-role-item { border: 1px solid #ececec; border-radius: .9rem; background: #fff; padding: .75rem .8rem; }
+    .users-role-item .users-check { align-items: flex-start; }
+    .users-role-text strong { display: block; font-size: .92rem; color: var(--auth-text); }
+    .users-role-text span { display: block; margin-top: .15rem; font-size: .8rem; color: var(--auth-muted); line-height: 1.4; }
+    .users-check { display: inline-flex; align-items: center; gap: .55rem; color: var(--auth-text); font-weight: 600; cursor: pointer; }
+    .users-check input { width: 16px; height: 16px; accent-color: var(--auth-brand); }
+    .field-validation-error { display: block; margin-top: .35rem; font-size: .78rem; color: #b42318; }
+    .validation-summary-errors { margin-bottom: 1rem; border-radius: .95rem; background: #fff4f4; border: 1px solid #f1c1c5; padding: .9rem 1rem; color: #b42318; }
+    .validation-summary-errors ul { margin: 0; padding-left: 1.1rem; }
+    .users-actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+    .btn-users-primary, .btn-users-secondary { min-height: 42px; padding: .75rem 1rem; border-radius: .75rem; font-weight: 700; text-decoration: none; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; }
+    .btn-users-primary { background: linear-gradient(90deg, var(--auth-brand-dark) 0%, var(--auth-brand) 100%); color: #fff; box-shadow: 0 14px 28px rgba(159, 10, 16, .18); }
+    .btn-users-secondary { background: #fff; color: var(--auth-text); border-color: var(--auth-border); }
+    @@media (max-width: 900px) { .users-form-columns { grid-template-columns: 1fr; } .users-search-form { flex-direction: column; } .users-toolbar, .users-actions { align-items: stretch; } .btn-users-primary, .btn-users-secondary { width: 100%; } }
+</style>
+
+<section class="users-card">
+    <div class="users-card-header">
+        <h2 class="users-card-title">Usuários cadastrados</h2>
+        <p class="users-card-subtitle">Pesquise usuários e edite no mesmo modal de cadastro.</p>
+    </div>
+    <div class="users-card-body">
+        <div class="users-toolbar">
+            <a asp-page="/Admin/Auth/Usuarios" asp-route-search="@Model.Search" asp-route-newUser="true" class="btn-users-primary"><i class="bi bi-plus-circle"></i>Novo usuário</a>
+            <form method="get" class="users-search-form">
+                <input asp-for="Search" placeholder="Pesquisar usuário, nome ou e-mail" />
+                <button type="submit" class="btn-users-primary"><i class="bi bi-search"></i>Pesquisar</button>
+                @if (!string.IsNullOrWhiteSpace(Model.Search))
+                {
+                    <a asp-page="/Admin/Auth/Usuarios" class="btn-users-secondary"><i class="bi bi-arrow-counterclockwise"></i>Limpar</a>
+                }
+            </form>
+        </div>
+        <div class="users-stat">@Model.FilteredUsers usuário(s) encontrado(s)</div>
+        @if (Model.Users.Any())
+        {
+            <div class="list-card">
+                <div class="table-responsive">
+                    <table class="table users-table admin-responsive-table">
+                        <thead>
+                            <tr>
+                                <th>Usuário</th>
+                                <th>Status</th>
+                                <th>E-mail</th>
+                                <th>Telefone</th>
+                                <th>Perfis</th>
+                                <th class="text-end">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in Model.Users)
+                            {
+                                <tr>
+                                    <td data-label="Usuário">
+                                        <div class="user-identity">
+                                            <div class="user-avatar">@user.Initials</div>
+                                            <div>
+                                                <h3 class="user-name">@user.DisplayName</h3>
+                                                <p class="user-username">@@@user.UserName</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td data-label="Status">
+                                        <span class="user-status @(user.Active ? "active" : "inactive")"><i class="bi @(user.Active ? "bi-check-circle-fill" : "bi-slash-circle-fill")"></i>@(user.Active ? "Ativo" : "Inativo")</span>
+                                    </td>
+                                    <td data-label="E-mail"><span class="users-muted">@user.Email</span></td>
+                                    <td data-label="Telefone"><span class="users-muted">@user.PhoneDisplay</span></td>
+                                    <td data-label="Perfis"><span class="users-muted">@user.RolesDisplay</span></td>
+                                    <td class="text-end" data-label="Ação">
+                                        <a asp-page="/Admin/Auth/Usuarios" asp-route-editId="@user.Id" asp-route-search="@Model.Search" class="btn-users-secondary"><i class="bi bi-pencil-square"></i>Editar</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="users-empty">Nenhum usuário encontrado para os filtros atuais.</div>
+        }
+    </div>
+</section>
+
+@if (Model.IsModalOpen)
+{
+    <div class="users-modal-overlay">
+        <div class="users-modal">
+            <div class="users-modal-header">
+                <div>
+                    <h2>@(Model.IsEditing ? "Editar usuário" : "Novo usuário")</h2>
+                    <p>Cadastre o usuário e selecione os perfis vinculados.</p>
+                </div>
+                <a asp-page="/Admin/Auth/Usuarios" asp-route-search="@Model.Search" class="users-modal-close"><i class="bi bi-x-lg"></i></a>
+            </div>
+            <div class="users-modal-body">
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+                <form method="post" asp-page-handler="Save" class="users-form-grid">
+                    <input asp-for="Input.Id" type="hidden" />
+                    <input asp-for="Search" type="hidden" />
+                    <div class="users-form-columns">
+                        <div><label asp-for="Input.NomeCompleto" class="users-label">Nome completo</label><div class="users-input"><input asp-for="Input.NomeCompleto" placeholder="Nome do usuário" /></div><span asp-validation-for="Input.NomeCompleto" class="field-validation-error"></span></div>
+                        <div><label asp-for="Input.UserName" class="users-label">Usuário</label><div class="users-input"><input asp-for="Input.UserName" placeholder="usuário" /></div><span asp-validation-for="Input.UserName" class="field-validation-error"></span></div>
+                    </div>
+                    <div class="users-form-columns">
+                        <div><label asp-for="Input.Email" class="users-label">E-mail</label><div class="users-input"><input asp-for="Input.Email" placeholder="email@empresa.com" /></div><span asp-validation-for="Input.Email" class="field-validation-error"></span></div>
+                        <div><label asp-for="Input.PhoneNumber" class="users-label">Telefone</label><div class="users-input"><input asp-for="Input.PhoneNumber" placeholder="(16) 99999-9999" /></div><span asp-validation-for="Input.PhoneNumber" class="field-validation-error"></span></div>
+                    </div>
+                    <div class="users-form-columns">
+                        <div><label asp-for="Input.Password" class="users-label">Senha @(Model.IsEditing ? "(preencha só se quiser trocar)" : string.Empty)</label><div class="users-input"><input asp-for="Input.Password" type="password" placeholder="Senha do usuário" /></div><span asp-validation-for="Input.Password" class="field-validation-error"></span></div>
+                        <div><label asp-for="Input.ConfirmPassword" class="users-label">Confirmar senha</label><div class="users-input"><input asp-for="Input.ConfirmPassword" type="password" placeholder="Repita a senha" /></div><span asp-validation-for="Input.ConfirmPassword" class="field-validation-error"></span></div>
+                    </div>
+                    <div class="users-checkbox-wrap"><label class="users-check"><input asp-for="Input.Active" /><span>Usuário ativo</span></label></div>
+                    <div>
+                        <label class="users-label">Perfis do usuário</label>
+                        <div class="users-role-box">
+                            @if (Model.Roles.Any())
+                            {
+                                <div class="users-role-list">
+                                    @foreach (var role in Model.Roles)
+                                    {
+                                        var isChecked = Model.Input.SelectedRoleIds.Contains(role.Id);
+                                        <label class="users-role-item"><span class="users-check"><input type="checkbox" name="Input.SelectedRoleIds" value="@role.Id" checked="@isChecked" /><span class="users-role-text"><strong>@role.Name</strong><span>@role.Descricao</span></span></span></label>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="users-empty">Nenhum perfil cadastrado. Cadastre em <a href="/Admin/Auth/Perfil">Perfil</a>.</div>
+                            }
+                        </div>
+                    </div>
+                    <div class="users-actions">
+                        <button type="submit" class="btn-users-primary"><i class="bi bi-floppy"></i>@(Model.IsEditing ? "Salvar alterações" : "Cadastrar usuário")</button>
+                        <a asp-page="/Admin/Auth/Usuarios" asp-route-search="@Model.Search" class="btn-users-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

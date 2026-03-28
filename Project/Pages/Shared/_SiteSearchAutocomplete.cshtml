@@ -1,0 +1,39 @@
+@{
+    var hiddenFields = ViewData["SearchHiddenFields"] as IEnumerable<KeyValuePair<string, string>> ?? [];
+    var searchValue = ViewData["SearchValue"] as string ?? string.Empty;
+    var searchPlaceholder = ViewData["SearchPlaceholder"] as string ?? "Ex.: Corolla, Toyota, automatico, flex";
+}
+
+<form method="get" asp-page="/Catalogo" class="site-search-form" autocomplete="off">
+    @foreach (var field in hiddenFields)
+    {
+        <input type="hidden" name="@field.Key" value="@field.Value" />
+    }
+
+    <div class="site-search-autocomplete" data-search-autocomplete data-endpoint="/Index?handler=SearchSuggestions">
+        <div class="hero-search-inline">
+            <span class="site-search-field-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 21l2-6"></path>
+                    <path d="M19 3l-6 2"></path>
+                    <path d="M11.5 6.5l6 6"></path>
+                    <path d="M12 3l.6 2.1A2 2 0 0 0 14 6.5l2 .5-2 .5a2 2 0 0 0-1.4 1.4L12 11l-.6-2.1A2 2 0 0 0 10 7.5L8 7l2-.5a2 2 0 0 0 1.4-1.4L12 3z"></path>
+                </svg>
+            </span>
+
+            <input type="text"
+                   class="form-control"
+                   name="busca"
+                   value="@searchValue"
+                   placeholder="@searchPlaceholder"
+                   data-search-input
+                   aria-label="Pesquisar veiculos"
+                   aria-autocomplete="list"
+                   aria-expanded="false" />
+        </div>
+
+        <div class="site-search-results" data-search-results hidden>
+            <div class="site-search-results-scroll" data-search-results-body></div>
+        </div>
+    </div>
+</form>

@@ -1,0 +1,704 @@
+﻿@page "{id:int?}"
+@model Concessionaria.Pages.Vendedor.UpsertModel
+@{
+    var isEdit = Model.Vendedor.Id > 0;
+
+    ViewData["Title"] = isEdit ? "Editar Vendedor" : "Novo Vendedor";
+    ViewData["TopbarTitle"] = isEdit ? "Editar Vendedor" : "Novo Vendedor";
+    ViewData["TopbarSubtitle"] = isEdit ? "Atualize os dados do vendedor" : "Cadastre um novo vendedor";
+    Layout = "_LayoutAdmin";
+}
+
+<style>
+    :root {
+        --brand-primary: #9f0a10;
+        --brand-dark: #222222;
+        --brand-border: #ececec;
+        --brand-muted: #6c757d;
+        --brand-soft: rgba(159, 10, 16, 0.08);
+        --brand-success: #198754;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .page-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin: 0;
+    }
+
+    .page-subtitle {
+        font-size: .92rem;
+        color: var(--brand-muted);
+        margin: .2rem 0 0 0;
+    }
+
+    .form-card {
+        background: #fff;
+        border: 1px solid var(--brand-border);
+        border-radius: 1rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,.05);
+        overflow: hidden;
+    }
+
+    .form-card-body {
+        padding: 1.25rem;
+    }
+
+    .section-title {
+        font-size: .98rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-size: .84rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin-bottom: .35rem;
+    }
+
+    .form-help {
+        display: block;
+        font-size: .78rem;
+        color: var(--brand-muted);
+        margin-top: .4rem;
+        line-height: 1.35;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: .85rem;
+        border: 1px solid #e6e6e6;
+        min-height: 46px;
+        box-shadow: none !important;
+    }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: rgba(159, 10, 16, .35);
+            box-shadow: 0 0 0 .2rem rgba(159, 10, 16, .08) !important;
+        }
+
+    .text-danger {
+        font-size: .8rem;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: .75rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid #f2f2f2;
+        margin-top: 1.25rem;
+    }
+
+    .btn-brand {
+        background: var(--brand-primary);
+        border-color: var(--brand-primary);
+        color: #fff;
+        border-radius: .85rem;
+        font-weight: 600;
+        min-height: 46px;
+        padding: 0 1.25rem;
+    }
+
+        .btn-brand:hover {
+            background: #86080d;
+            border-color: #86080d;
+            color: #fff;
+        }
+
+    .btn-soft-dark {
+        background: #fff;
+        border: 1px solid var(--brand-border);
+        color: var(--brand-dark);
+        border-radius: .85rem;
+        font-weight: 600;
+        min-height: 46px;
+        padding: 0 1.25rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+        .btn-soft-dark:hover {
+            background: #f8f8f8;
+            color: var(--brand-dark);
+        }
+
+    .field-block {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .switch-field {
+        display: flex;
+        flex-direction: column;
+        gap: .45rem;
+    }
+
+    .switch-wrapper {
+        display: inline-flex;
+        align-items: center;
+        gap: .75rem;
+        user-select: none;
+        cursor: pointer;
+        width: fit-content;
+    }
+
+        .switch-wrapper * {
+            cursor: pointer !important;
+        }
+
+    .switch-input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        pointer-events: none;
+    }
+
+    .switch-slider {
+        position: relative;
+        width: 52px;
+        height: 30px;
+        border-radius: 999px;
+        background: #d9d9d9;
+        transition: background-color .25s ease, box-shadow .25s ease, transform .25s ease;
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+        flex-shrink: 0;
+    }
+
+        .switch-slider::before {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,.18);
+            transition: transform .25s ease;
+        }
+
+    .switch-input:checked + .switch-slider {
+        background: var(--brand-primary);
+    }
+
+        .switch-input:checked + .switch-slider::before {
+            transform: translateX(22px);
+        }
+
+    .switch-input:focus + .switch-slider {
+        box-shadow: 0 0 0 .2rem rgba(159, 10, 16, .15);
+    }
+
+    .switch-text {
+        display: flex;
+        flex-direction: column;
+        gap: .1rem;
+    }
+
+    .switch-title {
+        font-size: .92rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        line-height: 1.2;
+    }
+
+    .switch-subtitle {
+        font-size: .78rem;
+        color: var(--brand-muted);
+        line-height: 1.35;
+    }
+
+    .switch-status {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        padding: .22rem .6rem;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 700;
+        background: rgba(108, 117, 125, .12);
+        color: var(--brand-muted);
+        transition: all .2s ease;
+    }
+
+        .switch-status.active {
+            background: rgba(25, 135, 84, .12);
+            color: var(--brand-success);
+        }
+
+    .foto-upload-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .foto-preview-box {
+        width: 180px;
+        height: 180px;
+        border-radius: 1rem;
+        border: 1px solid var(--brand-border);
+        background: #f8f8f8;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    .foto-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: none;
+    }
+
+    .foto-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        color: var(--brand-muted);
+        background: linear-gradient(180deg, #fafafa 0%, #f3f3f3 100%);
+        text-align: center;
+        padding: 1rem;
+    }
+
+        .foto-placeholder i {
+            font-size: 3rem;
+            color: var(--brand-primary);
+            opacity: .85;
+        }
+
+        .foto-placeholder span {
+            font-size: .8rem;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+    .foto-preview-box.has-image .foto-preview {
+        display: block;
+    }
+
+    .foto-preview-box.has-image .foto-placeholder {
+        display: none;
+    }
+
+    .foto-atual-link {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        font-size: .82rem;
+        color: var(--brand-primary);
+        text-decoration: none;
+        font-weight: 600;
+        margin-top: .5rem;
+    }
+
+        .foto-atual-link:hover {
+            text-decoration: underline;
+            color: #86080d;
+        }
+
+    .foto-actions {
+        display: flex;
+        gap: .75rem;
+        flex-wrap: wrap;
+        margin-top: .75rem;
+    }
+
+    .btn-danger-soft {
+        background: #fff4f4;
+        border: 1px solid #f4c7cb;
+        color: #b42318;
+        border-radius: .85rem;
+        font-weight: 600;
+        min-height: 46px;
+        padding: 0 1.25rem;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+        .btn-danger-soft:hover {
+            background: #b42318;
+            border-color: #b42318;
+            color: #fff;
+        }
+
+    @@media (max-width: 768px) {
+        .page-header,
+        .form-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .foto-preview-box {
+            width: 100%;
+            max-width: 220px;
+        }
+    }
+</style>
+
+<div class="container-fluid vendedor-form-page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <i class="bi @(isEdit ? "bi-pencil-square" : "bi-plus-circle") me-2"></i>
+                @(isEdit ? "Editar Vendedor" : "Novo Vendedor")
+            </h1>
+            <p class="page-subtitle">
+                @(isEdit ? "Atualize os dados do vendedor cadastrado" : "Preencha os dados para cadastrar um novo vendedor")
+            </p>
+        </div>
+
+        <a asp-page="./Index" class="btn btn-soft-dark">
+            <i class="bi bi-arrow-left me-2"></i>
+            Voltar
+        </a>
+    </div>
+
+    <div class="form-card">
+        <div class="form-card-body">
+            <form method="post" enctype="multipart/form-data" id="formVendedor">
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" asp-for="Vendedor.Id" />
+                <input type="hidden" asp-for="Vendedor.DataCadastro" />
+                <input type="hidden" asp-for="Vendedor.FotoUrl" />
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <h6 class="section-title">Dados principais</h6>
+
+                <div class="row g-3">
+                    <div class="col-12 col-lg-6">
+                        <div class="field-block">
+                            <label class="form-label">Nome</label>
+                            <input asp-for="Vendedor.Nome" class="form-control" placeholder="Ex.: João da Silva" />
+                            <small class="form-help">Nome completo do vendedor.</small>
+                            <span asp-validation-for="Vendedor.Nome" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-6">
+                        <div class="field-block">
+                            <label class="form-label">Loja</label>
+                            <select asp-for="Vendedor.LojaId" asp-items="Model.Lojas" class="form-select">
+                                <option value="">Selecione uma loja</option>
+                            </select>
+                            <small class="form-help">Unidade à qual o vendedor pertence.</small>
+                            <span asp-validation-for="Vendedor.LojaId" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-4">
+                        <div class="field-block">
+                            <label class="form-label">Cargo</label>
+                            <input asp-for="Vendedor.Cargo" class="form-control" placeholder="Ex.: Consultor de Vendas" />
+                            <small class="form-help">Cargo ou função do vendedor.</small>
+                            <span asp-validation-for="Vendedor.Cargo" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-4">
+                        <div class="field-block">
+                            <label class="form-label">E-mail</label>
+                            <input asp-for="Vendedor.Email" class="form-control" placeholder="vendedor@empresa.com.br" />
+                            <small class="form-help">E-mail de contato do vendedor.</small>
+                            <span asp-validation-for="Vendedor.Email" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-2">
+                        <div class="field-block">
+                            <label class="form-label">Telefone</label>
+                            <input asp-for="Vendedor.Telefone"
+                                   id="Vendedor_Telefone"
+                                   class="form-control"
+                                   placeholder="(00) 00000-0000"
+                                   inputmode="numeric"
+                                   maxlength="15" />
+                            <small class="form-help">Telefone principal.</small>
+                            <span asp-validation-for="Vendedor.Telefone" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-2">
+                        <div class="field-block">
+                            <label class="form-label">WhatsApp</label>
+                            <input asp-for="Vendedor.Whatsapp"
+                                   id="Vendedor_Whatsapp"
+                                   class="form-control"
+                                   placeholder="(00) 00000-0000"
+                                   inputmode="numeric"
+                                   maxlength="15" />
+                            <small class="form-help">Número para contato via WhatsApp.</small>
+                            <span asp-validation-for="Vendedor.Whatsapp" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <h6 class="section-title">Documentação e foto</h6>
+
+                <div class="row g-3 align-items-start">
+                    <div class="col-12 col-lg-4">
+                        <div class="field-block">
+                            <label class="form-label">CPF</label>
+                            <input asp-for="Vendedor.Cpf"
+                                   id="Vendedor_Cpf"
+                                   class="form-control"
+                                   placeholder="000.000.000-00"
+                                   inputmode="numeric"
+                                   maxlength="14" />
+                            <small class="form-help">Digite apenas números ou cole o CPF completo.</small>
+                            <span asp-validation-for="Vendedor.Cpf" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-8">
+                        <div class="foto-upload-wrapper">
+                            <div class="field-block">
+                                <label class="form-label">Foto do vendedor</label>
+                                <input asp-for="FotoArquivo"
+                                       id="FotoArquivo"
+                                       type="file"
+                                       class="form-control"
+                                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                                <small class="form-help">
+                                    Envie uma imagem JPG, PNG ou WEBP.
+                                </small>
+                                <span asp-validation-for="FotoArquivo" class="text-danger"></span>
+
+                                @if (isEdit && !string.IsNullOrWhiteSpace(Model.Vendedor.FotoUrl))
+                                {
+                                    <div class="foto-actions">
+                                        <a href="@Model.Vendedor.FotoUrl" target="_blank" class="foto-atual-link">
+                                            <i class="bi bi-image"></i>
+                                            Ver foto atual
+                                        </a>
+
+                                        <form method="post" asp-page-handler="DeletePhoto" class="m-0">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="Vendedor.Id" value="@Model.Vendedor.Id" />
+                                            <button type="button"
+                                                    class="btn btn-danger-soft"
+                                                    data-confirm-delete
+                                                    data-confirm-message="Deseja excluir a foto atual deste vendedor?">
+                                                <i class="bi bi-trash me-2"></i>
+                                                Excluir foto
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                            </div>
+
+                            <div id="fotoPreviewBox" class="foto-preview-box @(string.IsNullOrWhiteSpace(Model.Vendedor.FotoUrl) ? "" : "has-image")">
+                                <img id="fotoPreview"
+                                     class="foto-preview"
+                                     src="@(string.IsNullOrWhiteSpace(Model.Vendedor.FotoUrl) ? "" : Model.Vendedor.FotoUrl)"
+                                     alt="Prévia da foto do vendedor" />
+
+                                <div id="fotoPlaceholder" class="foto-placeholder">
+                                    <i class="bi bi-person-bounding-box"></i>
+                                    <span>Prévia da foto do vendedor</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <div class="row g-3 align-items-center">
+                    <div class="col-12 col-md-6">
+                        <div class="switch-field">
+                            <label class="switch-wrapper" for="Vendedor_Ativo">
+                                <input asp-for="Vendedor.Ativo" class="switch-input" id="Vendedor_Ativo" type="checkbox" />
+                                <span class="switch-slider"></span>
+                                <span class="switch-text">
+                                    <span class="switch-title">Vendedor ativo</span>
+                                    <span class="switch-subtitle">Define se o vendedor ficará disponível para uso no sistema.</span>
+                                </span>
+                            </label>
+
+                            <span id="statusVendedorAtivo" class="switch-status">Inativo</span>
+                            <span asp-validation-for="Vendedor.Ativo" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    @if (isEdit && Model.Vendedor.DataCadastro != default)
+                    {
+                        <div class="col-12 col-md-6 text-md-end">
+                            <small class="text-muted">
+                                Cadastro em: @Model.Vendedor.DataCadastro.ToString("dd/MM/yyyy HH:mm")
+                            </small>
+                        </div>
+                    }
+                </div>
+
+                <div class="form-actions">
+                    <a asp-page="./Index" class="btn btn-soft-dark">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Cancelar
+                    </a>
+
+                    <button type="submit" class="btn btn-brand">
+                        <i class="bi bi-check-circle me-2"></i>
+                        @(isEdit ? "Salvar alterações" : "Cadastrar vendedor")
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        (function () {
+            const form = document.getElementById('formVendedor');
+            const cpfInput = document.getElementById('Vendedor_Cpf');
+            const telefoneInput = document.getElementById('Vendedor_Telefone');
+            const whatsappInput = document.getElementById('Vendedor_Whatsapp');
+            const fotoArquivoInput = document.getElementById('FotoArquivo');
+            const fotoPreview = document.getElementById('fotoPreview');
+            const fotoPreviewBox = document.getElementById('fotoPreviewBox');
+
+            const ativoInput = document.getElementById('Vendedor_Ativo');
+            const statusVendedorAtivo = document.getElementById('statusVendedorAtivo');
+
+            function onlyDigits(value) {
+                return (value || '').replace(/\D/g, '');
+            }
+
+            function applyCpfMask(value) {
+                value = onlyDigits(value).slice(0, 11);
+
+                if (value.length > 3) value = value.replace(/^(\d{3})(\d)/, '$1.$2');
+                if (value.length > 6) value = value.replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3');
+                if (value.length > 9) value = value.replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
+
+                return value;
+            }
+
+            function applyTelefoneMask(value) {
+                value = onlyDigits(value).slice(0, 11);
+
+                if (value.length <= 10) {
+                    value = value.replace(/^(\d{0,2})(\d*)/, function (_, ddd, resto) {
+                        return ddd ? '(' + ddd + (ddd.length === 2 ? ') ' : '') + resto : resto;
+                    });
+
+                    value = value.replace(/^(\(\d{2}\)\s)(\d{4})(\d+)/, '$1$2-$3');
+                } else {
+                    value = value.replace(/^(\d{0,2})(\d*)/, function (_, ddd, resto) {
+                        return ddd ? '(' + ddd + (ddd.length === 2 ? ') ' : '') + resto : resto;
+                    });
+
+                    value = value.replace(/^(\(\d{2}\)\s)(\d{5})(\d+)/, '$1$2-$3');
+                }
+
+                return value;
+            }
+
+            function updateAtivoStatus() {
+                if (!ativoInput || !statusVendedorAtivo) return;
+
+                if (ativoInput.checked) {
+                    statusVendedorAtivo.textContent = 'Ativo';
+                    statusVendedorAtivo.classList.add('active');
+                } else {
+                    statusVendedorAtivo.textContent = 'Inativo';
+                    statusVendedorAtivo.classList.remove('active');
+                }
+            }
+
+            function updateFotoPreviewFromFile() {
+                if (!fotoArquivoInput || !fotoPreview || !fotoPreviewBox) return;
+
+                const file = fotoArquivoInput.files && fotoArquivoInput.files[0];
+
+                if (!file) {
+                    if (fotoPreview.getAttribute('src')) {
+                        fotoPreviewBox.classList.add('has-image');
+                    } else {
+                        fotoPreviewBox.classList.remove('has-image');
+                    }
+                    return;
+                }
+
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+                if (file.type && !allowedTypes.includes(file.type)) {
+                    fotoArquivoInput.value = '';
+                    alert('Selecione uma imagem válida: JPG, PNG ou WEBP.');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    fotoPreview.src = e.target.result;
+                    fotoPreviewBox.classList.add('has-image');
+                };
+                reader.readAsDataURL(file);
+            }
+
+            if (cpfInput) {
+                cpfInput.addEventListener('input', function () {
+                    this.value = applyCpfMask(this.value);
+                });
+                cpfInput.value = applyCpfMask(cpfInput.value);
+            }
+
+            if (telefoneInput) {
+                telefoneInput.addEventListener('input', function () {
+                    this.value = applyTelefoneMask(this.value);
+                });
+                telefoneInput.value = applyTelefoneMask(telefoneInput.value);
+            }
+
+            if (whatsappInput) {
+                whatsappInput.addEventListener('input', function () {
+                    this.value = applyTelefoneMask(this.value);
+                });
+                whatsappInput.value = applyTelefoneMask(whatsappInput.value);
+            }
+
+            if (fotoArquivoInput) {
+                fotoArquivoInput.addEventListener('change', updateFotoPreviewFromFile);
+            }
+
+            if (ativoInput) {
+                ativoInput.addEventListener('change', updateAtivoStatus);
+                updateAtivoStatus();
+            }
+
+            if (form) {
+                form.addEventListener('submit', function () {
+                    if (cpfInput) cpfInput.value = onlyDigits(cpfInput.value);
+                    if (telefoneInput) telefoneInput.value = onlyDigits(telefoneInput.value);
+                    if (whatsappInput) whatsappInput.value = onlyDigits(whatsappInput.value);
+                });
+            }
+        })();
+    </script>
+}

@@ -1,0 +1,134 @@
+@page
+@model Project.Pages.EmpresaModel
+@{
+    ViewData["Title"] = "Quem Somos";
+}
+
+<link rel="stylesheet" href="~/css/Empresa.css" />
+
+<section class="about-hero">
+    <div class="container">
+        <div class="about-hero-panel">
+            <div class="row align-items-center g-4 g-lg-5">
+                <div class="col-lg-7">
+                    <span class="about-kicker">Anderson Multimarcas</span>
+                    <h1 class="about-title">Uma história construída com confiança, transparência e paixão por carros.</h1>
+                    <p class="about-subtitle">
+                        Desde 2012, ajudamos clientes de Taquaritinga/SP e região a encontrar o veículo certo com atendimento próximo,
+                        negociação justa e uma experiência pensada para gerar segurança do primeiro contato à entrega.
+                    </p>
+
+                    <div class="about-hero-actions">
+                        <a asp-page="/Catalogo" class="btn btn-brand">Ver estoque</a>
+                        <a href="https://wa.me/551632523490?text=Ol%C3%A1%2C%20quero%20falar%20com%20a%20Anderson%20Multimarcas." target="_blank" class="btn btn-outline-brand">Falar no WhatsApp</a>
+                    </div>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="about-video-card">
+                        <video class="about-video" autoplay muted loop playsinline>
+                            <source src="/video/videoHome.mp4" type="video/mp4" />
+                            Seu navegador não suporta vídeo em HTML5.
+                        </video>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <article class="feature-card about-stat-card">
+                    <div class="about-stat-number">2012</div>
+                    <h2>Início da trajetória</h2>
+                    <p>
+                        A Anderson Multimarcas nasceu da realização do sonho do empresário Anderson Silva, somando experiência,
+                        visão de mercado e compromisso com atendimento de excelência.
+                    </p>
+                </article>
+            </div>
+
+            <div class="col-lg-4">
+                <article class="feature-card about-stat-card">
+                    <div class="about-stat-number">@Model.TotalVeiculosAtivos</div>
+                    <h2>Opções em estoque</h2>
+                    <p>
+                        Hoje o site exibe <strong>@Model.TotalVeiculosAtivos</strong> veículo(s) ativos puxados diretamente do backend,
+                        com atualização dinâmica da vitrine pública.
+                    </p>
+                </article>
+            </div>
+
+            <div class="col-lg-4">
+                <article class="feature-card about-stat-card">
+                    <div class="about-stat-number">@Model.TotalLojasAtivas</div>
+                    <h2>Unidades em Taquaritinga</h2>
+                    <p>
+                        Nossa presença local fortalece o atendimento próximo, agiliza negociações e amplia as oportunidades para quem
+                        quer comprar, trocar ou financiar.
+                    </p>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section about-locations-section">
+    <div class="container">
+        <div class="about-locations-panel">
+            <div class="about-reasons-header">
+                <span class="about-kicker">Onde estamos</span>
+                <h2 class="section-title mb-2">Unidades ativas para atender melhor Taquaritinga e região</h2>
+                <p class="section-subtitle mb-0">
+                    Estrutura pensada para oferecer variedade de estoque, facilidade de acesso e atendimento próximo em cada visita.
+                </p>
+            </div>
+
+            <div class="row g-4">
+                @if (Model.Stores.Any())
+                {
+                    @foreach (var store in Model.Stores)
+                    {
+                        <div class="col-lg-4">
+                            <div class="about-location-card">
+                                <div class="about-location-tag">@store.Nome</div>
+                                <p>@store.Endereco</p>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12">
+                        <div class="about-location-card">
+                            <div class="about-location-tag">Sem unidades</div>
+                            <p>Nenhuma loja ativa encontrada no backend no momento.</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="cta-sell about-cta">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+                    <p class="text-uppercase fw-bold mb-2 about-cta-kicker">Vamos encontrar seu próximo veículo</p>
+                    <h2 class="mb-3">Casa de Amigos, lugar de bons negócios</h2>
+                    <p class="mb-0 text-white-50">
+                        Se você quer comprar, trocar ou entender as melhores condições de financiamento, estamos prontos para ajudar.
+                    </p>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <a href="https://wa.me/551632523490?text=Ol%C3%A1%2C%20quero%20mais%20informa%C3%A7%C3%B5es%20sobre%20os%20ve%C3%ADculos%20da%20Anderson%20Multimarcas." target="_blank" class="btn btn-light btn-lg fw-semibold">Chamar no WhatsApp</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

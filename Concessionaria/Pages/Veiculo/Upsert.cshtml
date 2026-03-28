@@ -1,0 +1,1812 @@
+﻿@page "{id:int?}"
+@model Concessionaria.Pages.Veiculo.UpsertModel
+@{
+    var isEdit = Model.Veiculo.Id > 0;
+
+    ViewData["Title"] = isEdit ? "Editar Veículo" : "Novo Veículo";
+    ViewData["TopbarTitle"] = isEdit ? "Editar Veículo" : "Novo Veículo";
+    ViewData["TopbarSubtitle"] = isEdit ? "Atualize os dados do veículo" : "Cadastre um novo veículo";
+    Layout = "_LayoutAdmin";
+}
+
+<style>
+    :root {
+        --brand-primary: #9f0a10;
+        --brand-primary-dark: #86080d;
+        --brand-dark: #222222;
+        --brand-border: #ececec;
+        --brand-muted: #6c757d;
+        --brand-soft: rgba(159, 10, 16, 0.08);
+        --brand-success: #198754;
+        --brand-danger: #dc3545;
+        --brand-warning: #ffc107;
+        --brand-card-shadow: 0 8px 24px rgba(0,0,0,.05);
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .page-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin: 0;
+    }
+
+    .page-subtitle {
+        font-size: .92rem;
+        color: var(--brand-muted);
+        margin: .2rem 0 0 0;
+    }
+
+    .form-card {
+        background: #fff;
+        border: 1px solid var(--brand-border);
+        border-radius: 1rem;
+        box-shadow: var(--brand-card-shadow);
+        overflow: hidden;
+    }
+
+    .form-card-body {
+        padding: 1.25rem;
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin-bottom: .2rem;
+    }
+
+    .section-subtitle {
+        font-size: .85rem;
+        color: var(--brand-muted);
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-size: .84rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin-bottom: .35rem;
+    }
+
+    .form-help {
+        display: block;
+        font-size: .78rem;
+        color: var(--brand-muted);
+        margin-top: .4rem;
+        line-height: 1.35;
+    }
+
+    .form-control,
+    .form-select,
+    textarea.form-control {
+        border-radius: .85rem;
+        border: 1px solid #e6e6e6;
+        min-height: 46px;
+        box-shadow: none !important;
+    }
+
+        .form-control:focus,
+        .form-select:focus,
+        textarea.form-control:focus {
+            border-color: rgba(159, 10, 16, .35);
+            box-shadow: 0 0 0 .2rem rgba(159, 10, 16, .08) !important;
+        }
+
+    textarea.form-control {
+        min-height: 120px;
+    }
+
+    .text-danger {
+        font-size: .8rem;
+    }
+
+    .btn-brand {
+        background: var(--brand-primary);
+        border-color: var(--brand-primary);
+        color: #fff;
+        border-radius: .85rem;
+        font-weight: 600;
+        min-height: 46px;
+        padding: 0 1.25rem;
+    }
+
+        .btn-brand:hover {
+            background: var(--brand-primary-dark);
+            border-color: var(--brand-primary-dark);
+            color: #fff;
+        }
+
+    .btn-soft-dark {
+        background: #fff;
+        border: 1px solid var(--brand-border);
+        color: var(--brand-dark);
+        border-radius: .85rem;
+        font-weight: 600;
+        min-height: 46px;
+        padding: 0 1.25rem;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+        .btn-soft-dark:hover {
+            background: #f8f8f8;
+            color: var(--brand-dark);
+        }
+
+    .btn-soft-primary {
+        background: rgba(159, 10, 16, .06);
+        border: 1px solid rgba(159, 10, 16, .14);
+        color: var(--brand-primary);
+        border-radius: .85rem;
+        font-weight: 600;
+        min-height: 46px;
+        padding: 0 1rem;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+        .btn-soft-primary:hover {
+            background: rgba(159, 10, 16, .1);
+            color: var(--brand-primary-dark);
+            border-color: rgba(159, 10, 16, .22);
+        }
+
+    .switch-field {
+        display: flex;
+        flex-direction: column;
+        gap: .45rem;
+    }
+
+    .switch-wrapper {
+        display: inline-flex;
+        align-items: center;
+        gap: .75rem;
+        user-select: none;
+        cursor: pointer;
+        width: fit-content;
+    }
+
+        .switch-wrapper * {
+            cursor: pointer !important;
+        }
+
+    .switch-input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        pointer-events: none;
+    }
+
+    .switch-slider {
+        position: relative;
+        width: 52px;
+        height: 30px;
+        border-radius: 999px;
+        background: #d9d9d9;
+        transition: background-color .25s ease, box-shadow .25s ease, transform .25s ease;
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+        flex-shrink: 0;
+    }
+
+        .switch-slider::before {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,.18);
+            transition: transform .25s ease;
+        }
+
+    .switch-input:checked + .switch-slider {
+        background: var(--brand-primary);
+    }
+
+        .switch-input:checked + .switch-slider::before {
+            transform: translateX(22px);
+        }
+
+    .switch-input:focus + .switch-slider {
+        box-shadow: 0 0 0 .2rem rgba(159, 10, 16, .15);
+    }
+
+    .switch-text {
+        display: flex;
+        flex-direction: column;
+        gap: .1rem;
+    }
+
+    .switch-title {
+        font-size: .92rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        line-height: 1.2;
+    }
+
+    .switch-subtitle {
+        font-size: .78rem;
+        color: var(--brand-muted);
+        line-height: 1.35;
+    }
+
+    .switch-status {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        padding: .22rem .6rem;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 700;
+        background: rgba(108, 117, 125, .12);
+        color: var(--brand-muted);
+        transition: all .2s ease;
+    }
+
+        .switch-status.active {
+            background: rgba(25, 135, 84, .12);
+            color: var(--brand-success);
+        }
+
+    .brand-select-group {
+        display: flex;
+        gap: .75rem;
+        align-items: stretch;
+    }
+
+        .brand-select-group .form-select {
+            flex: 1 1 auto;
+        }
+
+    .accordion-clean .accordion-item {
+        border: 1px solid var(--brand-border);
+        border-radius: 1rem !important;
+        overflow: hidden;
+        margin-bottom: .85rem;
+        background: #fff;
+    }
+
+    .accordion-clean .accordion-button {
+        font-weight: 700;
+        color: var(--brand-dark);
+        background: #fff;
+        box-shadow: none !important;
+        padding: 1rem 1.1rem;
+    }
+
+        .accordion-clean .accordion-button:not(.collapsed) {
+            color: var(--brand-primary);
+            background: rgba(159, 10, 16, .04);
+        }
+
+    .accordion-clean .accordion-body {
+        padding: 1rem 1.1rem 1.1rem;
+    }
+
+    .feature-toolbar {
+        display: flex;
+        justify-content: flex-end;
+        gap: .65rem;
+        margin-bottom: .9rem;
+    }
+
+    .feature-toolbar-global {
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .feature-toolbar-note {
+        font-size: .82rem;
+        color: var(--brand-muted);
+    }
+
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: .75rem;
+    }
+
+    .feature-check {
+        display: flex;
+        align-items: center;
+        gap: .55rem;
+        min-height: 44px;
+        padding: .75rem .9rem;
+        border: 1px solid #eee;
+        border-radius: .85rem;
+        background: #fff;
+        transition: all .2s ease;
+    }
+
+        .feature-check:hover {
+            background: #fafafa;
+            border-color: #ddd;
+        }
+
+        .feature-check input[type="checkbox"] {
+            transform: scale(1.08);
+            accent-color: var(--brand-primary);
+        }
+
+        .feature-check label {
+            font-size: .88rem;
+            color: var(--brand-dark);
+            cursor: pointer;
+            margin: 0;
+            width: 100%;
+        }
+
+    .media-dropzone {
+        border: 2px dashed #d9d9d9;
+        border-radius: 1rem;
+        background: #fafafa;
+        padding: 1.25rem;
+        text-align: center;
+        transition: all .2s ease;
+    }
+
+        .media-dropzone.dragover {
+            border-color: var(--brand-primary);
+            background: rgba(159, 10, 16, .04);
+        }
+
+    .media-dropzone-icon {
+        font-size: 2rem;
+        color: var(--brand-primary);
+        margin-bottom: .4rem;
+    }
+
+    .media-dropzone-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin-bottom: .25rem;
+    }
+
+    .media-dropzone-subtitle {
+        font-size: .84rem;
+        color: var(--brand-muted);
+        margin-bottom: .9rem;
+    }
+
+    .media-input-hidden {
+        display: none;
+    }
+
+    .media-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: .75rem;
+        margin-top: 1rem;
+        margin-bottom: .75rem;
+        flex-wrap: wrap;
+    }
+
+    .media-sort-help {
+        font-size: .8rem;
+        color: var(--brand-muted);
+    }
+
+    .media-list {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+        margin-top: .75rem;
+    }
+
+    .media-item {
+        border: 1px solid var(--brand-border);
+        border-radius: 1rem;
+        background: #fff;
+        overflow: hidden;
+        box-shadow: var(--brand-card-shadow);
+        position: relative;
+        cursor: grab;
+    }
+
+        .media-item.dragging {
+            opacity: .55;
+            transform: scale(.98);
+        }
+
+    .media-thumb {
+        width: 100%;
+        height: 180px;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+        .media-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .media-body {
+        padding: .85rem;
+    }
+
+    .media-name {
+        font-size: .82rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin: 0 0 .45rem 0;
+        word-break: break-word;
+    }
+
+    .media-meta {
+        font-size: .76rem;
+        color: var(--brand-muted);
+        margin-bottom: .75rem;
+    }
+
+    .media-actions {
+        display: flex;
+        flex-direction: column;
+        gap: .45rem;
+    }
+
+    .media-badge {
+        position: absolute;
+        top: .75rem;
+        left: .75rem;
+        z-index: 2;
+        background: rgba(0,0,0,.65);
+        color: #fff;
+        font-size: .7rem;
+        font-weight: 700;
+        padding: .25rem .55rem;
+        border-radius: 999px;
+    }
+
+    .media-remove-btn {
+        width: 100%;
+        border-radius: .75rem;
+    }
+
+    .media-order-label {
+        font-size: .75rem;
+        color: var(--brand-muted);
+        font-weight: 700;
+    }
+
+    .input-with-prefix {
+        position: relative;
+    }
+
+        .input-with-prefix .prefix {
+            position: absolute;
+            top: 50%;
+            left: 14px;
+            transform: translateY(-50%);
+            font-size: .9rem;
+            color: var(--brand-muted);
+            font-weight: 700;
+            pointer-events: none;
+        }
+
+        .input-with-prefix .form-control {
+            padding-left: 40px;
+        }
+
+    .modal-content {
+        border-radius: 1rem;
+        border: 1px solid var(--brand-border);
+        box-shadow: var(--brand-card-shadow);
+    }
+
+    .modal-header,
+    .modal-footer {
+        border-color: #f2f2f2;
+    }
+
+    @@media (max-width: 1200px) {
+        .media-list {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 992px) {
+        .feature-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .media-list {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .page-header,
+        .form-actions,
+        .media-toolbar,
+        .brand-select-group {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .feature-grid,
+        .media-list {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <i class="bi @(isEdit ? "bi-pencil-square" : "bi-plus-circle") me-2"></i>
+                @(isEdit ? "Editar Veículo" : "Novo Veículo")
+            </h1>
+            <p class="page-subtitle">
+                @(isEdit ? "Atualize os dados do veículo cadastrado" : "Preencha os dados para cadastrar um novo veículo")
+            </p>
+        </div>
+
+        <a asp-page="./Index" class="btn btn-soft-dark">
+            <i class="bi bi-arrow-left me-2"></i>
+            Voltar
+        </a>
+    </div>
+
+    <div class="form-card">
+        <div class="form-card-body">
+            <form method="post" enctype="multipart/form-data" id="formVeiculo">
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" asp-for="Veiculo.Id" />
+                <input type="hidden" asp-for="Veiculo.DataCadastro" />
+                <input type="hidden" asp-for="MidiasOrdenadasJson" id="MidiasOrdenadasJson" />
+                <input type="hidden" asp-for="CapaItemKey" id="CapaItemKey" />
+                <input type="hidden" name="NovaMarcaNome" id="NovaMarcaNome" />
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-4">
+                    <div class="section-title">Dados principais</div>
+                    <div class="section-subtitle">Informações básicas do veículo.</div>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-4">
+                            <label asp-for="Veiculo.LojaId" class="form-label">Loja</label>
+                            <select asp-for="Veiculo.LojaId" asp-items="Model.Lojas" class="form-select">
+                                <option value="">Selecione</option>
+                            </select>
+                            <span asp-validation-for="Veiculo.LojaId" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12 col-lg-8">
+                            <label asp-for="Veiculo.MarcaId" class="form-label">Marca</label>
+                            <div class="brand-select-group">
+                                <select asp-for="Veiculo.MarcaId" asp-items="Model.Marcas" class="form-select" id="Veiculo_MarcaId">
+                                    <option value="">Selecione</option>
+                                </select>
+
+                                <button type="button" style="display:none" class="btn btn-soft-primary" data-bs-toggle="modal" data-bs-target="#modalNovaMarca">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    Cadastrar marca
+                                </button>
+                            </div>
+                            <span asp-validation-for="Veiculo.MarcaId" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12 col-lg-6">
+                            <label asp-for="Veiculo.Titulo" class="form-label">Título</label>
+                            <input asp-for="Veiculo.Titulo" class="form-control" maxlength="150" placeholder="Ex.: Onix LT 1.0 Turbo Automático" />
+                            <span asp-validation-for="Veiculo.Titulo" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12 col-lg-3">
+                            <label asp-for="Veiculo.Modelo" class="form-label">Modelo</label>
+                            <input asp-for="Veiculo.Modelo" class="form-control" maxlength="100" placeholder="Ex.: Onix" />
+                            <span asp-validation-for="Veiculo.Modelo" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12 col-lg-3">
+                            <label asp-for="Veiculo.Versao" class="form-label">Versão</label>
+                            <input asp-for="Veiculo.Versao" class="form-control" maxlength="100" placeholder="Ex.: LTZ" />
+                            <span asp-validation-for="Veiculo.Versao" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label asp-for="Veiculo.AnoFabricacao" class="form-label">Ano fabricação</label>
+                            <input asp-for="Veiculo.AnoFabricacao" class="form-control" type="number" placeholder="Ex.: 2022" />
+                            <span asp-validation-for="Veiculo.AnoFabricacao" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label asp-for="Veiculo.AnoModelo" class="form-label">Ano modelo</label>
+                            <input asp-for="Veiculo.AnoModelo" class="form-control" type="number" placeholder="Ex.: 2023" />
+                            <span asp-validation-for="Veiculo.AnoModelo" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label asp-for="Veiculo.Cor" class="form-label">Cor</label>
+                            <input asp-for="Veiculo.Cor" class="form-control" maxlength="30" placeholder="Ex.: Branco" />
+                            <span asp-validation-for="Veiculo.Cor" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label asp-for="Veiculo.Quilometragem" class="form-label">Quilometragem</label>
+                            <input asp-for="Veiculo.Quilometragem"
+                                   class="form-control js-mask-km"
+                                   type="text"
+                                   inputmode="numeric"
+                                   maxlength="15"
+                                   placeholder="Ex.: 45.000" />
+                            <span asp-validation-for="Veiculo.Quilometragem" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label asp-for="Veiculo.Combustivel" class="form-label">Combustível</label>
+                            <select asp-for="Veiculo.Combustivel" class="form-select">
+                                <option value="">Selecione</option>
+                                <option value="Flex">Flex</option>
+                                <option value="Gasolina">Gasolina</option>
+                                <option value="Etanol">Etanol</option>
+                                <option value="Diesel">Diesel</option>
+                                <option value="Elétrico">Elétrico</option>
+                                <option value="Híbrido">Híbrido</option>
+                                <option value="GNV">GNV</option>
+                            </select>
+                            <span asp-validation-for="Veiculo.Combustivel" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label asp-for="Veiculo.Cambio" class="form-label">Câmbio</label>
+                            <select asp-for="Veiculo.Cambio" class="form-select">
+                                <option value="">Selecione</option>
+                                <option value="Manual">Manual</option>
+                                <option value="Automático">Automático</option>
+                                <option value="CVT">CVT</option>
+                                <option value="Automatizado">Automatizado</option>
+                            </select>
+                            <span asp-validation-for="Veiculo.Cambio" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <label asp-for="Veiculo.Placa" class="form-label">Placa</label>
+                            <input asp-for="Veiculo.Placa"
+                                   class="form-control js-mask-placa text-uppercase"
+                                   maxlength="8"
+                                   placeholder="ABC1D23" />
+                            <span asp-validation-for="Veiculo.Placa" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <label asp-for="Veiculo.Chassi" class="form-label">Chassi</label>
+                            <input asp-for="Veiculo.Chassi"
+                                   class="form-control js-mask-chassi text-uppercase"
+                                   maxlength="17"
+                                   placeholder="Somente letras e números" />
+                            <span asp-validation-for="Veiculo.Chassi" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <label asp-for="Veiculo.Renavam" class="form-label">Renavam</label>
+                            <input asp-for="Veiculo.Renavam"
+                                   class="form-control js-mask-renavam"
+                                   maxlength="11"
+                                   inputmode="numeric"
+                                   placeholder="00000000000" />
+                            <span asp-validation-for="Veiculo.Renavam" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <label asp-for="Veiculo.PrecoVenda" class="form-label">Preço de venda</label>
+                            <div class="input-with-prefix">
+                                <span class="prefix">R$</span>
+                                <input asp-for="Veiculo.PrecoVenda"
+                                       class="form-control js-mask-money"
+                                       type="text"
+                                       inputmode="decimal"
+                                       placeholder="0,00" />
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <label asp-for="Veiculo.PrecoPromocional" class="form-label">Preço promocional</label>
+                            <div class="input-with-prefix">
+                                <span class="prefix">R$</span>
+                                <input asp-for="Veiculo.PrecoPromocional"
+                                       class="form-control js-mask-money"
+                                       type="text"
+                                       inputmode="decimal"
+                                       placeholder="0,00" />
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <label asp-for="Veiculo.PrecoFipe" class="form-label">Preço FIPE</label>
+                            <div class="input-with-prefix">
+                                <span class="prefix">R$</span>
+                                <input asp-for="Veiculo.PrecoFipe"
+                                       class="form-control js-mask-money"
+                                       type="text"
+                                       inputmode="decimal"
+                                       placeholder="0,00" />
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Veiculo.Descricao" class="form-label">Descrição</label>
+                            <textarea asp-for="Veiculo.Descricao" class="form-control" maxlength="1000" placeholder="Descreva os detalhes do veículo..."></textarea>
+                            <span asp-validation-for="Veiculo.Descricao" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <div class="mb-4">
+                    <div class="section-title">Status e flags</div>
+                    <div class="section-subtitle">Defina disponibilidade e condições comerciais.</div>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <div class="switch-field">
+                                <label class="switch-wrapper" for="Veiculo_Ativo">
+                                    <input asp-for="Veiculo.Ativo" class="switch-input" id="Veiculo_Ativo" type="checkbox" />
+                                    <span class="switch-slider"></span>
+                                    <span class="switch-text">
+                                        <span class="switch-title">Ativo</span>
+                                        <span class="switch-subtitle">Veículo disponível no sistema.</span>
+                                    </span>
+                                </label>
+                                <span id="statusVeiculoAtivo" class="switch-status">Inativo</span>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <div class="switch-field">
+                                <label class="switch-wrapper" for="Veiculo_Vendido">
+                                    <input asp-for="Veiculo.Vendido" class="switch-input" id="Veiculo_Vendido" type="checkbox" />
+                                    <span class="switch-slider"></span>
+                                    <span class="switch-text">
+                                        <span class="switch-title">Vendido</span>
+                                        <span class="switch-subtitle">Marca o veículo como vendido.</span>
+                                    </span>
+                                </label>
+                                <span id="statusVeiculoVendido" class="switch-status">Não</span>
+                                @if (Model.Veiculo.Vendido)
+                                {
+                                    var usuarioBaixa = !string.IsNullOrWhiteSpace(Model.Veiculo.VendidoPorUsuario?.NomeCompleto)
+                                        ? Model.Veiculo.VendidoPorUsuario?.NomeCompleto
+                                        : Model.Veiculo.VendidoPorUsuario?.UserName;
+
+                                    <small class="form-help">
+                                        Data da venda: @(Model.Veiculo.DataVenda.HasValue ? Model.Veiculo.DataVenda.Value.ToString("dd/MM/yyyy HH:mm") : "-")
+                                        <br />
+                                        Baixa registrada por: @(string.IsNullOrWhiteSpace(usuarioBaixa) ? "-" : usuarioBaixa)
+                                    </small>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <div class="switch-field">
+                                <label class="switch-wrapper" for="Veiculo_Destaque">
+                                    <input asp-for="Veiculo.Destaque" class="switch-input" id="Veiculo_Destaque" type="checkbox" />
+                                    <span class="switch-slider"></span>
+                                    <span class="switch-text">
+                                        <span class="switch-title">Destaque</span>
+                                        <span class="switch-subtitle">Prioriza o veículo na vitrine.</span>
+                                    </span>
+                                </label>
+                                <span id="statusVeiculoDestaque" class="switch-status">Não</span>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <div class="switch-field">
+                                <label class="switch-wrapper" for="Veiculo_Seminovo">
+                                    <input asp-for="Veiculo.Seminovo" class="switch-input" id="Veiculo_Seminovo" type="checkbox" />
+                                    <span class="switch-slider"></span>
+                                    <span class="switch-text">
+                                        <span class="switch-title">Seminovo</span>
+                                        <span class="switch-subtitle">Identifica como seminovo.</span>
+                                    </span>
+                                </label>
+                                <span id="statusVeiculoSeminovo" class="switch-status">Não</span>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <div class="switch-field">
+                                <label class="switch-wrapper" for="Veiculo_AceitaTroca">
+                                    <input asp-for="Veiculo.AceitaTroca" class="switch-input" id="Veiculo_AceitaTroca" type="checkbox" />
+                                    <span class="switch-slider"></span>
+                                    <span class="switch-text">
+                                        <span class="switch-title">Aceita troca</span>
+                                        <span class="switch-subtitle">Indica negociação com troca.</span>
+                                    </span>
+                                </label>
+                                <span id="statusVeiculoAceitaTroca" class="switch-status">Não</span>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <div class="switch-field">
+                                <label class="switch-wrapper" for="Veiculo_Financiavel">
+                                    <input asp-for="Veiculo.Financiavel" class="switch-input" id="Veiculo_Financiavel" type="checkbox" />
+                                    <span class="switch-slider"></span>
+                                    <span class="switch-text">
+                                        <span class="switch-title">Financiável</span>
+                                        <span class="switch-subtitle">Permite financiamento.</span>
+                                    </span>
+                                </label>
+                                <span id="statusVeiculoFinanciavel" class="switch-status">Não</span>
+                            </div>
+                        </div>
+
+                        @if (isEdit && Model.Veiculo.DataCadastro != default)
+                        {
+                            <div class="col-12 col-md-6 col-xl-3 d-flex align-items-end">
+                                <small class="text-muted">
+                                    Cadastro em: @Model.Veiculo.DataCadastro.ToString("dd/MM/yyyy HH:mm")
+                                </small>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <div class="mb-4">
+                    <div class="section-title">Características</div>
+                    <div class="section-subtitle">Expanda os grupos abaixo e marque o que o veículo possui.</div>
+
+                    <div class="feature-toolbar feature-toolbar-global mt-3">
+                        <span class="feature-toolbar-note">Use o atalho para preencher rapidamente um pacote básico.</span>
+                        <button type="button" class="btn btn-soft-primary" id="btnBaseCarro">
+                            <i class="bi bi-magic me-2"></i>
+                            Base Carro
+                        </button>
+                    </div>
+
+                    <div class="accordion accordion-clean" id="accordionCaracteristicas">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingConforto">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConforto" aria-expanded="true">
+                                    <i class="bi bi-stars me-2"></i> Conforto
+                                </button>
+                            </h2>
+                            <div id="collapseConforto" class="accordion-collapse collapse show" data-bs-parent="#accordionCaracteristicas">
+                                <div class="accordion-body">
+                                    <div class="feature-toolbar">
+                                        <button type="button" class="btn btn-soft-primary btn-selecionar-todos" data-target="#collapseConforto">
+                                            <i class="bi bi-check2-square me-2"></i>
+                                            Selecionar todas
+                                        </button>
+                                    </div>
+                                    <div class="feature-grid">
+                                        @Model.Check("Caracteristica.ArCondicionado", "Ar-condicionado")
+                                        @Model.Check("Caracteristica.ArQuente", "Ar quente")
+                                        @Model.Check("Caracteristica.DirecaoHidraulica", "Direção hidráulica")
+                                        @Model.Check("Caracteristica.DirecaoEletrica", "Direção elétrica")
+                                        @Model.Check("Caracteristica.VidroEletrico", "Vidro elétrico")
+                                        @Model.Check("Caracteristica.TravaEletrica", "Trava elétrica")
+                                        @Model.Check("Caracteristica.RetrovisorEletrico", "Retrovisor elétrico")
+                                        @Model.Check("Caracteristica.BancoDeCouro", "Banco de couro")
+                                        @Model.Check("Caracteristica.AjusteEletricoBancos", "Ajuste elétrico dos bancos")
+                                        @Model.Check("Caracteristica.AquecimentoBancos", "Aquecimento dos bancos")
+                                        @Model.Check("Caracteristica.VolanteMultifuncional", "Volante multifuncional")
+                                        @Model.Check("Caracteristica.PilotoAutomatico", "Piloto automático")
+                                        @Model.Check("Caracteristica.ControleAutomaticoVelocidade", "Controle automático de velocidade")
+                                        @Model.Check("Caracteristica.LimitadorVelocidade", "Limitador de velocidade")
+                                        @Model.Check("Caracteristica.ComputadorBordo", "Computador de bordo")
+                                        @Model.Check("Caracteristica.ChavePresencial", "Chave presencial")
+                                        @Model.Check("Caracteristica.PartidaBotao", "Partida por botão")
+                                        @Model.Check("Caracteristica.SensorChuva", "Sensor de chuva")
+                                        @Model.Check("Caracteristica.SensorCrepuscular", "Sensor crepuscular")
+                                        @Model.Check("Caracteristica.TetoSolar", "Teto solar")
+                                        @Model.Check("Caracteristica.TetoPanoramico", "Teto panorâmico")
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingSeguranca">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeguranca">
+                                    <i class="bi bi-shield-check me-2"></i> Segurança
+                                </button>
+                            </h2>
+                            <div id="collapseSeguranca" class="accordion-collapse collapse" data-bs-parent="#accordionCaracteristicas">
+                                <div class="accordion-body">
+                                    <div class="feature-toolbar">
+                                        <button type="button" class="btn btn-soft-primary btn-selecionar-todos" data-target="#collapseSeguranca">
+                                            <i class="bi bi-check2-square me-2"></i>
+                                            Selecionar todas
+                                        </button>
+                                    </div>
+                                    <div class="feature-grid">
+                                        @Model.Check("Caracteristica.AirbagMotorista", "Airbag motorista")
+                                        @Model.Check("Caracteristica.AirbagPassageiro", "Airbag passageiro")
+                                        @Model.Check("Caracteristica.AirbagLateral", "Airbag lateral")
+                                        @Model.Check("Caracteristica.AirbagCortina", "Airbag cortina")
+                                        @Model.Check("Caracteristica.FreiosAbs", "Freios ABS")
+                                        @Model.Check("Caracteristica.ControleTracao", "Controle de tração")
+                                        @Model.Check("Caracteristica.ControleEstabilidade", "Controle de estabilidade")
+                                        @Model.Check("Caracteristica.AssistentePartidaRampa", "Assistente de partida em rampa")
+                                        @Model.Check("Caracteristica.Isofix", "Isofix")
+                                        @Model.Check("Caracteristica.Alarme", "Alarme")
+                                        @Model.Check("Caracteristica.CameraDeRe", "Câmera de ré")
+                                        @Model.Check("Caracteristica.SensorEstacionamentoDianteiro", "Sensor dianteiro")
+                                        @Model.Check("Caracteristica.SensorEstacionamentoTraseiro", "Sensor traseiro")
+                                        @Model.Check("Caracteristica.FarolNeblina", "Farol de neblina")
+                                        @Model.Check("Caracteristica.FarolLed", "Farol em LED")
+                                        @Model.Check("Caracteristica.FarolMilha", "Farol de milha")
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingMultimidia">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMultimidia">
+                                    <i class="bi bi-speaker me-2"></i> Multimídia
+                                </button>
+                            </h2>
+                            <div id="collapseMultimidia" class="accordion-collapse collapse" data-bs-parent="#accordionCaracteristicas">
+                                <div class="accordion-body">
+                                    <div class="feature-toolbar">
+                                        <button type="button" class="btn btn-soft-primary btn-selecionar-todos" data-target="#collapseMultimidia">
+                                            <i class="bi bi-check2-square me-2"></i>
+                                            Selecionar todas
+                                        </button>
+                                    </div>
+                                    <div class="feature-grid">
+                                        @Model.Check("Caracteristica.CentralMultimidia", "Central multimídia")
+                                        @Model.Check("Caracteristica.Som", "Som")
+                                        @Model.Check("Caracteristica.Bluetooth", "Bluetooth")
+                                        @Model.Check("Caracteristica.Usb", "USB")
+                                        @Model.Check("Caracteristica.EntradaAuxiliar", "Entrada auxiliar")
+                                        @Model.Check("Caracteristica.Radio", "Rádio")
+                                        @Model.Check("Caracteristica.GPS", "GPS")
+                                        @Model.Check("Caracteristica.CarregadorInducao", "Carregador por indução")
+                                        @Model.Check("Caracteristica.AppleCarPlay", "Apple CarPlay")
+                                        @Model.Check("Caracteristica.AndroidAuto", "Android Auto")
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingEstrutura">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEstrutura">
+                                    <i class="bi bi-truck me-2"></i> Estrutura
+                                </button>
+                            </h2>
+                            <div id="collapseEstrutura" class="accordion-collapse collapse" data-bs-parent="#accordionCaracteristicas">
+                                <div class="accordion-body">
+                                    <div class="feature-toolbar">
+                                        <button type="button" class="btn btn-soft-primary btn-selecionar-todos" data-target="#collapseEstrutura">
+                                            <i class="bi bi-check2-square me-2"></i>
+                                            Selecionar todas
+                                        </button>
+                                    </div>
+                                    <div class="feature-grid">
+                                        @Model.Check("Caracteristica.RodaLigaLeve", "Roda de liga leve")
+                                        @Model.Check("Caracteristica.KitMultimidia", "Kit multimídia")
+                                        @Model.Check("Caracteristica.Engate", "Engate")
+                                        @Model.Check("Caracteristica.Bagageiro", "Bagageiro")
+                                        @Model.Check("Caracteristica.CapotaMaritima", "Capota marítima")
+                                        @Model.Check("Caracteristica.Estribo", "Estribo")
+                                        @Model.Check("Caracteristica.SantoAntonio", "Santo Antônio")
+                                        @Model.Check("Caracteristica.ProtetorCacamba", "Protetor de caçamba")
+                                        @Model.Check("Caracteristica.PortaMalasEletrico", "Porta-malas elétrico")
+                                        @Model.Check("Caracteristica.TerceiraFileira", "Terceira fileira")
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingMecanica">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMecanica">
+                                    <i class="bi bi-gear-wide-connected me-2"></i> Mecânica
+                                </button>
+                            </h2>
+                            <div id="collapseMecanica" class="accordion-collapse collapse" data-bs-parent="#accordionCaracteristicas">
+                                <div class="accordion-body">
+                                    <div class="feature-toolbar">
+                                        <button type="button" class="btn btn-soft-primary btn-selecionar-todos" data-target="#collapseMecanica">
+                                            <i class="bi bi-check2-square me-2"></i>
+                                            Selecionar todas
+                                        </button>
+                                    </div>
+                                    <div class="feature-grid">
+                                        @Model.Check("Caracteristica.CambioAutomatico", "Câmbio automático")
+                                        @Model.Check("Caracteristica.CambioManual", "Câmbio manual")
+                                        @Model.Check("Caracteristica.CambioCvt", "Câmbio CVT")
+                                        @Model.Check("Caracteristica.CambioAutomatizado", "Câmbio automatizado")
+                                        @Model.Check("Caracteristica.TracaoDianteira", "Tração dianteira")
+                                        @Model.Check("Caracteristica.TracaoTraseira", "Tração traseira")
+                                        @Model.Check("Caracteristica.TracaoIntegral", "Tração integral")
+                                        @Model.Check("Caracteristica.StartStop", "Start/Stop")
+                                        @Model.Check("Caracteristica.Turbo", "Turbo")
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingEletricos">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEletricos">
+                                    <i class="bi bi-lightning-charge me-2"></i> Elétricos / Híbridos
+                                </button>
+                            </h2>
+                            <div id="collapseEletricos" class="accordion-collapse collapse" data-bs-parent="#accordionCaracteristicas">
+                                <div class="accordion-body">
+                                    <div class="feature-toolbar">
+                                        <button type="button" class="btn btn-soft-primary btn-selecionar-todos" data-target="#collapseEletricos">
+                                            <i class="bi bi-check2-square me-2"></i>
+                                            Selecionar todas
+                                        </button>
+                                    </div>
+                                    <div class="feature-grid">
+                                        @Model.Check("Caracteristica.Hibrido", "Híbrido")
+                                        @Model.Check("Caracteristica.Eletrico", "Elétrico")
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <div class="mb-3">
+                    <div class="section-title">Fotos do veículo</div>
+                    <div class="section-subtitle">Envie várias imagens, arraste para ordenar e marque qual será a capa.</div>
+
+                    <div class="media-dropzone" id="mediaDropzone">
+                        <div class="media-dropzone-icon">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                        </div>
+                        <div class="media-dropzone-title">Arraste imagens aqui</div>
+                        <div class="media-dropzone-subtitle">
+                            ou clique no botão abaixo para selecionar várias imagens de uma vez.
+                        </div>
+
+                        <button type="button" class="btn btn-soft-dark" id="btnSelecionarMidias">
+                            <i class="bi bi-images me-2"></i>
+                            Selecionar fotos
+                        </button>
+
+                        <input asp-for="NovasMidias"
+                               id="NovasMidias"
+                               class="media-input-hidden"
+                               type="file"
+                               accept=".jpg,.jpeg,.png,.webp,image/*"
+                               multiple />
+
+                        <span asp-validation-for="NovasMidias" class="text-danger d-block mt-2"></span>
+                    </div>
+
+                    <div class="media-toolbar">
+                        <div class="media-sort-help">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Dica: arraste os cards para mudar a ordem. O primeiro pode ser sua foto principal, mas você também pode marcar qualquer item como capa.
+                        </div>
+
+                        <button type="button" class="btn btn-soft-dark" id="btnLimparNovasMidias">
+                            <i class="bi bi-trash me-2"></i>
+                            Limpar novas fotos
+                        </button>
+                    </div>
+
+                    <div id="mediaList" class="media-list">
+                        @foreach (var midia in Model.MidiasExistentes.OrderBy(x => x.Ordem).ThenByDescending(x => x.Capa))
+                        {
+                            <div class="media-item"
+                                 draggable="true"
+                                 data-kind="existing"
+                                 data-id="@midia.Id"
+                                 data-key="existing-@midia.Id">
+                                <div class="media-badge">@((midia.Capa ? "CAPA" : "MÍDIA"))</div>
+
+                                <div class="media-thumb">
+                                    <img src="@midia.Url" alt="@midia.NomeArquivo" />
+                                </div>
+
+                                <div class="media-body">
+                                    <p class="media-name">@midia.NomeArquivo</p>
+                                    <div class="media-meta">
+                                        Ordem atual: @(midia.Ordem) |
+                                        @((midia.TamanhoBytes ?? 0) / 1024) KB
+                                    </div>
+
+                                    <div class="media-actions">
+                                        <label class="form-check">
+                                            <input class="form-check-input js-capa-radio"
+                                                   type="radio"
+                                                   name="capaSelector"
+                                                   value="existing-@midia.Id"
+                                            @(midia.Capa ? "checked" : null) />
+                                            <span class="form-check-label">Definir como capa</span>
+                                        </label>
+
+                                        <label class="form-check">
+                                            <input class="form-check-input js-remover-midia"
+                                                   type="checkbox"
+                                                   name="MidiasRemoverIds"
+                                                   value="@midia.Id" />
+                                            <span class="form-check-label">Remover esta mídia</span>
+                                        </label>
+
+                                        <div class="media-order-label">Arraste para ordenar</div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a asp-page="./Index" class="btn btn-soft-dark">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Cancelar
+                    </a>
+
+                    <button type="submit" class="btn btn-brand">
+                        <i class="bi bi-check-circle me-2"></i>
+                        @(isEdit ? "Salvar alterações" : "Cadastrar veículo")
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalNovaMarca" tabindex="-1" aria-labelledby="modalNovaMarcaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="modalNovaMarcaLabel">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Cadastrar marca
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="inputNovaMarca" class="form-label">Nome da marca</label>
+                    <input type="text"
+                           id="inputNovaMarca"
+                           class="form-control"
+                           maxlength="80"
+                           placeholder="Ex.: Chevrolet" />
+                    <small class="form-help">
+                        Ao salvar, a marca será selecionada automaticamente no formulário.
+                    </small>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-soft-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-brand" id="btnSalvarNovaMarca">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Adicionar marca
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // Aceita números no formato pt-BR no jQuery Validate
+        if (window.jQuery && $.validator) {
+            $.validator.methods.number = function (value, element) {
+                return this.optional(element) || /^-?(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d{1,2})?$/.test(value);
+            };
+        }
+    </script>
+
+    <script>
+        (function () {
+            const form = document.getElementById('formVeiculo');
+            const mediaInput = document.getElementById('NovasMidias');
+            const mediaDropzone = document.getElementById('mediaDropzone');
+            const mediaList = document.getElementById('mediaList');
+            const btnSelecionarMidias = document.getElementById('btnSelecionarMidias');
+            const btnLimparNovasMidias = document.getElementById('btnLimparNovasMidias');
+            const midiasOrdenadasJson = document.getElementById('MidiasOrdenadasJson');
+            const capaItemKey = document.getElementById('CapaItemKey');
+
+            const selectMarca = document.getElementById('Veiculo_MarcaId');
+            const inputNovaMarca = document.getElementById('inputNovaMarca');
+            const btnSalvarNovaMarca = document.getElementById('btnSalvarNovaMarca');
+            const hiddenNovaMarcaNome = document.getElementById('NovaMarcaNome');
+            const modalNovaMarcaEl = document.getElementById('modalNovaMarca');
+            const modalNovaMarca = modalNovaMarcaEl ? bootstrap.Modal.getOrCreateInstance(modalNovaMarcaEl) : null;
+
+            let newFiles = [];
+            let dragItem = null;
+
+            function bindSwitchStatus(inputId, statusId, onText, offText, activeWhenChecked = true) {
+                const input = document.getElementById(inputId);
+                const status = document.getElementById(statusId);
+                if (!input || !status) return;
+
+                function update() {
+                    const active = activeWhenChecked ? input.checked : !input.checked;
+                    status.textContent = input.checked ? onText : offText;
+
+                    if (active) status.classList.add('active');
+                    else status.classList.remove('active');
+                }
+
+                input.addEventListener('change', update);
+                update();
+            }
+
+            bindSwitchStatus('Veiculo_Ativo', 'statusVeiculoAtivo', 'Ativo', 'Inativo');
+            bindSwitchStatus('Veiculo_Vendido', 'statusVeiculoVendido', 'Sim', 'Não');
+            bindSwitchStatus('Veiculo_Destaque', 'statusVeiculoDestaque', 'Sim', 'Não');
+            bindSwitchStatus('Veiculo_Seminovo', 'statusVeiculoSeminovo', 'Sim', 'Não');
+            bindSwitchStatus('Veiculo_AceitaTroca', 'statusVeiculoAceitaTroca', 'Sim', 'Não');
+            bindSwitchStatus('Veiculo_Financiavel', 'statusVeiculoFinanciavel', 'Sim', 'Não');
+
+            function formatBytes(bytes) {
+                if (!bytes || bytes <= 0) return '0 KB';
+                const kb = bytes / 1024;
+                if (kb < 1024) return kb.toFixed(0) + ' KB';
+                const mb = kb / 1024;
+                return mb.toFixed(2) + ' MB';
+            }
+
+            function digitsOnly(value) {
+                return (value || '').replace(/\D/g, '');
+            }
+
+            function lettersAndNumbersOnly(value) {
+                return (value || '').replace(/[^a-zA-Z0-9]/g, '');
+            }
+
+            function formatMoney(value) {
+                const digits = digitsOnly(value);
+                if (!digits) return '';
+
+                const cents = parseInt(digits, 10);
+                if (isNaN(cents)) return '';
+
+                const number = (cents / 100).toFixed(2);
+                const parts = number.split('.');
+
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+                return parts[0] + ',' + parts[1];
+            }
+
+            function formatIntegerWithThousands(value) {
+                const digits = digitsOnly(value);
+                if (!digits) return '';
+                return parseInt(digits, 10).toLocaleString('pt-BR');
+            }
+
+            function formatPlaca(value) {
+                return lettersAndNumbersOnly(value).toUpperCase().substring(0, 7);
+            }
+
+            function formatRenavam(value) {
+                return digitsOnly(value).substring(0, 11);
+            }
+
+            function formatChassi(value) {
+                return lettersAndNumbersOnly(value).toUpperCase().substring(0, 17);
+            }
+
+            function applyInputMasks() {
+                document.querySelectorAll('.js-mask-money').forEach(input => {
+                    input.addEventListener('input', function () {
+                        this.value = formatMoney(this.value);
+                    });
+
+                    input.addEventListener('blur', function () {
+                        this.value = formatMoney(this.value);
+                    });
+
+                    if (input.value) {
+                        input.value = formatMoney(input.value);
+                    }
+                });
+
+                document.querySelectorAll('.js-mask-km').forEach(input => {
+                    input.addEventListener('input', function () {
+                        this.value = formatIntegerWithThousands(this.value);
+                    });
+
+                    input.addEventListener('blur', function () {
+                        this.value = formatIntegerWithThousands(this.value);
+                    });
+
+                    if (input.value) {
+                        input.value = formatIntegerWithThousands(input.value);
+                    }
+                });
+
+                document.querySelectorAll('.js-mask-placa').forEach(input => {
+                    input.addEventListener('input', function () {
+                        this.value = formatPlaca(this.value);
+                    });
+
+                    input.addEventListener('blur', function () {
+                        this.value = formatPlaca(this.value);
+                    });
+
+                    if (input.value) {
+                        input.value = formatPlaca(input.value);
+                    }
+                });
+
+                document.querySelectorAll('.js-mask-renavam').forEach(input => {
+                    input.addEventListener('input', function () {
+                        this.value = formatRenavam(this.value);
+                    });
+
+                    input.addEventListener('blur', function () {
+                        this.value = formatRenavam(this.value);
+                    });
+
+                    if (input.value) {
+                        input.value = formatRenavam(input.value);
+                    }
+                });
+
+                document.querySelectorAll('.js-mask-chassi').forEach(input => {
+                    input.addEventListener('input', function () {
+                        this.value = formatChassi(this.value);
+                    });
+
+                    input.addEventListener('blur', function () {
+                        this.value = formatChassi(this.value);
+                    });
+
+                    if (input.value) {
+                        input.value = formatChassi(input.value);
+                    }
+                });
+            }
+
+            function normalizeMaskedInputsBeforeSubmit() {
+                document.querySelectorAll('.js-mask-km').forEach(input => {
+                    input.value = digitsOnly(input.value);
+                });
+
+                document.querySelectorAll('.js-mask-renavam').forEach(input => {
+                    input.value = digitsOnly(input.value);
+                });
+
+                document.querySelectorAll('.js-mask-money').forEach(input => {
+                    let value = (input.value || '').trim();
+
+                    if (!value) {
+                        input.value = '';
+                        return;
+                    }
+
+                    // Envia em formato pt-BR para o model binder da aplicação
+                    // Ex.: 58.000,00 -> 58000,00
+                    input.value = value.replace(/\./g, '');
+                });
+
+                document.querySelectorAll('.js-mask-placa').forEach(input => {
+                    input.value = formatPlaca(input.value);
+                });
+
+                document.querySelectorAll('.js-mask-chassi').forEach(input => {
+                    input.value = formatChassi(input.value);
+                });
+            }
+
+            function bindSelectAllButtons() {
+                document.querySelectorAll('.btn-selecionar-todos').forEach(button => {
+                    button.addEventListener('click', function () {
+                        const targetSelector = this.getAttribute('data-target');
+                        const group = document.querySelector(targetSelector);
+
+                        if (!group) return;
+
+                        const checkboxes = group.querySelectorAll('input[type="checkbox"]');
+                        checkboxes.forEach(cb => {
+                            cb.checked = true;
+                            cb.dispatchEvent(new Event('change', { bubbles: true }));
+                        });
+                    });
+                });
+            }
+
+            function bindBaseCarroButton() {
+                const button = document.getElementById('btnBaseCarro');
+                if (!button) return;
+
+                const baseCarroIds = [
+                    'Caracteristica_ArCondicionado',
+                    'Caracteristica_VidroEletrico',
+                    'Caracteristica_TravaEletrica',
+                    'Caracteristica_ComputadorBordo',
+                    'Caracteristica_AirbagMotorista',
+                    'Caracteristica_AirbagPassageiro',
+                    'Caracteristica_FreiosAbs',
+                    'Caracteristica_Alarme',
+                    'Caracteristica_Som',
+                    'Caracteristica_Bluetooth',
+                    'Caracteristica_Usb',
+                    'Caracteristica_Radio',
+                    'Caracteristica_RodaLigaLeve',
+                    'Caracteristica_CambioManual',
+                    'Caracteristica_TracaoDianteira'
+                ];
+
+                button.addEventListener('click', function () {
+                    baseCarroIds.forEach(id => {
+                        const checkbox = document.getElementById(id);
+                        if (!checkbox) return;
+
+                        checkbox.checked = true;
+                        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                });
+            }
+
+            function bindNovaMarca() {
+                if (!btnSalvarNovaMarca || !selectMarca) return;
+
+                btnSalvarNovaMarca.addEventListener('click', function () {
+                    const nomeMarca = (inputNovaMarca?.value || '').trim();
+
+                    if (!nomeMarca) {
+                        if (inputNovaMarca) inputNovaMarca.focus();
+                        return;
+                    }
+
+                    const optionExistente = Array.from(selectMarca.options)
+                        .find(opt => (opt.text || '').trim().toLowerCase() === nomeMarca.toLowerCase());
+
+                    if (optionExistente) {
+                        selectMarca.value = optionExistente.value;
+                        hiddenNovaMarcaNome.value = '';
+                        modalNovaMarca?.hide();
+                        if (inputNovaMarca) inputNovaMarca.value = '';
+                        return;
+                    }
+
+                    const tempValue = 'nova:' + nomeMarca;
+                    const option = new Option(nomeMarca, tempValue, true, true);
+                    selectMarca.add(option);
+                    selectMarca.value = tempValue;
+                    hiddenNovaMarcaNome.value = nomeMarca;
+
+                    modalNovaMarca?.hide();
+                    if (inputNovaMarca) inputNovaMarca.value = '';
+                });
+
+                modalNovaMarcaEl?.addEventListener('hidden.bs.modal', function () {
+                    if (inputNovaMarca) inputNovaMarca.value = '';
+                });
+            }
+
+            function createNewMediaCard(file, index) {
+                const key = `new-${index}`;
+                const objectUrl = URL.createObjectURL(file);
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'media-item';
+                wrapper.setAttribute('draggable', 'true');
+                wrapper.dataset.kind = 'new';
+                wrapper.dataset.newIndex = String(index);
+                wrapper.dataset.key = key;
+
+                wrapper.innerHTML = `
+                    <div class="media-badge">NOVA</div>
+                    <div class="media-thumb">
+                        <img src="${objectUrl}" alt="${file.name}" />
+                    </div>
+                    <div class="media-body">
+                        <p class="media-name">${file.name}</p>
+                        <div class="media-meta">
+                            ${formatBytes(file.size)}
+                        </div>
+                        <div class="media-actions">
+                            <label class="form-check">
+                                <input class="form-check-input js-capa-radio"
+                                       type="radio"
+                                       name="capaSelector"
+                                       value="${key}" />
+                                <span class="form-check-label">Definir como capa</span>
+                            </label>
+
+                            <button type="button" class="btn btn-outline-danger btn-sm media-remove-btn js-remove-new-file">
+                                <i class="bi bi-trash me-1"></i>
+                                Remover
+                            </button>
+
+                            <div class="media-order-label">Arraste para ordenar</div>
+                        </div>
+                    </div>
+                `;
+
+                const removeButton = wrapper.querySelector('.js-remove-new-file');
+                removeButton.addEventListener('click', function () {
+                    const currentIndex = parseInt(wrapper.dataset.newIndex, 10);
+                    if (!isNaN(currentIndex)) {
+                        newFiles.splice(currentIndex, 1);
+                        renderNewFiles();
+                    }
+                });
+
+                return wrapper;
+            }
+
+            function renderNewFiles() {
+                const existingCards = Array.from(mediaList.querySelectorAll('.media-item[data-kind="existing"]'));
+
+                mediaList.innerHTML = '';
+                existingCards.forEach(card => mediaList.appendChild(card));
+
+                newFiles.forEach((file, index) => {
+                    const card = createNewMediaCard(file, index);
+                    mediaList.appendChild(card);
+                });
+
+                refreshDragAndDrop();
+                restoreSelectedCoverIfNeeded();
+                syncFileInputFromArray();
+            }
+
+            function restoreSelectedCoverIfNeeded() {
+                const current = capaItemKey.value;
+                if (!current) return;
+
+                const radio = mediaList.querySelector(`.js-capa-radio[value="${current}"]`);
+                if (radio) {
+                    radio.checked = true;
+                } else {
+                    capaItemKey.value = '';
+                }
+            }
+
+            function syncFileInputFromArray() {
+                if (!mediaInput) return;
+
+                const dt = new DataTransfer();
+                newFiles.forEach(file => dt.items.add(file));
+                mediaInput.files = dt.files;
+            }
+
+            function appendFiles(files) {
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
+                Array.from(files).forEach(file => {
+                    const type = (file.type || '').toLowerCase();
+                    if (!validTypes.includes(type)) return;
+                    newFiles.push(file);
+                });
+
+                renderNewFiles();
+            }
+
+            function collectOrder() {
+                const items = [];
+                const cards = Array.from(mediaList.querySelectorAll('.media-item'));
+
+                cards.forEach((card, index) => {
+                    items.push({
+                        key: card.dataset.key,
+                        kind: card.dataset.kind,
+                        id: card.dataset.id ? parseInt(card.dataset.id, 10) : null,
+                        newIndex: card.dataset.newIndex ? parseInt(card.dataset.newIndex, 10) : null,
+                        ordem: index
+                    });
+                });
+
+                midiasOrdenadasJson.value = JSON.stringify(items);
+            }
+
+            function updateCapaHidden() {
+                const selected = document.querySelector('.js-capa-radio:checked');
+                capaItemKey.value = selected ? selected.value : '';
+            }
+
+            function refreshNewIndexesFromDom() {
+                const newCards = Array.from(mediaList.querySelectorAll('.media-item[data-kind="new"]'));
+                const reorderedFiles = [];
+
+                newCards.forEach((card, idx) => {
+                    const oldIndex = parseInt(card.dataset.newIndex, 10);
+
+                    if (!isNaN(oldIndex) && newFiles[oldIndex]) {
+                        reorderedFiles.push(newFiles[oldIndex]);
+                    }
+
+                    card.dataset.newIndex = String(idx);
+                    card.dataset.key = `new-${idx}`;
+
+                    const radio = card.querySelector('.js-capa-radio');
+                    if (radio) radio.value = `new-${idx}`;
+                });
+
+                newFiles = reorderedFiles;
+                syncFileInputFromArray();
+                updateCapaHidden();
+                collectOrder();
+            }
+
+            function refreshExistingBadges() {
+                const cards = Array.from(mediaList.querySelectorAll('.media-item'));
+
+                cards.forEach(card => {
+                    const badge = card.querySelector('.media-badge');
+                    const radio = card.querySelector('.js-capa-radio');
+                    if (!badge || !radio) return;
+
+                    if (radio.checked) {
+                        badge.textContent = 'CAPA';
+                    } else if (card.dataset.kind === 'new') {
+                        badge.textContent = 'NOVA';
+                    } else {
+                        badge.textContent = 'MÍDIA';
+                    }
+                });
+            }
+
+            function onDragStart() {
+                dragItem = this;
+                this.classList.add('dragging');
+            }
+
+            function onDragEnd() {
+                this.classList.remove('dragging');
+                dragItem = null;
+                refreshNewIndexesFromDom();
+                refreshExistingBadges();
+            }
+
+            function onDragOver(e) {
+                e.preventDefault();
+            }
+
+            function onDrop(e) {
+                e.preventDefault();
+                if (!dragItem || dragItem === this) return;
+
+                const list = mediaList;
+                const cards = Array.from(list.children);
+                const draggedIndex = cards.indexOf(dragItem);
+                const targetIndex = cards.indexOf(this);
+
+                if (draggedIndex < targetIndex) {
+                    list.insertBefore(dragItem, this.nextSibling);
+                } else {
+                    list.insertBefore(dragItem, this);
+                }
+
+                refreshNewIndexesFromDom();
+                refreshExistingBadges();
+            }
+
+            function bindCapaRadios() {
+                const radios = document.querySelectorAll('.js-capa-radio');
+                radios.forEach(radio => {
+                    radio.removeEventListener('change', onCapaChange);
+                    radio.addEventListener('change', onCapaChange);
+                });
+            }
+
+            function onCapaChange() {
+                updateCapaHidden();
+                refreshExistingBadges();
+            }
+
+            function refreshDragAndDrop() {
+                const cards = mediaList.querySelectorAll('.media-item');
+
+                cards.forEach(card => {
+                    card.removeEventListener('dragstart', onDragStart);
+                    card.removeEventListener('dragend', onDragEnd);
+                    card.removeEventListener('dragover', onDragOver);
+                    card.removeEventListener('drop', onDrop);
+
+                    card.addEventListener('dragstart', onDragStart);
+                    card.addEventListener('dragend', onDragEnd);
+                    card.addEventListener('dragover', onDragOver);
+                    card.addEventListener('drop', onDrop);
+                });
+
+                bindCapaRadios();
+            }
+
+            if (btnSelecionarMidias) {
+                btnSelecionarMidias.addEventListener('click', function () {
+                    if (mediaInput) mediaInput.click();
+                });
+            }
+
+            if (mediaInput) {
+                mediaInput.addEventListener('change', function () {
+                    if (mediaInput.files && mediaInput.files.length > 0) {
+                        appendFiles(mediaInput.files);
+                    }
+                    mediaInput.value = '';
+                });
+            }
+
+            if (btnLimparNovasMidias) {
+                btnLimparNovasMidias.addEventListener('click', function () {
+                    newFiles = [];
+                    renderNewFiles();
+                });
+            }
+
+            if (mediaDropzone) {
+                ['dragenter', 'dragover'].forEach(evt => {
+                    mediaDropzone.addEventListener(evt, function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        mediaDropzone.classList.add('dragover');
+                    });
+                });
+
+                ['dragleave', 'drop'].forEach(evt => {
+                    mediaDropzone.addEventListener(evt, function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        mediaDropzone.classList.remove('dragover');
+                    });
+                });
+
+                mediaDropzone.addEventListener('drop', function (e) {
+                    const files = e.dataTransfer.files;
+                    if (files && files.length > 0) {
+                        appendFiles(files);
+                    }
+                });
+            }
+
+            if (form) {
+                form.addEventListener('submit', function () {
+                    refreshNewIndexesFromDom();
+                    updateCapaHidden();
+                    collectOrder();
+                    normalizeMaskedInputsBeforeSubmit();
+                });
+            }
+
+            applyInputMasks();
+            bindSelectAllButtons();
+            bindBaseCarroButton();
+            bindNovaMarca();
+            refreshDragAndDrop();
+            updateCapaHidden();
+            collectOrder();
+            refreshExistingBadges();
+        })();
+    </script>
+}
+
+}

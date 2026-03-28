@@ -1,37 +1,30 @@
 using Data;
 using Domain.Application;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Project.Config;
 
 var Producao = false;
 var builder = WebApplication.CreateBuilder(args);
 
-// ==============================
-// BANCO DE DADOS
-// ==============================
+// BANCO
 if (Producao)
 {
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnectionProd")
-        )
-    );
+        options.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnectionProd")));
 }
 else
 {
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnectionDev")
-        )
-    );
+        options.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnectionDev")));
 }
 
-
-// ==============================
 // IDENTITY
-// ==============================
 builder.Services
-    .AddIdentity<AspNetCoreUser, IdentityRole>(options =>
+    .AddIdentity<AspNetCoreUser, AspNetCoreRole>(options =>
     {
         options.Password.RequireDigit = true;
         options.Password.RequireLowercase = true;
@@ -42,21 +35,18 @@ builder.Services
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
-// ==============================
-// DEPENDENCY INJECTION
-// ==============================
+// SEUS SERVIÇOS
+builder.Services.AddProjectDependencies();
 
-// ==============================
-// RAZOR PAGES
-// ==============================
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages(options =>
+{
+    options.Conventions.AuthorizeFolder("/Admin");
+    options.Conventions.AllowAnonymousToPage("/Admin/Login");
+});
 
-// ==============================
-// COOKIE / AUTH
-// ==============================
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.LoginPath = "/Login";
+    options.LoginPath = "/Admin/Login";
     options.AccessDeniedPath = "/AccessDenied";
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
@@ -64,9 +54,6 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
-// ==============================
-// PIPELINE
-// ==============================
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -77,26 +64,33 @@ else
     app.UseHsts();
 }
 
-// ==============================
-// MIGRATIONS AUTOMÁTICAS (DEV + PROD)
-// ==============================
-using (var scope = app.Services.CreateScope())
+await using (var scope = app.Services.CreateAsyncScope())
 {
-    await IdentitySeed.EnsureDeveloperUserAsync(scope.ServiceProvider);
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await db.Database.MigrateAsync();
+    var logger = scope.ServiceProvider
+        .GetRequiredService<ILoggerFactory>()
+        .CreateLogger("StartupMigration");
+
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        logger.LogInformation("Aplicando migrations pendentes no banco de dados.");
+        await db.Database.MigrateAsync();
+
+        logger.LogInformation("Executando seed de usuarios, perfis e menus.");
+        await IdentitySeed.EnsureDeveloperUserAsync(scope.ServiceProvider);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Falha ao aplicar migrations automaticas na inicializacao.");
+        throw;
+    }
 }
-
-
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
-
 await app.RunAsync();

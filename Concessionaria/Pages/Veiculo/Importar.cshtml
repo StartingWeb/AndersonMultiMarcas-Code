@@ -1,0 +1,352 @@
+@page
+@model Concessionaria.Pages.Veiculo.ImportarModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Importar Veículo";
+    ViewData["TopbarTitle"] = "Importar Veículo";
+    ViewData["TopbarSubtitle"] = "Migrar cadastro do site antigo";
+    Layout = "_LayoutAdmin";
+
+    var culture = new CultureInfo("pt-BR");
+}
+
+<style>
+    :root {
+        --import-brand: #9f0a10;
+        --import-brand-dark: #86080d;
+        --import-border: #ececec;
+        --import-text: #222222;
+        --import-muted: #6c757d;
+        --import-soft: rgba(159, 10, 16, 0.08);
+        --import-card-shadow: 0 8px 24px rgba(0,0,0,.05);
+    }
+
+    .import-shell {
+        display: grid;
+        gap: 1.25rem;
+    }
+
+    .import-card {
+        background: #fff;
+        border: 1px solid var(--import-border);
+        border-radius: 1rem;
+        box-shadow: var(--import-card-shadow);
+        overflow: hidden;
+    }
+
+    .import-card-header {
+        padding: 1.1rem 1.2rem 1rem;
+        border-bottom: 1px solid var(--import-border);
+        background: linear-gradient(180deg, #fff 0%, #fff8f8 100%);
+    }
+
+    .import-card-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--import-text);
+        margin: 0;
+    }
+
+    .import-card-subtitle {
+        margin: .25rem 0 0;
+        color: var(--import-muted);
+        font-size: .9rem;
+    }
+
+    .import-card-body {
+        padding: 1.2rem;
+    }
+
+    .import-textarea {
+        width: 100%;
+        min-height: 340px;
+        border-radius: .9rem;
+        border: 1px solid #e6e6e6;
+        padding: 1rem;
+        font-family: Consolas, monospace;
+        font-size: .92rem;
+        line-height: 1.45;
+    }
+
+    .import-textarea:focus {
+        outline: none;
+        border-color: rgba(159, 10, 16, .35);
+        box-shadow: 0 0 0 .2rem rgba(159, 10, 16, .08);
+    }
+
+    .import-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: .75rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    .btn-import-primary,
+    .btn-import-secondary {
+        min-height: 46px;
+        border-radius: .85rem;
+        padding: 0 1.2rem;
+        font-weight: 600;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-import-primary {
+        background: linear-gradient(135deg, var(--import-brand) 0%, var(--import-brand-dark) 100%);
+        color: #fff;
+    }
+
+    .btn-import-secondary {
+        background: #fff;
+        color: var(--import-text);
+        border: 1px solid var(--import-border);
+    }
+
+    .import-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .import-box {
+        border: 1px solid #f0e6e7;
+        background: #fff7f7;
+        border-radius: .9rem;
+        padding: .9rem;
+    }
+
+    .import-box-label {
+        display: block;
+        font-size: .74rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--import-muted);
+        letter-spacing: .05em;
+        margin-bottom: .3rem;
+    }
+
+    .import-box-value {
+        color: var(--import-text);
+        font-size: .92rem;
+        white-space: pre-line;
+    }
+
+    .import-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .9rem;
+        margin-top: 1rem;
+    }
+
+    .import-alert {
+        border-radius: .85rem;
+        padding: .9rem 1rem;
+        font-size: .92rem;
+        margin-bottom: 1rem;
+    }
+
+    .import-alert-danger {
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+        color: #9f1239;
+    }
+
+    .import-alert-success {
+        background: #ecfdf3;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+    }
+
+    .import-helper {
+        margin-top: .75rem;
+        color: var(--import-muted);
+        font-size: .86rem;
+        line-height: 1.45;
+    }
+
+    .import-feature-list {
+        margin: 0;
+        padding-left: 1.1rem;
+        color: var(--import-text);
+        font-size: .9rem;
+    }
+
+    @@media (max-width: 992px) {
+        .import-summary,
+        .import-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="container-fluid import-shell">
+    <section class="import-card">
+        <div class="import-card-header">
+            <h1 class="import-card-title">Importação do site antigo</h1>
+            <p class="import-card-subtitle">Cole o conteúdo bruto da página antiga e gere a prévia antes de importar.</p>
+        </div>
+        <div class="import-card-body">
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div asp-validation-summary="ModelOnly" class="import-alert import-alert-danger"></div>
+            }
+
+            <form method="post" asp-page-handler="Preview">
+                <textarea asp-for="Input.RawContent" class="import-textarea" placeholder="Cole aqui o bloco do site antigo..."></textarea>
+
+                <div class="import-helper">
+                    Campos reconhecidos: tipo de cadastro, status, loja, marca, modelo, KM, cor, combustível,
+                    câmbio, descrição, opcionais, valor, ano, placa, descrição interna e data da venda.
+                    A marca é criada automaticamente se ainda não existir. A loja precisa existir no sistema novo.
+                </div>
+
+                <div class="import-actions">
+                    <a asp-page="./Index" class="btn-import-secondary">Voltar</a>
+                    <button type="submit" class="btn-import-primary">Gerar prévia</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    @if (Model.Preview != null)
+    {
+        <section class="import-card">
+            <div class="import-card-header">
+                <h2 class="import-card-title">Prévia da importação</h2>
+                <p class="import-card-subtitle">Revise os campos resolvidos antes de criar o veículo.</p>
+            </div>
+            <div class="import-card-body">
+                @if (Model.Preview.CanImport)
+                {
+                    <div class="import-alert import-alert-success">
+                        Prévia válida para importação.
+                    </div>
+                }
+                else
+                {
+                    <div class="import-alert import-alert-danger">
+                        <strong>Importação bloqueada.</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach (var erro in Model.Preview.Errors)
+                            {
+                                <li>@erro</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <div class="import-summary">
+                    <div class="import-box">
+                        <span class="import-box-label">Título</span>
+                        <div class="import-box-value">@Model.Preview.Titulo</div>
+                    </div>
+                    <div class="import-box">
+                        <span class="import-box-label">Loja</span>
+                        <div class="import-box-value">@(Model.Preview.Loja?.Nome ?? Model.Preview.LojaNome ?? "-")</div>
+                    </div>
+                    <div class="import-box">
+                        <span class="import-box-label">Marca</span>
+                        <div class="import-box-value">@(Model.Preview.Marca?.Nome ?? Model.Preview.MarcaNome ?? "-")</div>
+                    </div>
+                </div>
+
+                <div class="import-grid">
+                    <div class="import-box">
+                        <span class="import-box-label">Modelo</span>
+                        <div class="import-box-value">@Model.Preview.ModeloNome</div>
+                    </div>
+                    <div class="import-box">
+                        <span class="import-box-label">Preço</span>
+                        <div class="import-box-value">@(Model.Preview.PrecoVenda.HasValue ? Model.Preview.PrecoVenda.Value.ToString("C", culture) : "-")</div>
+                    </div>
+                    <div class="import-box">
+                        <span class="import-box-label">Ano / Modelo</span>
+                        <div class="import-box-value">@($"{Model.Preview.AnoFabricacao?.ToString() ?? "-"} / {Model.Preview.AnoModelo?.ToString() ?? "-"}")</div>
+                    </div>
+                    <div class="import-box">
+                        <span class="import-box-label">Quilometragem</span>
+                        <div class="import-box-value">@(Model.Preview.Quilometragem.HasValue ? $"{Model.Preview.Quilometragem.Value:N0} km" : "-")</div>
+                    </div>
+                    <div class="import-box">
+                        <span class="import-box-label">Cor / Combustível</span>
+                        <div class="import-box-value">@($"{Model.Preview.Cor ?? "-"} / {Model.Preview.Combustivel ?? "-"}")</div>
+                    </div>
+                    <div class="import-box">
+                        <span class="import-box-label">Câmbio</span>
+                        <div class="import-box-value">@Model.Preview.Cambio</div>
+                    </div>
+                    <div class="import-box">
+                        <span class="import-box-label">Placa</span>
+                        <div class="import-box-value">@Model.Preview.Placa</div>
+                    </div>
+                    <div class="import-box">
+                        <span class="import-box-label">Status</span>
+                        <div class="import-box-value">
+                            Seminovo: @(Model.Preview.Seminuovo ? "Sim" : "Não")
+                            <br />
+                            Vendido: @(Model.Preview.Vendido ? "Sim" : "Não")
+                        </div>
+                    </div>
+                    <div class="import-box">
+                        <span class="import-box-label">Descrição</span>
+                        <div class="import-box-value">@(string.IsNullOrWhiteSpace(Model.Preview.Descricao) ? "-" : Model.Preview.Descricao)</div>
+                    </div>
+                    <div class="import-box">
+                        <span class="import-box-label">Observações internas</span>
+                        <div class="import-box-value">@(string.IsNullOrWhiteSpace(Model.Preview.ObservacoesInternas) ? "-" : Model.Preview.ObservacoesInternas)</div>
+                    </div>
+                    <div class="import-box">
+                        <span class="import-box-label">Opcionais lidos</span>
+                        <div class="import-box-value">@(string.IsNullOrWhiteSpace(Model.Preview.Opcionais) ? "-" : Model.Preview.Opcionais)</div>
+                    </div>
+                    <div class="import-box">
+                        <span class="import-box-label">Características marcadas</span>
+                        <div class="import-box-value">
+                            <ul class="import-feature-list">
+                                @foreach (var item in new[]
+                                {
+                                    Model.Preview.Carateristica.ArCondicionado ? "Ar-condicionado" : null,
+                                    Model.Preview.Carateristica.DirecaoHidraulica ? "Direção hidráulica" : null,
+                                    Model.Preview.Carateristica.DirecaoEletrica ? "Direção elétrica" : null,
+                                    Model.Preview.Carateristica.VidroEletrico ? "Vidro elétrico" : null,
+                                    Model.Preview.Carateristica.TravaEletrica ? "Trava elétrica" : null,
+                                    Model.Preview.Carateristica.Alarme ? "Alarme" : null,
+                                    Model.Preview.Carateristica.FreiosAbs ? "ABS" : null,
+                                    Model.Preview.Carateristica.AirbagMotorista ? "Airbag motorista" : null,
+                                    Model.Preview.Carateristica.AirbagPassageiro ? "Airbag passageiro" : null,
+                                    Model.Preview.Carateristica.CameraDeRe ? "Câmera de ré" : null,
+                                    Model.Preview.Carateristica.CentralMultimidia ? "Central multimídia" : null,
+                                    Model.Preview.Carateristica.Bluetooth ? "Bluetooth" : null,
+                                    Model.Preview.Carateristica.Usb ? "USB" : null,
+                                    Model.Preview.Carateristica.RodaLigaLeve ? "Roda de liga leve" : null,
+                                    Model.Preview.Carateristica.CambioManual ? "Câmbio manual" : null,
+                                    Model.Preview.Carateristica.CambioAutomatico ? "Câmbio automático" : null,
+                                    Model.Preview.Carateristica.CambioCvt ? "Câmbio CVT" : null,
+                                    Model.Preview.Carateristica.Turbo ? "Turbo" : null
+                                }.Where(item => item != null))
+                                {
+                                    <li>@item</li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" asp-page-handler="Import" class="mt-4">
+                    <input asp-for="Input.RawContent" type="hidden" />
+                    <div class="import-actions">
+                        <button type="submit" class="btn-import-primary" @(Model.Preview.CanImport ? null : "disabled")>Importar veículo</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

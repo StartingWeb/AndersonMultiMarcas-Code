@@ -1,0 +1,358 @@
+@page "/veiculo/{id:int}"
+@model Project.Pages.VeiculoModel
+@{
+    var culture = new System.Globalization.CultureInfo("pt-BR");
+    var vehicle = Model.Vehicle;
+}
+
+<link rel="stylesheet" href="~/css/Veiculo.css" />
+
+<section class="vehicle-detail-hero">
+    <div class="container">
+        <div class="breadcrumb-line">
+            <a asp-page="/Index">Início</a>
+            <span>/</span>
+            <a asp-page="/Catalogo">Estoque</a>
+            <span>/</span>
+            <strong>@vehicle.Titulo</strong>
+        </div>
+
+        <div class="detail-topbar">
+            <div>
+                <span class="detail-kicker">@vehicle.Marca</span>
+                <h1 class="detail-title">@vehicle.Titulo</h1>
+                @if (!string.IsNullOrWhiteSpace(vehicle.Highlight))
+                {
+                    <p class="detail-subtitle">@vehicle.Highlight</p>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="vehicle-detail-grid">
+            <div class="detail-gallery-shell">
+                <div class="gallery-stage">
+                    @if (vehicle.Photos.Count > 1)
+                    {
+                        <button type="button" class="gallery-nav gallery-nav-prev" data-gallery-direction="-1" aria-label="Foto anterior">
+                            <span aria-hidden="true">&#8249;</span>
+                        </button>
+                    }
+
+                    <button type="button" class="gallery-open-button" data-lightbox-index="0" aria-label="Abrir foto principal">
+                        <img id="mainVehicleImage" class="gallery-main-image" src="@vehicle.Photos[0].Url" alt="@vehicle.Photos[0].Alt" />
+                    </button>
+
+                    @if (vehicle.Photos.Count > 1)
+                    {
+                        <button type="button" class="gallery-nav gallery-nav-next" data-gallery-direction="1" aria-label="Próxima foto">
+                            <span aria-hidden="true">&#8250;</span>
+                        </button>
+                    }
+                </div>
+
+                <div class="gallery-thumbs-shell">
+                    @if (vehicle.Photos.Count > 4)
+                    {
+                        <button type="button" class="gallery-thumbs-nav gallery-thumbs-nav-prev" data-thumbs-direction="-1" aria-label="Miniatura anterior">
+                            <span aria-hidden="true">&#8249;</span>
+                        </button>
+                    }
+
+                    <div class="gallery-thumbs" role="tablist" aria-label="Galeria do veículo" id="vehicleThumbsTrack">
+                        @for (var i = 0; i < vehicle.Photos.Count; i++)
+                        {
+                            var photo = vehicle.Photos[i];
+                            <button type="button"
+                                    class="gallery-thumb @(i == 0 ? "active" : null)"
+                                    data-photo-url="@photo.Url"
+                                    data-photo-alt="@photo.Alt"
+                                    data-lightbox-index="@i"
+                                    aria-label="Selecionar foto @(i + 1)">
+                                <img src="@photo.Url" alt="@photo.Alt" />
+                            </button>
+                        }
+                    </div>
+
+                    @if (vehicle.Photos.Count > 4)
+                    {
+                        <button type="button" class="gallery-thumbs-nav gallery-thumbs-nav-next" data-thumbs-direction="1" aria-label="Próxima miniatura">
+                            <span aria-hidden="true">&#8250;</span>
+                        </button>
+                    }
+                </div>
+
+                <div class="detail-summary-card detail-description-card">
+                    <h2>Descrição</h2>
+                    <p class="detail-description-text">
+                        @(string.IsNullOrWhiteSpace(vehicle.Descricao) ? "Consulte nossa equipe para receber mais detalhes sobre esse veículo." : vehicle.Descricao)
+                    </p>
+                </div>
+
+                <div class="detail-bottom-stack">
+                    <details class="detail-summary-card detail-summary-accordion">
+                        <summary class="detail-summary-toggle">
+                            <h2>Resumo do veículo</h2>
+                            <span class="detail-summary-icon" aria-hidden="true"></span>
+                        </summary>
+
+                        <div class="detail-summary-list">
+                            <div><span>Marca</span><strong>@vehicle.Marca</strong></div>
+                            <div><span>Modelo</span><strong>@(string.IsNullOrWhiteSpace(vehicle.Modelo) ? "-" : vehicle.Modelo)</strong></div>
+                            <div><span>Versão</span><strong>@(string.IsNullOrWhiteSpace(vehicle.Versao) ? "-" : vehicle.Versao)</strong></div>
+                            <div><span>Ano</span><strong>@($"{vehicle.AnoFabricacao?.ToString() ?? "-"} / {vehicle.AnoModelo?.ToString() ?? "-"}")</strong></div>
+                            <div><span>Câmbio</span><strong>@(string.IsNullOrWhiteSpace(vehicle.Cambio) ? "-" : vehicle.Cambio)</strong></div>
+                            <div><span>Combustível</span><strong>@(string.IsNullOrWhiteSpace(vehicle.Combustivel) ? "-" : vehicle.Combustivel)</strong></div>
+                            <div><span>Cor</span><strong>@(string.IsNullOrWhiteSpace(vehicle.Cor) ? "-" : vehicle.Cor)</strong></div>
+                            <div><span>KM</span><strong>@(vehicle.Quilometragem.HasValue ? $"{vehicle.Quilometragem.Value.ToString("N0", culture)} km" : "Não informado")</strong></div>
+                            <div><span>Placa</span><strong>@(string.IsNullOrWhiteSpace(vehicle.Placa) ? "-" : vehicle.Placa)</strong></div>
+                            @if (!string.IsNullOrWhiteSpace(vehicle.Vendedor))
+                            {
+                                <div><span>Vendedor</span><strong>@vehicle.Vendedor</strong></div>
+                            }
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <div class="detail-info-stack">
+                <div class="detail-summary-card detail-commerce-card">
+                    <div class="detail-price detail-sidebar-price">
+                        @(vehicle.Preco.HasValue ? vehicle.Preco.Value.ToString("C0", culture) : "Consulte")
+                    </div>
+                    <p>Fale com nossa equipe em poucos toques e tire suas dúvidas sobre este veículo com rapidez.</p>
+                    <div class="commerce-actions">
+                        <a href="@vehicle.WhatsappUrl" target="_blank" class="btn btn-brand">Quero falar no WhatsApp</a>
+                    </div>
+                </div>
+
+                <div class="detail-summary-card">
+                    <h2>Características</h2>
+                    @if (vehicle.Features.Any())
+                    {
+                        <div class="feature-pills-wrap" data-feature-list>
+                            <div class="feature-pills" data-feature-container>
+                                @for (var i = 0; i < vehicle.Features.Count; i++)
+                                {
+                                    var feature = vehicle.Features[i];
+                                    var hiddenClass = i >= 8 ? "feature-pill-hidden" : string.Empty;
+                                    <span class="@hiddenClass" data-feature-item="@i">@feature</span>
+                                }
+                            </div>
+
+                            @if (vehicle.Features.Count > 8)
+                            {
+                                <button type="button" class="feature-toggle-btn" data-feature-toggle aria-expanded="false">
+                                    Ver mais
+                                </button>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="detail-description-text mb-0">Esse veículo ainda não possui características detalhadas publicadas.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@if (Model.RelatedVehicles.Any())
+{
+    <section id="relacionados" class="section related-section">
+        <div class="container">
+            <div class="related-header">
+                <div>
+                    <span class="detail-kicker">Mais opções</span>
+                    <h2 class="section-title mb-1">Carros relacionados</h2>
+                    <p class="section-subtitle mb-0">Sugestões no mesmo perfil para ajudar na comparação e acelerar a decisão de compra.</p>
+                </div>
+                <a asp-page="/Catalogo" class="btn btn-outline-brand">Voltar ao estoque</a>
+            </div>
+
+            <div class="row g-4 mt-1">
+                @foreach (var relatedVehicle in Model.RelatedVehicles)
+                {
+                    <div class="col-xl-4 col-md-6">
+                        @await Html.PartialAsync("_CatalogVehicleCardDb", relatedVehicle)
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<div id="vehicleLightbox" class="vehicle-lightbox" aria-hidden="true">
+    <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Fechar galeria">&times;</button>
+    <button type="button" class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Foto anterior">&#8249;</button>
+    <div class="lightbox-content">
+        <img id="lightboxImage" src="" alt="" />
+        <div id="lightboxCaption" class="lightbox-caption"></div>
+    </div>
+    <button type="button" class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="Próxima foto">&#8250;</button>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            document.querySelectorAll('[data-feature-list]').forEach(function (root) {
+                const button = root.querySelector('[data-feature-toggle]');
+                const hiddenItems = root.querySelectorAll('.feature-pill-hidden');
+
+                if (!button || !hiddenItems.length) {
+                    return;
+                }
+
+                button.addEventListener('click', function () {
+                    const expanded = button.getAttribute('aria-expanded') === 'true';
+                    hiddenItems.forEach(function (item) {
+                        item.classList.toggle('feature-pill-visible', !expanded);
+                    });
+
+                    button.textContent = expanded ? 'Ver mais' : 'Ver menos';
+                    button.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                });
+            });
+
+            const thumbnails = Array.from(document.querySelectorAll('.gallery-thumb'));
+            const mainImage = document.getElementById('mainVehicleImage');
+            const lightbox = document.getElementById('vehicleLightbox');
+            const lightboxImage = document.getElementById('lightboxImage');
+            const lightboxCaption = document.getElementById('lightboxCaption');
+            const lightboxClose = document.getElementById('lightboxClose');
+            const lightboxPrev = document.getElementById('lightboxPrev');
+            const lightboxNext = document.getElementById('lightboxNext');
+            const openButtons = Array.from(document.querySelectorAll('[data-lightbox-index]'));
+            const galleryNavButtons = Array.from(document.querySelectorAll('[data-gallery-direction]'));
+            const thumbsTrack = document.getElementById('vehicleThumbsTrack');
+            const thumbsNavButtons = Array.from(document.querySelectorAll('[data-thumbs-direction]'));
+
+            const photos = thumbnails.map(function (button) {
+                return {
+                    url: button.dataset.photoUrl,
+                    alt: button.dataset.photoAlt
+                };
+            });
+
+            let currentIndex = 0;
+
+            function updateMainImage(index) {
+                const photo = photos[index];
+                currentIndex = index;
+                mainImage.src = photo.url;
+                mainImage.alt = photo.alt;
+
+                thumbnails.forEach(function (thumb, thumbIndex) {
+                    thumb.classList.toggle('active', thumbIndex === index);
+                });
+
+                const activeThumb = thumbnails[index];
+                if (activeThumb && thumbsTrack) {
+                    activeThumb.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest',
+                        inline: 'center'
+                    });
+                }
+            }
+
+            function navigateGallery(direction) {
+                const nextIndex = (currentIndex + direction + photos.length) % photos.length;
+                updateMainImage(nextIndex);
+            }
+
+            function openLightbox(index) {
+                const photo = photos[index];
+                currentIndex = index;
+                lightboxImage.src = photo.url;
+                lightboxImage.alt = photo.alt;
+                lightboxCaption.textContent = photo.alt;
+                lightbox.classList.add('show');
+                lightbox.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('lightbox-open');
+            }
+
+            function closeLightbox() {
+                lightbox.classList.remove('show');
+                lightbox.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('lightbox-open');
+            }
+
+            function navigateLightbox(direction) {
+                const nextIndex = (currentIndex + direction + photos.length) % photos.length;
+                updateMainImage(nextIndex);
+                openLightbox(nextIndex);
+            }
+
+            thumbnails.forEach(function (button, index) {
+                button.addEventListener('click', function () {
+                    updateMainImage(index);
+                });
+            });
+
+            galleryNavButtons.forEach(function (button) {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    navigateGallery(Number(button.dataset.galleryDirection || 0));
+                });
+            });
+
+            thumbsNavButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    if (!thumbsTrack) {
+                        return;
+                    }
+
+                    const direction = Number(button.dataset.thumbsDirection || 0);
+                    const firstThumb = thumbnails[0];
+                    const thumbWidth = firstThumb ? firstThumb.getBoundingClientRect().width : 140;
+                    const gap = 14;
+
+                    thumbsTrack.scrollBy({
+                        left: direction * ((thumbWidth * 2) + gap),
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            openButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    openLightbox(Number(button.dataset.lightboxIndex || 0));
+                });
+            });
+
+            lightboxClose.addEventListener('click', closeLightbox);
+            lightboxPrev.addEventListener('click', function () { navigateLightbox(-1); });
+            lightboxNext.addEventListener('click', function () { navigateLightbox(1); });
+
+            lightbox.addEventListener('click', function (event) {
+                if (event.target === lightbox) {
+                    closeLightbox();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (!lightbox.classList.contains('show')) {
+                    return;
+                }
+
+                if (event.key === 'Escape') {
+                    closeLightbox();
+                }
+
+                if (event.key === 'ArrowRight') {
+                    navigateLightbox(1);
+                }
+
+                if (event.key === 'ArrowLeft') {
+                    navigateLightbox(-1);
+                }
+            });
+        })();
+    </script>
+}

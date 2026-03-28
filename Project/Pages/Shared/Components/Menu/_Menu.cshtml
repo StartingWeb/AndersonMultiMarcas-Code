@@ -1,0 +1,429 @@
+@using Data
+@using Domain.Application
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext Db
+@inject UserManager<AspNetCoreUser> UserManager
+@inject SignInManager<AspNetCoreUser> SignInManager
+@{
+    var currentPath = Context.Request.Path.Value?.TrimEnd('/') ?? string.Empty;
+    var userDisplayName = "Usuario";
+    var userRoleLabel = "Sem perfil";
+    var visibleRoots = new List<AspNetMenu>();
+    var childrenByParent = new Dictionary<Guid, List<AspNetMenu>>();
+    var isDeveloper = false;
+
+    bool IsActive(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return false;
+        }
+
+        var menuPath = url.TrimEnd('/');
+        return string.Equals(currentPath, menuPath, StringComparison.OrdinalIgnoreCase)
+            || (!string.IsNullOrWhiteSpace(menuPath)
+                && currentPath.StartsWith($"{menuPath}/", StringComparison.OrdinalIgnoreCase));
+    }
+
+    if (SignInManager.IsSignedIn(User))
+    {
+        var currentUser = await UserManager.GetUserAsync(User);
+        if (currentUser != null)
+        {
+            userDisplayName = string.IsNullOrWhiteSpace(currentUser.NomeCompleto)
+                ? (currentUser.UserName ?? "Usuario")
+                : currentUser.NomeCompleto;
+
+            var roleNames = await UserManager.GetRolesAsync(currentUser);
+            if (roleNames.Count > 0)
+            {
+                userRoleLabel = string.Join(", ", roleNames);
+            }
+
+            isDeveloper = roleNames.Any(roleName =>
+                string.Equals(roleName, "Desenvolvedor", StringComparison.OrdinalIgnoreCase));
+
+            var roleIds = await Db.UserRoles
+                .AsNoTracking()
+                .Where(link => link.UserId == currentUser.Id)
+                .Select(link => link.RoleId)
+                .ToListAsync();
+
+            var allMenus = await Db.Menus
+                .AsNoTracking()
+                .Where(menu => menu.Ativo)
+                .OrderBy(menu => menu.Ordem)
+                .ThenBy(menu => menu.Nome)
+                .ToListAsync();
+
+            var allowedMenuIds = await Db.MenuRoles
+                .AsNoTracking()
+                .Where(link => roleIds.Contains(link.RoleId))
+                .Select(link => link.MenuId)
+                .Distinct()
+                .ToListAsync();
+
+            var menuLookup = allMenus.ToDictionary(menu => menu.Id);
+            var visibleIds = new HashSet<Guid>(allowedMenuIds);
+
+            foreach (var allowedMenuId in allowedMenuIds)
+            {
+                var cursor = menuLookup.GetValueOrDefault(allowedMenuId);
+                while (cursor?.MenuPaiId is Guid parentId && menuLookup.TryGetValue(parentId, out var parent))
+                {
+                    visibleIds.Add(parent.Id);
+                    cursor = parent;
+                }
+            }
+
+            var visibleMenus = allMenus
+                .Where(menu => visibleIds.Contains(menu.Id))
+                .ToList();
+
+            if (!isDeveloper)
+            {
+                visibleMenus = visibleMenus
+                    .Where(menu => !string.Equals(menu.Nome, "Auth", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            visibleRoots = visibleMenus
+                .Where(menu => !menu.MenuPaiId.HasValue)
+                .ToList();
+
+            childrenByParent = visibleMenus
+                .Where(menu => menu.MenuPaiId.HasValue)
+                .GroupBy(menu => menu.MenuPaiId!.Value)
+                .ToDictionary(group => group.Key, group => group.OrderBy(menu => menu.Ordem).ThenBy(menu => menu.Nome).ToList());
+        }
+    }
+}
+
+<style>
+    .menu-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.28);
+        opacity: 0;
+        visibility: hidden;
+        transition: all .25s ease;
+        z-index: 1040;
+    }
+
+    .menu-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .menu-lateral {
+        position: fixed;
+        top: 16px;
+        left: 16px;
+        width: 290px;
+        max-width: calc(100vw - 32px);
+        height: calc(100vh - 32px);
+        background: #ffffff;
+        border-radius: 24px;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.16);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transform: translateX(-110%);
+        opacity: 0;
+        transition: transform .35s ease, opacity .35s ease;
+        z-index: 1050;
+        overflow: hidden;
+        border: 1px solid rgb(39 39 39);
+    }
+
+    .menu-lateral.show {
+        transform: translateX(0);
+        opacity: 1;
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .menu-lateral.show::-webkit-scrollbar {
+        display: none;
+    }
+
+    .menu-topo {
+        padding: 26px 20px 20px 20px;
+        text-align: center;
+        border-bottom: 1px solid #f1f1f1;
+        background: linear-gradient(180deg, #222222 0%, #2e2e2e 100%);
+    }
+
+    .menu-logo {
+        width: 74px;
+        height: 74px;
+        border-radius: 50%;
+        object-fit: contain;
+        display: block;
+        margin: 0 auto 14px auto;
+        background: #fff;
+        padding: 6px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.20);
+    }
+
+    .menu-brand {
+        font-size: 20px;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .menu-subtitle {
+        margin: 6px 0 0 0;
+        font-size: 13px;
+        color: rgba(255,255,255,.68);
+    }
+
+    .menu-itens {
+        padding: 16px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 1;
+    }
+
+    .menu-group-title {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #8b8b8b;
+        padding: 8px 12px 4px 12px;
+    }
+
+    .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        text-decoration: none;
+        color: #333;
+        font-weight: 600;
+        transition: all .2s ease;
+        cursor: pointer;
+    }
+
+    .menu-item:hover {
+        background: rgba(159, 10, 16, 0.08);
+        color: #9f0a10;
+    }
+
+    .menu-item.active {
+        background: linear-gradient(90deg, #222222 0%, #9f0a10 100%);
+        color: #fff;
+        box-shadow: 0 10px 20px rgba(159, 10, 16, 0.20);
+    }
+
+    .menu-item.child {
+        margin-left: 12px;
+        padding-left: 20px;
+        font-size: 14px;
+    }
+
+    .menu-icon {
+        width: 24px;
+        min-width: 24px;
+        font-size: 18px;
+        text-align: center;
+    }
+
+    .menu-text {
+        font-size: 15px;
+    }
+
+    .menu-empty {
+        border: 1px dashed #dddddd;
+        border-radius: 16px;
+        padding: 14px;
+        text-align: center;
+        color: #777;
+        background: #fcfcfc;
+        font-size: 14px;
+    }
+
+    .menu-bottom {
+        padding: 14px 12px 16px 12px;
+        border-top: 1px solid #f3f3f3;
+        background: #fcfcfc;
+    }
+
+    .menu-user-box {
+        background: #f7f7f7;
+        border: 1px solid #eeeeee;
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin: 0 0 12px 0;
+    }
+
+    .menu-user-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: #8a8a8a;
+        margin-bottom: 4px;
+    }
+
+    .menu-user-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: #222222;
+        margin: 0;
+    }
+
+    .menu-user-role {
+        font-size: 12px;
+        color: #777;
+        margin-top: 2px;
+    }
+
+    .menu-fechar {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: rgba(255,255,255,.10);
+        color: #fff;
+        border-radius: 12px;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all .2s ease;
+    }
+
+    .menu-fechar:hover {
+        background: #9f0a10;
+        color: #fff;
+    }
+
+    .menu-logout {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 14px;
+        background: #fff4f4;
+        color: #c0392b;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid #ffdede;
+        transition: all .2s ease;
+    }
+
+    .menu-logout:hover {
+        background: #9f0a10;
+        color: white;
+        border-color: #9f0a10;
+        transform: translateY(-1px);
+    }
+
+    .menu-logout .menu-icon {
+        font-size: 18px;
+    }
+
+    @@media (max-width: 576px) {
+        .menu-lateral {
+            top: 10px;
+            left: 10px;
+            height: calc(100vh - 20px);
+            max-width: calc(100vw - 20px);
+            border-radius: 20px;
+        }
+    }
+</style>
+
+<div id="menuOverlay" class="menu-overlay" onclick="fecharMenu()"></div>
+
+<div id="menuLateral" class="menu-lateral">
+    <button type="button" class="menu-fechar" onclick="fecharMenu()">✕</button>
+
+    <div class="menu-topo">
+        <img src="~/img/logo.png" alt="Logo" class="menu-logo" />
+        <h2 class="menu-brand">Multimarcas</h2>
+        <p class="menu-subtitle">Painel administrativo</p>
+    </div>
+
+    <div class="menu-itens">
+        @if (visibleRoots.Any())
+        {
+            @foreach (var root in visibleRoots)
+            {
+                var children = childrenByParent.GetValueOrDefault(root.Id) ?? [];
+                var rootIcon = string.IsNullOrWhiteSpace(root.Icone) ? "bi bi-grid" : root.Icone;
+
+                if (string.IsNullOrWhiteSpace(root.Url))
+                {
+                    <div class="menu-group-title">@root.Nome</div>
+
+                    @foreach (var child in children)
+                    {
+                        var childIcon = string.IsNullOrWhiteSpace(child.Icone) ? "bi bi-circle" : child.Icone;
+
+                        <a href="@child.Url" class="menu-item child @(IsActive(child.Url) ? "active" : null)">
+                            <i class="menu-icon @childIcon"></i>
+                            <span class="menu-text">@child.Nome</span>
+                        </a>
+                    }
+                }
+                else
+                {
+                    <a href="@root.Url" class="menu-item @(IsActive(root.Url) ? "active" : null)">
+                        <i class="menu-icon @rootIcon"></i>
+                        <span class="menu-text">@root.Nome</span>
+                    </a>
+
+                    @foreach (var child in children)
+                    {
+                        var childIcon = string.IsNullOrWhiteSpace(child.Icone) ? "bi bi-circle" : child.Icone;
+
+                        <a href="@child.Url" class="menu-item child @(IsActive(child.Url) ? "active" : null)">
+                            <i class="menu-icon @childIcon"></i>
+                            <span class="menu-text">@child.Nome</span>
+                        </a>
+                    }
+                }
+            }
+        }
+        else
+        {
+            <div class="menu-empty">Nenhum menu liberado para o usuario logado.</div>
+        }
+    </div>
+
+    <div class="menu-bottom">
+        <div class="menu-user-box">
+            <div class="menu-user-label">Usuario logado</div>
+            <p class="menu-user-name">@userDisplayName</p>
+            <div class="menu-user-role">@userRoleLabel</div>
+        </div>
+
+        <a href="/Admin/Login" class="menu-logout">
+            <span class="menu-icon">🚪</span>
+            <span class="menu-text">Sair</span>
+        </a>
+    </div>
+</div>
+
+<script>
+    function abrirMenu() {
+        document.getElementById("menuLateral").classList.add("show");
+        document.getElementById("menuOverlay").classList.add("show");
+        document.body.style.overflow = "hidden";
+    }
+
+    function fecharMenu() {
+        document.getElementById("menuLateral").classList.remove("show");
+        document.getElementById("menuOverlay").classList.remove("show");
+        document.body.style.overflow = "";
+    }
+</script>

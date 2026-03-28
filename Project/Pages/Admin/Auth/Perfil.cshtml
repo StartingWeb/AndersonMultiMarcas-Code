@@ -1,0 +1,178 @@
+@page
+@model Project.Pages.Admin.Auth.PerfilModel
+@{
+    ViewData["Title"] = "Perfil";
+    Layout = "_LayoutAdmin";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+    :root { --perfil-brand: #9f0a10; --perfil-brand-dark: #6e060a; --perfil-text: #1f2937; --perfil-muted: #6b7280; --perfil-border: #ececec; --perfil-bg: #f8fafc; }
+    .perfil-card { background: #fff; border: 1px solid var(--perfil-border); border-radius: 1.1rem; box-shadow: 0 10px 28px rgba(0, 0, 0, .05); overflow: hidden; }
+    .perfil-card-header { padding: 1.2rem 1.2rem 1rem; border-bottom: 1px solid var(--perfil-border); background: linear-gradient(180deg, #fff 0%, #fff8f8 100%); }
+    .perfil-card-title { margin: 0; font-size: 1.08rem; font-weight: 800; color: var(--perfil-text); }
+    .perfil-card-subtitle { margin: .2rem 0 0; color: var(--perfil-muted); font-size: .9rem; }
+    .perfil-card-body { padding: 1.2rem; }
+    .perfil-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .perfil-search-form { display: flex; gap: .75rem; width: 100%; flex: 1; }
+    .perfil-search-form input { flex: 1; min-height: 50px; border-radius: .95rem; border: 1px solid #dfdfdf; padding: .75rem 1rem; }
+    .perfil-search-form input:focus, .perfil-field input:focus, .perfil-field textarea:focus { outline: none; border-color: rgba(159, 10, 16, .45); box-shadow: 0 0 0 4px rgba(159, 10, 16, .10); }
+    .perfil-stat { font-size: .92rem; color: var(--perfil-muted); }
+    .list-card { margin-top: 1rem; border: 1px solid var(--perfil-border); border-radius: 1rem; overflow: hidden; background: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, .05); }
+    .perfil-table { margin: 0; vertical-align: middle; }
+    .perfil-table thead th { background: #f8f8f8; color: var(--perfil-text); font-size: .76rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--perfil-border); padding: 1rem .9rem; white-space: nowrap; }
+    .perfil-table tbody td { padding: 1rem .9rem; border-color: #f1f1f1; color: var(--perfil-text); }
+    .perfil-name { display: block; margin: 0 0 .15rem; font-size: 1rem; font-weight: 800; color: var(--perfil-text); }
+    .perfil-meta { display: block; color: var(--perfil-muted); font-size: .84rem; line-height: 1.45; }
+    .perfil-badge { display: inline-flex; align-items: center; gap: .35rem; padding: .34rem .7rem; border-radius: 999px; font-size: .76rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; background: #ebfaf1; color: #1f9d55; width: fit-content; }
+    .perfil-muted { color: var(--perfil-muted); font-size: .9rem; }
+    .perfil-empty { border: 1px dashed #d8d8d8; border-radius: 1rem; padding: 1.8rem 1rem; text-align: center; color: var(--perfil-muted); background: #fcfcfc; }
+    .perfil-modal-overlay { position: fixed; inset: 0; background: rgba(17, 24, 39, .52); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1.25rem; z-index: 1200; }
+    .perfil-modal { width: min(100%, 760px); max-height: calc(100vh - 2.5rem); overflow: auto; background: #fff; border: 1px solid rgba(159, 10, 16, .12); border-radius: 1.25rem; box-shadow: 0 28px 70px rgba(17, 24, 39, .26); }
+    .perfil-modal-header { padding: 1.15rem 1.2rem 1rem; border-bottom: 1px solid var(--perfil-border); background: linear-gradient(180deg, #fff 0%, #fff8f8 100%); display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+    .perfil-modal-header h2 { margin: 0; font-size: 1.12rem; font-weight: 800; color: var(--perfil-text); }
+    .perfil-modal-header p { margin: .2rem 0 0; color: var(--perfil-muted); font-size: .9rem; }
+    .perfil-modal-close { width: 42px; height: 42px; border-radius: 999px; border: 1px solid var(--perfil-border); background: #fff; color: var(--perfil-text); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 1.1rem; }
+    .perfil-modal-body { padding: 1.2rem; }
+    .perfil-form { display: grid; gap: 1rem; }
+    .perfil-field label, .perfil-section-label { display: block; margin-bottom: .38rem; font-size: .84rem; font-weight: 700; color: #374151; }
+    .perfil-field input, .perfil-field textarea { width: 100%; border: 1px solid #dfdfdf; border-radius: .95rem; min-height: 50px; padding: .8rem .95rem; transition: .2s ease; background: #fff; }
+    .perfil-field textarea { min-height: 96px; resize: vertical; }
+    .perfil-selection-box { border: 1px solid var(--perfil-border); border-radius: 1rem; background: var(--perfil-bg); padding: .9rem; }
+    .perfil-selection-list { display: grid; gap: .65rem; max-height: 380px; overflow: auto; padding-right: .2rem; }
+    .perfil-selection-item { border: 1px solid #ececec; border-radius: .9rem; background: #fff; padding: .75rem .8rem; }
+    .perfil-check { display: inline-flex; align-items: flex-start; gap: .55rem; font-weight: 600; color: var(--perfil-text); cursor: pointer; }
+    .perfil-check input { width: 16px; height: 16px; accent-color: var(--perfil-brand); margin-top: .15rem; }
+    .perfil-selection-text strong { display: block; color: var(--perfil-text); font-size: .92rem; }
+    .perfil-selection-text span { display: block; color: var(--perfil-muted); font-size: .8rem; line-height: 1.4; }
+    .field-validation-error { display: block; margin-top: .35rem; font-size: .78rem; color: #b42318; }
+    .validation-summary-errors { margin-bottom: 1rem; border-radius: .95rem; background: #fff4f4; border: 1px solid #f1c1c5; padding: .9rem 1rem; color: #b42318; }
+    .validation-summary-errors ul { margin: 0; padding-left: 1.1rem; }
+    .perfil-actions { display: flex; gap: .75rem; flex-wrap: wrap; justify-content: flex-end; }
+    .perfil-btn-primary, .perfil-btn-secondary { min-height: 42px; border-radius: .75rem; padding: .75rem 1rem; border: 1px solid transparent; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; }
+    .perfil-btn-primary { color: #fff; background: linear-gradient(90deg, var(--perfil-brand-dark) 0%, var(--perfil-brand) 100%); box-shadow: 0 14px 28px rgba(159, 10, 16, .18); }
+    .perfil-btn-secondary { color: var(--perfil-text); background: #fff; border-color: var(--perfil-border); }
+    @@media (max-width: 900px) { .perfil-search-form, .perfil-actions { flex-direction: column; } .perfil-btn-primary, .perfil-btn-secondary { width: 100%; } }
+</style>
+
+<section class="perfil-card">
+    <div class="perfil-card-header">
+        <h2 class="perfil-card-title">Perfis cadastrados</h2>
+        <p class="perfil-card-subtitle">Pesquise perfis e edite os usuários vinculados.</p>
+    </div>
+    <div class="perfil-card-body">
+        <div class="perfil-toolbar">
+            <form method="get" class="perfil-search-form">
+                <input asp-for="Search" placeholder="Pesquisar perfil ou descrição" />
+                <button type="submit" class="perfil-btn-primary"><i class="bi bi-search"></i>Pesquisar</button>
+                @if (!string.IsNullOrWhiteSpace(Model.Search))
+                {
+                    <a asp-page="/Admin/Auth/Perfil" class="perfil-btn-secondary"><i class="bi bi-arrow-counterclockwise"></i>Limpar</a>
+                }
+            </form>
+            <a asp-page="/Admin/Auth/Perfil" asp-route-search="@Model.Search" asp-route-newProfile="true" class="perfil-btn-primary"><i class="bi bi-plus-circle"></i>Novo perfil</a>
+        </div>
+        <div class="perfil-stat">@Model.Profiles.Count perfil(is) encontrado(s)</div>
+        @if (Model.Profiles.Any())
+        {
+            <div class="list-card">
+                <div class="table-responsive">
+                    <table class="table perfil-table admin-responsive-table">
+                        <thead>
+                            <tr>
+                                <th>Perfil</th>
+                                <th>Descrição</th>
+                                <th>Usuários</th>
+                                <th>ID</th>
+                                <th class="text-end">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var profile in Model.Profiles)
+                            {
+                                <tr>
+                                    <td data-label="Perfil">
+                                        <span class="perfil-name">@profile.Name</span>
+                                        <span class="perfil-badge">Perfil</span>
+                                    </td>
+                                    <td data-label="Descrição"><span class="perfil-muted">@profile.Descricao</span></td>
+                                    <td data-label="Usuários"><span class="perfil-muted">@profile.UserCount</span></td>
+                                    <td data-label="ID"><span class="perfil-muted">@profile.Id</span></td>
+                                    <td class="text-end" data-label="Ação">
+                                        <a asp-page="/Admin/Auth/Perfil" asp-route-editRoleId="@profile.Id" asp-route-search="@Model.Search" class="perfil-btn-secondary"><i class="bi bi-pencil-square"></i>Editar</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="perfil-empty">Nenhum perfil encontrado para os filtros atuais.</div>
+        }
+    </div>
+</section>
+
+@if (Model.IsModalOpen)
+{
+    <div class="perfil-modal-overlay">
+        <div class="perfil-modal">
+            <div class="perfil-modal-header">
+                <div>
+                    <h2>@(Model.IsEditing ? "Editar perfil" : "Novo perfil")</h2>
+                    <p>Cadastre o perfil e selecione os usuários vinculados.</p>
+                </div>
+                <a asp-page="/Admin/Auth/Perfil" asp-route-search="@Model.Search" class="perfil-modal-close"><i class="bi bi-x-lg"></i></a>
+            </div>
+            <div class="perfil-modal-body">
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+                <form method="post" asp-page-handler="Save" class="perfil-form">
+                    <input asp-for="Input.Id" type="hidden" />
+                    <input asp-for="Search" type="hidden" />
+                    <div class="perfil-field">
+                        <label asp-for="Input.Name">Nome do perfil</label>
+                        <input asp-for="Input.Name" placeholder="Ex.: Comercial" />
+                        <span asp-validation-for="Input.Name" class="field-validation-error"></span>
+                    </div>
+                    <div class="perfil-field">
+                        <label asp-for="Input.Descricao">Descrição</label>
+                        <textarea asp-for="Input.Descricao" placeholder="Resumo do perfil"></textarea>
+                    </div>
+                    <div class="perfil-selection-box">
+                        <div class="perfil-section-label">Usuários do perfil</div>
+                        <div class="perfil-selection-list">
+                            @if (Model.Users.Any())
+                            {
+                                @foreach (var user in Model.Users)
+                                {
+                                    var userChecked = Model.Input.SelectedUserIds.Contains(user.Id);
+                                    <label class="perfil-selection-item">
+                                        <span class="perfil-check">
+                                            <input type="checkbox" name="Input.SelectedUserIds" value="@user.Id" checked="@userChecked" />
+                                            <span class="perfil-selection-text"><strong>@user.DisplayName</strong><span>@@@user.UserName</span><span>@user.Email</span></span>
+                                        </span>
+                                    </label>
+                                }
+                            }
+                            else
+                            {
+                                <div class="perfil-empty">Nenhum usuário disponível.</div>
+                            }
+                        </div>
+                    </div>
+                    <div class="perfil-actions">
+                        <button type="submit" class="perfil-btn-primary">Salvar perfil</button>
+                        <a asp-page="/Admin/Auth/Perfil" asp-route-search="@Model.Search" class="perfil-btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

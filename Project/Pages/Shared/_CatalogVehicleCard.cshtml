@@ -1,0 +1,72 @@
+@model Project.Catalog.VehicleCatalogItem
+
+<article class="vehicle-card catalog-card">
+    <a asp-page="/Veiculo" asp-route-slug="@Model.Slug" class="catalog-thumb @(Model.Photos.Count > 1 ? "catalog-thumb-carousel" : null)" data-catalog-carousel>
+        @if (Model.Photos.Count > 0)
+        {
+            <div class="catalog-thumb-track">
+                @for (var i = 0; i < Model.Photos.Count; i++)
+                {
+                    var photo = Model.Photos[i];
+                    <img src="@photo.Url"
+                         alt="@photo.Alt"
+                         class="catalog-thumb-image @(i == 0 ? "is-active" : null)"
+                         loading="lazy" />
+                }
+            </div>
+
+            @if (Model.Photos.Count > 1)
+            {
+                <button type="button" class="catalog-thumb-nav catalog-thumb-prev" data-direction="-1" aria-label="Foto anterior">
+                    &#8249;
+                </button>
+                <button type="button" class="catalog-thumb-nav catalog-thumb-next" data-direction="1" aria-label="Próxima foto">
+                    &#8250;
+                </button>
+
+                <div class="catalog-thumb-dots" aria-label="Indicadores de fotos">
+                    @for (var i = 0; i < Model.Photos.Count; i++)
+                    {
+                        <button type="button"
+                                class="catalog-thumb-dot @(i == 0 ? "is-active" : null)"
+                                data-photo-index="@i"
+                                aria-label="Ir para foto @(i + 1)"></button>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="vehicle-placeholder" aria-hidden="true">
+                <div class="vehicle-placeholder-icon">
+                    <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+                        <path d="M5.3 11.1 7.1 6.9A3 3 0 0 1 9.86 5h4.28a3 3 0 0 1 2.76 1.9l1.8 4.2c1.28.22 2.3 1.38 2.3 2.73V17a2 2 0 0 1-2 2h-1a2.5 2.5 0 0 1-5 0h-2a2.5 2.5 0 0 1-5 0H5a2 2 0 0 1-2-2v-3.17c0-1.35 1.02-2.5 2.3-2.73ZM8.93 7a1 1 0 0 0-.92.63L6.6 11h10.8l-1.4-3.37a1 1 0 0 0-.92-.63H8.93ZM7.5 18a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm9 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM5 13a1 1 0 0 0-1 1v3h1.05a2.5 2.5 0 0 1 4.9 0h4.1a2.5 2.5 0 0 1 4.9 0H20v-3a1 1 0 0 0-1-1H5Z" />
+                    </svg>
+                </div>
+            </div>
+        }
+        <span class="vehicle-tag">@Model.Tag</span>
+    </a>
+
+    <div class="vehicle-body">
+        <div class="catalog-brandline">@Model.Brand • @Model.Year</div>
+        <div class="vehicle-name">@Model.Model</div>
+        <div class="catalog-highlight-text">@Model.Highlight</div>
+
+        <div class="catalog-specs">
+            <span>@Model.Type</span>
+            <span>@Model.Gearbox</span>
+            <span>@Model.Fuel</span>
+        </div>
+
+        <div class="vehicle-meta">@Model.Mileage.ToString("N0") km rodados</div>
+        <div class="vehicle-price">@Model.Price.ToString("C0", new System.Globalization.CultureInfo("pt-BR"))</div>
+
+        <div class="catalog-actions d-grid gap-2">
+            <a asp-page="/Veiculo" asp-route-slug="@Model.Slug" class="btn btn-brand w-100">Ver detalhes</a>
+            <a href="@($"https://wa.me/551632523490?text=Ol%C3%A1%2C%20quero%20mais%20detalhes%20do%20{Uri.EscapeDataString($"{Model.Brand} {Model.Model}")}")" target="_blank" class="btn btn-outline-brand w-100">
+                Tenho interesse
+            </a>
+        </div>
+    </div>
+</article>

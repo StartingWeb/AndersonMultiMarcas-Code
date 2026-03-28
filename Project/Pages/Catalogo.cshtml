@@ -1,0 +1,264 @@
+@page
+@model Project.Pages.CatalogoModel
+@{
+    ViewData["Title"] = "Catalogo";
+    ViewData["SearchValue"] = Model.Busca ?? string.Empty;
+    ViewData["SearchPlaceholder"] = "Ex.: Onix, Toyota, automatico, flex, Taquaritinga";
+    ViewData["SearchHiddenFields"] = new List<KeyValuePair<string, string>>
+    {
+        new("marca", Model.Marca ?? string.Empty),
+        new("cambio", Model.Cambio ?? string.Empty),
+        new("combustivel", Model.Combustivel ?? string.Empty),
+        new("anoMinimo", Model.AnoMinimo?.ToString() ?? string.Empty),
+        new("precoMinimo", Model.PrecoMinimo?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty),
+        new("precoMaximo", Model.PrecoMaximo?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty)
+    }.Where(item => !string.IsNullOrWhiteSpace(item.Value)).ToList();
+}
+
+<link rel="stylesheet" href="~/css/Catalogo.css" />
+
+<section class="catalog-search-section">
+    <div class="container">
+        <div class="catalog-search-panel">
+            <div>
+                <span class="catalog-kicker">Estoque multimarcas</span>
+                <h1 class="catalog-title">Encontre seu proximo veiculo</h1>
+                <p class="catalog-subtitle">Pesquise por modelo, marca ou oportunidade e refine o restante nos filtros ao lado.</p>
+            </div>
+
+            <div class="catalog-search-form">
+                <partial name="_SiteSearchAutocomplete" view-data="ViewData" />
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="catalog-shell" id="catalog-shell">
+            <aside class="filter-panel">
+                <details class="filter-disclosure" open>
+                    <summary class="filter-summary">
+                        <div class="filter-summary-copy">
+                            <span class="filter-summary-label">Filtros de pesquisa</span>
+                            <span class="filter-summary-hint">Expandir ou ocultar filtros</span>
+                        </div>
+                        <span class="filter-summary-icon" aria-hidden="true"></span>
+                    </summary>
+
+                    <div class="filter-content">
+                        <div class="filter-header">
+                            <h2>Filtros de pesquisa</h2>
+                            <p>Combine os filtros para encontrar o veiculo certo mais rapido.</p>
+                        </div>
+
+                        <form method="get" class="filter-form" id="catalog-filter-form">
+                            <div>
+                                <label class="form-label" asp-for="Marca">Marca</label>
+                                <select asp-for="Marca" class="form-select">
+                                    <option value="">Todas as marcas</option>
+                                    @foreach (var item in Model.AvailableBrands)
+                                    {
+                                        <option value="@item">@item</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="form-label" asp-for="Cambio">Cambio</label>
+                                <select asp-for="Cambio" class="form-select">
+                                    <option value="">Todos</option>
+                                    @foreach (var item in Model.AvailableGearboxes)
+                                    {
+                                        <option value="@item">@item</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="form-label" asp-for="Combustivel">Combustivel</label>
+                                <select asp-for="Combustivel" class="form-select">
+                                    <option value="">Todos</option>
+                                    @foreach (var item in Model.AvailableFuels)
+                                    {
+                                        <option value="@item">@item</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="form-label" asp-for="AnoMinimo">Ano minimo</label>
+                                <select asp-for="AnoMinimo" class="form-select">
+                                    <option value="">Todos os anos</option>
+                                    @foreach (var item in Model.AvailableYears)
+                                    {
+                                        <option value="@item">@item em diante</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="filter-price-grid">
+                                <div>
+                                    <label class="form-label" asp-for="PrecoMinimo">Preco minimo</label>
+                                    <select asp-for="PrecoMinimo" class="form-select">
+                                        <option value="">Sem minimo</option>
+                                        <option value="30000">A partir de R$ 30 mil</option>
+                                        <option value="50000">A partir de R$ 50 mil</option>
+                                        <option value="80000">A partir de R$ 80 mil</option>
+                                        <option value="120000">A partir de R$ 120 mil</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="form-label" asp-for="PrecoMaximo">Preco maximo</label>
+                                    <select asp-for="PrecoMaximo" class="form-select">
+                                        <option value="">Sem limite</option>
+                                        <option value="60000">Ate R$ 60 mil</option>
+                                        <option value="90000">Ate R$ 90 mil</option>
+                                        <option value="130000">Ate R$ 130 mil</option>
+                                        <option value="180000">Ate R$ 180 mil</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="filter-actions">
+                                <a asp-page="/Catalogo" class="btn btn-outline-brand w-100">Limpar busca</a>
+                            </div>
+                        </form>
+                    </div>
+                </details>
+            </aside>
+
+            <div class="catalog-results">
+                <div class="catalog-results-topbar">
+                    <button type="button" class="btn btn-outline-brand catalog-filter-toggle" id="catalog-filter-toggle">
+                        <span class="catalog-filter-toggle-icon" aria-hidden="true"></span>
+                        <span class="catalog-filter-toggle-text">Ocultar filtros</span>
+                    </button>
+                </div>
+
+                @if (Model.TotalEncontrado == 0)
+                {
+                    <div class="empty-state">
+                        <h3>Sem resultados no momento</h3>
+                        <p>Ajuste os filtros ou limpe a busca para ver novamente todo o catalogo.</p>
+                    </div>
+                }
+                else if (Model.HasActiveFilters)
+                {
+                    <div class="row g-4">
+                        @foreach (var vehicle in Model.Vehicles)
+                        {
+                            <div class="col-xl-4 col-md-6">
+                                @await Html.PartialAsync("_CatalogVehicleCardDb", vehicle)
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <section class="vehicle-group">
+                        <div class="vehicle-group-header vehicle-group-header-featured">
+                            <div>
+                                <h3>Mais recentes</h3>
+                                <p>Os modelos mais novos do estoque com destaque na abertura da pagina.</p>
+                            </div>
+                        </div>
+                        <div class="row g-4">
+                            @foreach (var vehicle in Model.RecentVehicles)
+                            {
+                                <div class="col-xl-4 col-md-6">
+                                    @await Html.PartialAsync("_CatalogVehicleCardDb", vehicle)
+                                </div>
+                            }
+                        </div>
+                    </section>
+
+                    <section class="vehicle-group">
+                        <div class="vehicle-group-header">
+                            <div>
+                                <h3>Outros carros</h3>
+                                <p>O restante do estoque para continuar a busca sem repetir os mais recentes.</p>
+                            </div>
+                        </div>
+                        <div class="row g-4">
+                            @foreach (var vehicle in Model.RemainingVehicles)
+                            {
+                                <div class="col-xl-4 col-md-6">
+                                    @await Html.PartialAsync("_CatalogVehicleCardDb", vehicle)
+                                </div>
+                            }
+                        </div>
+                    </section>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    (() => {
+        const filterForm = document.querySelector('#catalog-filter-form');
+        const catalogShell = document.querySelector('#catalog-shell');
+        const filterToggle = document.querySelector('#catalog-filter-toggle');
+        const filterToggleText = document.querySelector('.catalog-filter-toggle-text');
+        const filterDisclosure = document.querySelector('.filter-disclosure');
+
+        if (!filterForm) {
+            return;
+        }
+
+        const syncToggleLabel = () => {
+            if (!catalogShell || !filterToggleText) {
+                return;
+            }
+
+            const collapsed = catalogShell.classList.contains('is-filter-collapsed');
+            filterToggleText.textContent = collapsed ? 'Expandir filtros' : 'Ocultar filtros';
+        };
+
+        const syncResponsiveState = () => {
+            if (!catalogShell || !filterDisclosure) {
+                return;
+            }
+
+            if (window.innerWidth < 992) {
+                catalogShell.classList.remove('is-filter-collapsed');
+                filterDisclosure.removeAttribute('open');
+            }
+            else {
+                filterDisclosure.setAttribute('open', 'open');
+            }
+
+            syncToggleLabel();
+        };
+
+        if (filterToggle && catalogShell) {
+            filterToggle.addEventListener('click', () => {
+                if (window.innerWidth < 992) {
+                    if (filterDisclosure) {
+                        filterDisclosure.toggleAttribute('open');
+                    }
+
+                    return;
+                }
+
+                catalogShell.classList.toggle('is-filter-collapsed');
+                syncToggleLabel();
+            });
+        }
+
+        syncResponsiveState();
+        window.addEventListener('resize', syncResponsiveState);
+
+        let submitTimeout;
+        const autoSubmit = () => {
+            window.clearTimeout(submitTimeout);
+            submitTimeout = window.setTimeout(() => filterForm.requestSubmit(), 120);
+        };
+
+        filterForm.querySelectorAll('select').forEach((field) => {
+            field.addEventListener('change', autoSubmit);
+        });
+    })();
+</script>

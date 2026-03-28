@@ -1,0 +1,410 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Anderson Multimarcas</title>
+
+    <script type="importmap"></script>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            background: #f6f6f6;
+            font-family: 'Segoe UI', sans-serif;
+            color: #222222;
+        }
+
+        .app-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* TOPBAR */
+
+        .topbar {
+            height: 72px;
+            background: linear-gradient(90deg, #222222 0%, #9f0a10 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            color: white;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .menu-button {
+            font-size: 24px;
+            border: none;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+            .menu-button:hover {
+                transform: scale(1.08);
+                opacity: 0.9;
+            }
+
+        /* LOGO */
+
+        .logo-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.35);
+        }
+
+            .logo-circle img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
+
+        .system-title {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+            .system-title strong {
+                font-size: 18px;
+                font-weight: 700;
+                color: #ffffff;
+            }
+
+            .system-title span {
+                font-size: 12px;
+                color: rgba(255,255,255,0.75);
+                letter-spacing: 0.5px;
+                text-transform: uppercase;
+            }
+
+        /* USER */
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-box {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+            backdrop-filter: blur(4px);
+        }
+
+        /* MAIN */
+
+        .app-content {
+            flex: 1;
+            padding: 30px;
+            background: linear-gradient(to bottom, #f8f8f8, #efefef);
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
+            min-height: calc(100vh - 165px);
+            border-top: 5px solid #9f0a10;
+        }
+
+        /* FOOTER */
+
+        .footer {
+            height: 48px;
+            background: #222222;
+            border-top: 3px solid #9f0a10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            color: #d8d8d8;
+        }
+
+        /* RESPONSIVO */
+
+        @@media (max-width: 768px) {
+            .topbar {
+                padding: 0 16px;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                border-radius: 0;
+                z-index: 100;
+            }
+
+            .system-title strong {
+                font-size: 16px;
+            }
+
+            .system-title span {
+                display: none;
+            }
+
+            .app-content {
+                padding: 0;
+                padding-top: 88px;
+            }
+
+            .content-card {
+                padding: 0;
+                min-height: auto;
+                padding-top: 1rem;
+            }
+
+            .user-box {
+                font-size: 13px;
+                padding: 6px 10px;
+            }
+        }
+
+        .select2-container {
+            width: 100% !important;
+        }
+
+        .select2-container .select2-selection--single,
+        .select2-container .select2-selection--multiple {
+            min-height: 46px;
+            border-radius: .85rem;
+            border: 1px solid #e6e6e6;
+            display: flex;
+            align-items: center;
+            padding: .25rem .75rem;
+            box-shadow: none !important;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+            color: #222222;
+            padding: 0;
+            line-height: 1.5;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
+            height: 44px;
+            right: .65rem;
+        }
+
+        .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+        .select2-container--bootstrap-5.select2-container--open .select2-selection {
+            border-color: rgba(159, 10, 16, .35);
+            box-shadow: 0 0 0 .2rem rgba(159, 10, 16, .08) !important;
+        }
+
+        .select2-dropdown {
+            border-radius: .9rem;
+            border: 1px solid #e6e6e6;
+            overflow: hidden;
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .select2-search--dropdown .select2-search__field {
+            border-radius: .75rem;
+            border: 1px solid #e6e6e6;
+            padding: .55rem .75rem;
+        }
+
+        .select2-container--bootstrap-5 .select2-results__option--highlighted {
+            background-color: #9f0a10;
+            color: #fff;
+        }
+
+        @@media (max-width: 768px) {
+            .admin-responsive-table thead {
+                display: none;
+            }
+
+            .admin-responsive-table,
+            .admin-responsive-table tbody,
+            .admin-responsive-table tr,
+            .admin-responsive-table td {
+                display: block;
+                width: 100%;
+            }
+
+            .admin-responsive-table tbody {
+                display: grid;
+                gap: .9rem;
+            }
+
+            .admin-responsive-table tr {
+                border: 1px solid #ececec;
+                border-radius: 1rem;
+                background: #fff;
+                box-shadow: 0 8px 22px rgba(0, 0, 0, .05);
+                padding: .35rem 0;
+                overflow: hidden;
+            }
+
+            .admin-responsive-table td {
+                border: 0 !important;
+                border-bottom: 1px solid #f2f2f2 !important;
+                padding: .8rem 1rem !important;
+                text-align: left !important;
+                white-space: normal !important;
+            }
+
+            .admin-responsive-table td:last-child {
+                border-bottom: 0 !important;
+            }
+
+            .admin-responsive-table td::before {
+                content: attr(data-label);
+                display: block;
+                margin-bottom: .3rem;
+                font-size: .72rem;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: .05em;
+                color: #6b7280;
+            }
+        }
+    </style>
+</head>
+
+@{
+    var loggedUserName =
+        User?.Claims?.FirstOrDefault(claim => claim.Type == "NomeCompleto")?.Value ??
+        User?.Identity?.Name ??
+        "Usuário";
+}
+
+<body>
+    <partial name="~/Pages/Shared/Components/Message/_MessageToast.cshtml" />
+    <partial name="~/Pages/Shared/Components/ConfirmDelete/_ConfirmDeleteModal.cshtml" />
+    @await Component.InvokeAsync("Menu")
+
+    <div class="app-wrapper">
+
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="menu-button" onclick="abrirMenu()">
+                    ☰
+                </button>
+
+                <div class="logo-circle">
+                    <img src="~/img/logo.png" alt="Logo" />
+                </div>
+
+                <div class="system-title">
+                    <strong>Anderson Multimarcas</strong>
+                    <span>Painel de Gestão</span>
+                </div>
+            </div>
+
+            <div class="topbar-right">
+                <div class="user-box">
+                    @loggedUserName
+                </div>
+            </div>
+        </header>
+
+        <main class="app-content">
+            <div class="content-card">
+                @RenderBody()
+            </div>
+        </main>
+
+        <footer class="footer">
+            © 2026 - ERP Anderson Multimarcas
+        </footer>
+
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            function buildOptions(select) {
+                const modal = select.closest('.modal');
+                const options = {
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    placeholder: select.getAttribute('data-placeholder') || '',
+                    allowClear: !select.required && select.querySelector('option[value=""]') !== null
+                };
+
+                if (modal) {
+                    options.dropdownParent = $(modal);
+                }
+
+                return options;
+            }
+
+            function initAdminSelect2(scope) {
+                if (!window.jQuery || !$.fn.select2) return;
+
+                const root = scope || document;
+                const selects = root.querySelectorAll('select:not([data-no-select2])');
+
+                selects.forEach(select => {
+                    const $select = $(select);
+
+                    if ($select.hasClass('select2-hidden-accessible')) {
+                        return;
+                    }
+
+                    $select.select2(buildOptions(select));
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                initAdminSelect2(document);
+
+                const observer = new MutationObserver(function (mutations) {
+                    mutations.forEach(function (mutation) {
+                        mutation.addedNodes.forEach(function (node) {
+                            if (!(node instanceof HTMLElement)) return;
+
+                            if (node.matches && node.matches('select:not([data-no-select2])')) {
+                                initAdminSelect2(node.parentElement || document);
+                                return;
+                            }
+
+                            if (node.querySelectorAll) {
+                                initAdminSelect2(node);
+                            }
+                        });
+                    });
+                });
+
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+            });
+        })();
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

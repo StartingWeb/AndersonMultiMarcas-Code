@@ -1,0 +1,589 @@
+﻿@page
+@model Project.Pages.Admin.IndexModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["TopbarTitle"] = "Dashboard";
+    ViewData["TopbarSubtitle"] = "Resumo rápido da operação";
+    Layout = "_LayoutAdmin";
+
+    var culture = new CultureInfo("pt-BR");
+    var dashboard = Model.Dashboard;
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+    :root {
+        --dash-ink: #171717;
+        --dash-brand: #a61d24;
+        --dash-brand-dark: #7f1218;
+        --dash-accent: #d7a85d;
+        --dash-sand: #f6f0e7;
+        --dash-paper: #fffdf9;
+        --dash-border: #ece4d9;
+        --dash-muted: #72685e;
+        --dash-success: #157347;
+        --dash-warning: #b7791f;
+        --dash-danger: #b42318;
+    }
+
+    .dashboard-shell {
+        display: grid;
+        gap: 1.25rem;
+    }
+
+    .dashboard-metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .commercial-metric {
+        height: 100%;
+        border: 1px solid var(--dash-border);
+        border-radius: 1.25rem;
+        background: linear-gradient(180deg, #fff 0%, var(--dash-paper) 100%);
+        box-shadow: 0 12px 26px rgba(15, 23, 42, .05);
+        overflow: hidden;
+    }
+
+    .commercial-metric-body {
+        padding: 1.1rem;
+        display: grid;
+        gap: .85rem;
+    }
+
+    .commercial-metric-top {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: .75rem;
+    }
+
+    .commercial-metric-label {
+        font-size: .8rem;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: var(--dash-muted);
+        font-weight: 800;
+        margin-bottom: .35rem;
+    }
+
+    .commercial-metric-value {
+        font-size: 1.9rem;
+        font-weight: 800;
+        color: var(--dash-ink);
+        line-height: 1.05;
+    }
+
+    .commercial-metric-help {
+        font-size: .85rem;
+        color: var(--dash-muted);
+    }
+
+    .commercial-metric-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .commercial-metric-icon.brand { background: rgba(166, 29, 36, .10); color: var(--dash-brand); }
+    .commercial-metric-icon.gold { background: rgba(215, 168, 93, .16); color: #9a6720; }
+    .commercial-metric-icon.success { background: rgba(21, 115, 71, .12); color: var(--dash-success); }
+    .commercial-metric-icon.alert { background: rgba(180, 35, 24, .10); color: var(--dash-danger); }
+
+    .dashboard-section {
+        background: #fff;
+        border: 1px solid var(--dash-border);
+        border-radius: 1.35rem;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, .05);
+        overflow: hidden;
+    }
+
+    .dashboard-section-header {
+        padding: 1.15rem 1.2rem 0;
+    }
+
+    .dashboard-section-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        font-size: .74rem;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--dash-brand);
+        font-weight: 800;
+    }
+
+    .dashboard-section-title {
+        margin: .45rem 0 .2rem;
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: var(--dash-ink);
+    }
+
+    .dashboard-section-subtitle {
+        margin: 0;
+        color: var(--dash-muted);
+        font-size: .9rem;
+    }
+
+    .dashboard-section-body {
+        padding: 1.2rem;
+    }
+
+    .dashboard-split-grid {
+        display: grid;
+        grid-template-columns: minmax(0, .95fr) minmax(0, 1.25fr);
+        gap: 1.25rem;
+    }
+
+    .operations-list {
+        display: grid;
+        gap: .8rem;
+    }
+
+    .operations-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        padding: .9rem 1rem;
+        border-radius: 1rem;
+        background: linear-gradient(180deg, #fff 0%, #fcfaf7 100%);
+        border: 1px solid var(--dash-border);
+    }
+
+    .operations-item-label {
+        display: flex;
+        align-items: center;
+        gap: .65rem;
+        color: var(--dash-muted);
+        font-weight: 600;
+    }
+
+    .operations-item-label i {
+        color: var(--dash-brand);
+    }
+
+    .operations-item strong {
+        font-size: 1.1rem;
+        color: var(--dash-ink);
+    }
+
+    .seller-podium {
+        display: grid;
+        gap: .9rem;
+    }
+
+    .seller-podium-item {
+        display: grid;
+        grid-template-columns: auto auto minmax(0, 1fr) auto;
+        gap: .85rem;
+        align-items: center;
+        padding: .95rem 1rem;
+        border-radius: 1.1rem;
+        background: linear-gradient(180deg, #fff 0%, #fcfaf8 100%);
+        border: 1px solid var(--dash-border);
+    }
+
+    .seller-podium-rank {
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(166, 29, 36, .10);
+        color: var(--dash-brand);
+        font-size: .85rem;
+        font-weight: 800;
+    }
+
+    .seller-podium-item:nth-child(1) .seller-podium-rank {
+        background: rgba(215, 168, 93, .22);
+        color: #8a5b17;
+    }
+
+    .seller-podium-photo {
+        width: 56px;
+        height: 56px;
+        border-radius: 1rem;
+        object-fit: cover;
+        border: 1px solid var(--dash-border);
+        background: #f3f3f3;
+    }
+
+    .seller-podium-name {
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--dash-ink);
+        margin-bottom: .15rem;
+    }
+
+    .seller-podium-meta {
+        color: var(--dash-muted);
+        font-size: .84rem;
+    }
+
+    .seller-podium-total {
+        text-align: right;
+    }
+
+    .seller-podium-total strong {
+        display: block;
+        font-size: 1.3rem;
+        color: var(--dash-brand);
+        line-height: 1.05;
+    }
+
+    .seller-podium-total span {
+        display: block;
+        font-size: .74rem;
+        color: var(--dash-muted);
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
+
+    .stock-commercial-header {
+        padding: 1.2rem 1.2rem 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-dashboard-soft {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        min-height: 46px;
+        padding: .75rem 1rem;
+        border-radius: .95rem;
+        border: 1px solid var(--dash-border);
+        background: #fff;
+        color: var(--dash-ink);
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .btn-dashboard-soft:hover {
+        background: #faf7f3;
+        color: var(--dash-ink);
+    }
+
+    .stock-commercial-grid {
+        padding: 1.2rem;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .stock-commercial-card {
+        border: 1px solid var(--dash-border);
+        border-radius: 1.2rem;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, .04);
+    }
+
+    .stock-commercial-image {
+        width: 100%;
+        height: 170px;
+        object-fit: cover;
+        background: #f1f1f1;
+    }
+
+    .stock-commercial-body {
+        padding: 1rem;
+        display: grid;
+        gap: .7rem;
+    }
+
+    .stock-commercial-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        width: fit-content;
+        border-radius: 999px;
+        padding: .38rem .7rem;
+        font-size: .76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        background: rgba(166, 29, 36, .10);
+        color: var(--dash-brand);
+    }
+
+    .stock-commercial-title {
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--dash-ink);
+        margin: 0;
+    }
+
+    .stock-commercial-meta {
+        color: var(--dash-muted);
+        font-size: .86rem;
+    }
+
+    .stock-commercial-price {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--dash-ink);
+    }
+
+    .stock-commercial-tip {
+        border-radius: .95rem;
+        padding: .72rem .8rem;
+        font-size: .83rem;
+        font-weight: 700;
+        line-height: 1.4;
+    }
+
+    .stock-commercial-tip.warning {
+        background: rgba(215, 168, 93, .18);
+        color: #8a5b17;
+    }
+
+    .stock-commercial-tip.danger {
+        background: rgba(180, 35, 24, .10);
+        color: var(--dash-danger);
+    }
+
+    .dashboard-empty {
+        border: 1px dashed var(--dash-border);
+        border-radius: 1rem;
+        padding: 2rem 1.25rem;
+        text-align: center;
+        color: var(--dash-muted);
+        background: #fffcf8;
+    }
+
+    @@media (max-width: 1200px) {
+        .dashboard-split-grid,
+        .stock-commercial-grid,
+        .dashboard-metrics-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media (max-width: 900px) {
+        .dashboard-split-grid,
+        .dashboard-metrics-grid,
+        .stock-commercial-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .seller-podium-item,
+        .stock-commercial-header {
+            grid-template-columns: 1fr;
+        }
+
+        .seller-podium-item {
+            text-align: left;
+        }
+
+        .seller-podium-total {
+            text-align: left;
+        }
+    }
+</style>
+
+<div class="container-fluid dashboard-shell">
+<section class="dashboard-metrics-grid">
+        <article class="commercial-metric">
+            <div class="commercial-metric-body">
+                <div class="commercial-metric-top">
+                    <div>
+                        <div class="commercial-metric-label">Estoque no site</div>
+                        <div class="commercial-metric-value">@dashboard.TotalVeiculosNoSite</div>
+                    </div>
+                    <div class="commercial-metric-icon brand">
+                        <i class="bi bi-car-front-fill"></i>
+                    </div>
+                </div>
+                <div class="commercial-metric-help">Anúncios ativos e prontos para conversão.</div>
+            </div>
+        </article>
+
+        @if (Model.CanViewFinancialData)
+        {
+            <article class="commercial-metric">
+                <div class="commercial-metric-body">
+                    <div class="commercial-metric-top">
+                        <div>
+                            <div class="commercial-metric-label">Valor em estoque</div>
+                            <div class="commercial-metric-value">@dashboard.ValorEmEstoque.ToString("C0", culture)</div>
+                        </div>
+                        <div class="commercial-metric-icon gold">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                    </div>
+                    <div class="commercial-metric-help">Preço principal somado dos veículos ativos.</div>
+                </div>
+            </article>
+        }
+
+        <article class="commercial-metric">
+            <div class="commercial-metric-body">
+                <div class="commercial-metric-top">
+                    <div>
+                        <div class="commercial-metric-label">Saída do dia</div>
+                        <div class="commercial-metric-value">@dashboard.VendidosHoje</div>
+                    </div>
+                    <div class="commercial-metric-icon success">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                </div>
+                <div class="commercial-metric-help">Baixas registradas com `DataVenda` de hoje.</div>
+            </div>
+        </article>
+
+        <article class="commercial-metric">
+            <div class="commercial-metric-body">
+                <div class="commercial-metric-top">
+                    <div>
+                        <div class="commercial-metric-label">Estoque crítico</div>
+                        <div class="commercial-metric-value" style="color: var(--dash-brand);">@dashboard.VeiculosParados90Dias</div>
+                    </div>
+                    <div class="commercial-metric-icon alert">
+                        <i class="bi bi-exclamation-diamond-fill"></i>
+                    </div>
+                </div>
+                <div class="commercial-metric-help">Veículos ativos que já pedem ação de giro.</div>
+            </div>
+        </article>
+    </section>
+
+    <section class="dashboard-split-grid">
+        <article class="dashboard-section">
+            <div class="dashboard-section-header">
+                <span class="dashboard-section-kicker"><i class="bi bi-activity"></i> Operação</span>
+                <h2 class="dashboard-section-title">Indicadores do negócio</h2>
+                <p class="dashboard-section-subtitle">Base atual de lojas, vendedores e vitrine comercial.</p>
+            </div>
+            <div class="dashboard-section-body">
+                <div class="operations-list">
+                    <div class="operations-item">
+                        <div class="operations-item-label"><i class="bi bi-shop"></i>Lojas cadastradas</div>
+                        <strong>@dashboard.TotalLojas</strong>
+                    </div>
+                    <div class="operations-item">
+                        <div class="operations-item-label"><i class="bi bi-buildings"></i>Lojas ativas</div>
+                        <strong>@dashboard.LojasAtivas</strong>
+                    </div>
+                    <div class="operations-item">
+                        <div class="operations-item-label"><i class="bi bi-people-fill"></i>Vendedores ativos</div>
+                        <strong>@dashboard.VendedoresAtivos</strong>
+                    </div>
+                    <div class="operations-item">
+                        <div class="operations-item-label"><i class="bi bi-stars"></i>Veículos em destaque</div>
+                        <strong>@dashboard.VeiculosEmDestaque</strong>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <article class="dashboard-section">
+            <div class="dashboard-section-header">
+                <span class="dashboard-section-kicker"><i class="bi bi-trophy-fill"></i> Performance</span>
+                <h2 class="dashboard-section-title">Ranking de vendedores</h2>
+                <p class="dashboard-section-subtitle">Quem mais vendeu em @dashboard.DataReferencia.ToString("MMMM/yyyy", culture).</p>
+            </div>
+            <div class="dashboard-section-body">
+                @if (dashboard.RankingVendedoresMes.Count == 0)
+                {
+                    <div class="dashboard-empty">
+                        <i class="bi bi-person-check fs-3 d-block mb-2"></i>
+                        Nenhuma venda com vendedor vinculado no mês vigente.
+                    </div>
+                }
+                else
+                {
+                    <div class="seller-podium">
+                        @for (var i = 0; i < dashboard.RankingVendedoresMes.Count; i++)
+                        {
+                            var vendedor = dashboard.RankingVendedoresMes[i];
+                            <div class="seller-podium-item">
+                                <div class="seller-podium-rank">#@(i + 1)</div>
+                                <img src="@vendedor.FotoUrl" alt="@vendedor.Nome" class="seller-podium-photo" />
+                                <div>
+                                    <div class="seller-podium-name">@vendedor.Nome</div>
+                                    <div class="seller-podium-meta">ID @vendedor.VendedorId@if (!string.IsNullOrWhiteSpace(vendedor.Loja)) {<text> â€¢ @vendedor.Loja</text>}</div>
+                                </div>
+                                <div class="seller-podium-total">
+                                    <strong>@vendedor.VeiculosVendidos</strong>
+                                    <span>veículos</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </article>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="stock-commercial-header">
+            <div>
+                <span class="dashboard-section-kicker"><i class="bi bi-lightning-charge-fill"></i> Ação comercial</span>
+                <h2 class="dashboard-section-title">Carros parados no site</h2>
+                <p class="dashboard-section-subtitle">Veículos ativos com mais de 100 dias em estoque e necessidade de reposicionamento.</p>
+            </div>
+
+            <a href="/Catalogo" class="btn-dashboard-soft">
+                <i class="bi bi-box-arrow-up-right"></i>
+                Ir para o estoque público
+            </a>
+        </div>
+
+        @if (dashboard.VeiculosParaAcao.Count == 0)
+        {
+            <div class="dashboard-section-body">
+                <div class="dashboard-empty">
+                    <i class="bi bi-check-circle fs-3 d-block mb-2"></i>
+                    Nenhum veículo ativo ultrapassou 100 dias em estoque.
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="stock-commercial-grid">
+                @foreach (var veiculo in dashboard.VeiculosParaAcao)
+                {
+                    <article class="stock-commercial-card">
+                        <img src="@veiculo.ImagemUrl" class="stock-commercial-image" alt="@veiculo.Titulo" />
+                        <div class="stock-commercial-body">
+                            <span class="stock-commercial-chip">
+                                <i class="bi bi-clock-history"></i>
+                                @veiculo.DiasParado dias parado
+                            </span>
+
+                            <h3 class="stock-commercial-title">@veiculo.Titulo</h3>
+                            <div class="stock-commercial-meta">@veiculo.Marca â€¢ ID @veiculo.Id@if (!string.IsNullOrWhiteSpace(veiculo.Loja)) {<text> â€¢ @veiculo.Loja</text>}</div>
+
+                            @if (Model.CanViewFinancialData)
+                            {
+                                <div class="stock-commercial-price">@veiculo.Preco.ToString("C0", culture)</div>
+                            }
+
+                            <div class="stock-commercial-tip @veiculo.RecomendacaoTipo">
+                                @veiculo.Recomendacao
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+</div>
+

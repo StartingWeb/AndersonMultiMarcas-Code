@@ -24,4 +24,10 @@
     <ProjectReference Include="..\Domain\Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="temp-build\**\*.cs" />
+    <EmbeddedResource Remove="temp-build\**\*" />
+    <None Remove="temp-build\**\*" />
+  </ItemGroup>
+
 </Project>

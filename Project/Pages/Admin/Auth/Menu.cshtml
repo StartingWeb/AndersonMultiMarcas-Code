@@ -1,0 +1,294 @@
+@page
+@model Project.Pages.Admin.Auth.MenuModel
+@{
+    ViewData["Title"] = "Menu";
+    Layout = "_LayoutAdmin";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+    :root { --menu-brand: #9f0a10; --menu-brand-dark: #76070c; --menu-text: #1f2937; --menu-muted: #6b7280; --menu-border: #ececec; --menu-bg: #fff7f7; }
+    .menu-card { background: #fff; border: 1px solid var(--menu-border); border-radius: 1.1rem; box-shadow: 0 10px 28px rgba(0, 0, 0, .05); overflow: hidden; }
+    .menu-card-header { padding: 1.2rem 1.2rem 1rem; border-bottom: 1px solid var(--menu-border); background: linear-gradient(180deg, #fff 0%, #fff8f8 100%); }
+    .menu-card-title { margin: 0; font-size: 1.08rem; font-weight: 800; color: var(--menu-text); }
+    .menu-card-subtitle { margin: .2rem 0 0; color: var(--menu-muted); font-size: .9rem; }
+    .menu-card-body { padding: 1.2rem; }
+    .menu-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .menu-search-form { display: flex; gap: .75rem; width: 100%; flex: 1; }
+    .menu-search-form input { flex: 1; min-height: 50px; border-radius: .95rem; border: 1px solid #dfdfdf; padding: .75rem 1rem; }
+    .menu-search-form input:focus { outline: none; border-color: rgba(159, 10, 16, .45); box-shadow: 0 0 0 4px rgba(159, 10, 16, .10); }
+    .menu-stat { font-size: .92rem; color: var(--menu-muted); }
+    .list-card { margin-top: 1rem; border: 1px solid var(--menu-border); border-radius: 1rem; overflow: hidden; background: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, .05); }
+    .menu-table { margin: 0; vertical-align: middle; }
+    .menu-table thead th { background: #f8f8f8; color: var(--menu-text); font-size: .76rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--menu-border); padding: 1rem .9rem; white-space: nowrap; }
+    .menu-table tbody td { padding: 1rem .9rem; border-color: #f1f1f1; color: var(--menu-text); }
+    .menu-name { display: block; font-size: .96rem; font-weight: 800; color: var(--menu-text); margin: 0 0 .15rem; }
+    .menu-description { display: block; margin: 0; font-size: .84rem; color: var(--menu-muted); line-height: 1.45; }
+    .menu-hierarchy { display: inline-flex; width: fit-content; padding: .28rem .6rem; border-radius: 999px; background: #fdf1f2; color: var(--menu-brand); font-size: .74rem; font-weight: 800; }
+    .menu-status { display: inline-flex; align-items: center; gap: .4rem; padding: .38rem .7rem; border-radius: 999px; font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; width: fit-content; }
+    .menu-status.active { background: #ebfaf1; color: #1f9d55; }
+    .menu-status.inactive { background: #fff1f2; color: #b42318; }
+    .menu-muted { color: var(--menu-muted); font-size: .9rem; }
+    .menu-row-actions { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: flex-end; }
+    .btn-menu-danger { min-height: 42px; padding: .75rem 1rem; border-radius: .75rem; font-weight: 700; border: 1px solid #f4c7cb; background: #fff4f4; color: #b42318; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; }
+    .btn-menu-danger:hover { background: #b42318; color: #fff; border-color: #b42318; }
+    .menu-empty { border: 1px dashed #d8d8d8; border-radius: 1rem; padding: 2rem 1.25rem; text-align: center; color: var(--menu-muted); background: #fcfcfc; }
+    .menu-modal-overlay { position: fixed; inset: 0; background: rgba(17, 24, 39, .52); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1.25rem; z-index: 1200; }
+    .menu-modal { width: min(100%, 820px); max-height: calc(100vh - 2.5rem); overflow: auto; background: #fff; border: 1px solid rgba(159, 10, 16, .12); border-radius: 1.25rem; box-shadow: 0 28px 70px rgba(17, 24, 39, .26); }
+    .menu-modal-header { padding: 1.15rem 1.2rem 1rem; border-bottom: 1px solid var(--menu-border); background: linear-gradient(180deg, #fff 0%, #fff8f8 100%); display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+    .menu-modal-header h2 { margin: 0; font-size: 1.12rem; font-weight: 800; color: var(--menu-text); }
+    .menu-modal-header p { margin: .2rem 0 0; color: var(--menu-muted); font-size: .9rem; }
+    .menu-modal-close { width: 42px; height: 42px; border-radius: 999px; border: 1px solid var(--menu-border); background: #fff; color: var(--menu-text); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 1.1rem; }
+    .menu-modal-body { padding: 1.2rem; }
+    .menu-form-grid { display: grid; gap: 1rem; }
+    .menu-form-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .menu-label { display: block; margin-bottom: .4rem; font-size: .84rem; font-weight: 700; color: #374151; }
+    .menu-input input, .menu-input select, .menu-input textarea { width: 100%; min-height: 50px; border-radius: .9rem; border: 1px solid #dfdfdf; padding: .75rem .95rem; outline: none; transition: .2s ease; background: #fff; }
+    .menu-input textarea { min-height: 96px; resize: vertical; }
+    .menu-input input:focus, .menu-input select:focus, .menu-input textarea:focus { border-color: rgba(159, 10, 16, .45); box-shadow: 0 0 0 4px rgba(159, 10, 16, .10); }
+    .menu-role-box { border: 1px solid var(--menu-border); border-radius: 1rem; background: #fafafa; padding: .9rem; }
+    .menu-role-list { display: grid; gap: .65rem; max-height: 260px; overflow: auto; }
+    .menu-role-item { border: 1px solid #ececec; border-radius: .9rem; background: #fff; padding: .75rem .8rem; }
+    .menu-check { display: inline-flex; align-items: flex-start; gap: .55rem; color: var(--menu-text); font-weight: 600; cursor: pointer; }
+    .menu-check input { width: 16px; height: 16px; accent-color: var(--menu-brand); margin-top: .15rem; }
+    .menu-role-text strong { display: block; font-size: .92rem; color: var(--menu-text); }
+    .menu-role-text span { display: block; margin-top: .15rem; font-size: .8rem; color: var(--menu-muted); line-height: 1.4; }
+    .field-validation-error { display: block; margin-top: .35rem; font-size: .78rem; color: #b42318; }
+    .validation-summary-errors { margin-bottom: 1rem; border-radius: .95rem; background: #fff4f4; border: 1px solid #f1c1c5; padding: .9rem 1rem; color: #b42318; }
+    .validation-summary-errors ul { margin: 0; padding-left: 1.1rem; }
+    .menu-actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+    .btn-menu-primary, .btn-menu-secondary { min-height: 42px; padding: .75rem 1rem; border-radius: .75rem; font-weight: 700; text-decoration: none; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; }
+    .btn-menu-primary { background: linear-gradient(90deg, var(--menu-brand-dark) 0%, var(--menu-brand) 100%); color: #fff; box-shadow: 0 14px 28px rgba(159, 10, 16, .18); }
+    .btn-menu-secondary { background: #fff; color: var(--menu-text); border-color: var(--menu-border); }
+    @@media (max-width: 900px) { .menu-form-columns { grid-template-columns: 1fr; } .menu-search-form, .menu-actions, .menu-row-actions { flex-direction: column; } .btn-menu-primary, .btn-menu-secondary, .btn-menu-danger { width: 100%; } }
+</style>
+
+<section class="menu-card">
+    <div class="menu-card-header">
+        <h2 class="menu-card-title">Menus cadastrados</h2>
+        <p class="menu-card-subtitle">Pesquise menus e edite no mesmo modal de cadastro.</p>
+    </div>
+
+    <div class="menu-card-body">
+        <div class="menu-toolbar">
+            <a asp-page="/Admin/Auth/Menu" asp-route-search="@Model.Search" asp-route-newMenu="true" class="btn-menu-primary">
+                <i class="bi bi-plus-circle"></i>
+                Novo menu
+            </a>
+
+            <form method="get" class="menu-search-form">
+                <input asp-for="Search" placeholder="Pesquisar menu, descrição ou rota" />
+                <button type="submit" class="btn-menu-primary">
+                    <i class="bi bi-search"></i>
+                    Pesquisar
+                </button>
+                @if (!string.IsNullOrWhiteSpace(Model.Search))
+                {
+                    <a asp-page="/Admin/Auth/Menu" class="btn-menu-secondary">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        Limpar
+                    </a>
+                }
+            </form>
+        </div>
+
+        <div class="menu-stat">@Model.FilteredMenus menu(s) encontrado(s)</div>
+
+        @if (Model.Menus.Any())
+        {
+            <div class="list-card">
+                <div class="table-responsive">
+                    <table class="table menu-table admin-responsive-table">
+                        <thead>
+                            <tr>
+                                <th>Menu</th>
+                                <th>Status</th>
+                                <th>Rota</th>
+                                <th>Pai</th>
+                                <th>Ordem</th>
+                                <th>Perfis</th>
+                                <th class="text-end">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var menu in Model.Menus)
+                            {
+                                <tr>
+                                    <td data-label="Menu">
+                                        <span class="menu-hierarchy">Nível @menu.Level</span>
+                                        <span class="menu-name mt-2">@menu.Nome</span>
+                                        <span class="menu-description">@menu.Descricao</span>
+                                    </td>
+                                    <td data-label="Status">
+                                        <span class="menu-status @(menu.Ativo ? "active" : "inactive")">
+                                            <i class="bi @(menu.Ativo ? "bi-check-circle-fill" : "bi-slash-circle-fill")"></i>
+                                            @(menu.Ativo ? "Ativo" : "Inativo")
+                                        </span>
+                                    </td>
+                                    <td data-label="Rota"><span class="menu-muted">@menu.Url</span></td>
+                                    <td data-label="Pai"><span class="menu-muted">@menu.ParentName</span></td>
+                                    <td data-label="Ordem"><span class="menu-muted">@menu.Ordem</span></td>
+                                    <td data-label="Perfis"><span class="menu-muted">@menu.ProfilesDisplay</span></td>
+                                    <td class="text-end" data-label="Ação">
+                                        <div class="menu-row-actions">
+                                            <a asp-page="/Admin/Auth/Menu" asp-route-editId="@menu.Id" asp-route-search="@Model.Search" class="btn-menu-secondary">
+                                                <i class="bi bi-pencil-square"></i>
+                                                Editar
+                                            </a>
+
+                                            <form method="post" asp-page-handler="Delete" class="m-0">
+                                                <input type="hidden" name="id" value="@menu.Id" />
+                                                <input type="hidden" name="search" value="@Model.Search" />
+                                                <button type="button" class="btn-menu-danger" data-confirm-delete data-confirm-message="Deseja excluir este menu?">
+                                                    <i class="bi bi-trash"></i>
+                                                    Excluir
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="menu-empty">Nenhum menu encontrado para os filtros atuais.</div>
+        }
+    </div>
+</section>
+
+@if (Model.IsModalOpen)
+{
+    <div class="menu-modal-overlay">
+        <div class="menu-modal">
+            <div class="menu-modal-header">
+                <div>
+                    <h2>@(Model.IsEditing ? "Editar menu" : "Novo menu")</h2>
+                    <p>Cadastre o menu e selecione os perfis que podem visualizar este item.</p>
+                </div>
+
+                <a asp-page="/Admin/Auth/Menu" asp-route-search="@Model.Search" class="menu-modal-close">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            </div>
+
+            <div class="menu-modal-body">
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+                <form method="post" asp-page-handler="Save" class="menu-form-grid">
+                    <input asp-for="Input.Id" type="hidden" />
+                    <input asp-for="Search" type="hidden" />
+
+                    <div class="menu-form-columns">
+                        <div>
+                            <label asp-for="Input.Nome" class="menu-label">Nome</label>
+                            <div class="menu-input">
+                                <input asp-for="Input.Nome" placeholder="Ex.: Financeiro" />
+                            </div>
+                            <span asp-validation-for="Input.Nome" class="field-validation-error"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="Input.Ordem" class="menu-label">Ordem</label>
+                            <div class="menu-input">
+                                <input asp-for="Input.Ordem" type="number" min="0" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="menu-form-columns">
+                        <div>
+                            <label asp-for="Input.Icone" class="menu-label">Icone</label>
+                            <div class="menu-input">
+                                <input asp-for="Input.Icone" placeholder="bi bi-grid" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label asp-for="Input.MenuPaiId" class="menu-label">Menu pai</label>
+                            <div class="menu-input">
+                                <select asp-for="Input.MenuPaiId">
+                                    <option value="">Sem pai (grupo principal)</option>
+                                    @foreach (var parent in Model.ParentMenuOptions)
+                                    {
+                                        <option value="@parent.Id">@parent.Label</option>
+                                    }
+                                </select>
+                            </div>
+                            <span asp-validation-for="Input.MenuPaiId" class="field-validation-error"></span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label asp-for="Input.Url" class="menu-label">URL</label>
+                        <div class="menu-input">
+                            <input asp-for="Input.Url" placeholder="/Admin/Auth/Menu" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label asp-for="Input.Descricao" class="menu-label">Descrição</label>
+                        <div class="menu-input">
+                            <textarea asp-for="Input.Descricao" placeholder="Resumo do menu"></textarea>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="menu-check">
+                            <input asp-for="Input.Ativo" />
+                            <span>Menu ativo</span>
+                        </label>
+                    </div>
+
+                    <div>
+                        <label class="menu-label">Perfis que visualizam o menu</label>
+                        <div class="menu-role-box">
+                            @if (Model.Roles.Any())
+                            {
+                                <div class="menu-role-list">
+                                    @foreach (var role in Model.Roles)
+                                    {
+                                        var isChecked = Model.Input.SelectedRoleIds.Contains(role.Id);
+
+                                        <label class="menu-role-item">
+                                            <span class="menu-check">
+                                                <input type="checkbox" name="Input.SelectedRoleIds" value="@role.Id" checked="@isChecked" />
+                                                <span class="menu-role-text">
+                                                    <strong>@role.Name</strong>
+                                                    <span>@role.Descricao</span>
+                                                </span>
+                                            </span>
+                                        </label>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="menu-empty">Nenhum perfil cadastrado. Cadastre em <a href="/Admin/Auth/Perfil">Perfil</a>.</div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="menu-actions">
+                        <button type="submit" class="btn-menu-primary">
+                            <i class="bi bi-floppy"></i>
+                            @(Model.IsEditing ? "Salvar alterações" : "Cadastrar menu")
+                        </button>
+
+                        <a asp-page="/Admin/Auth/Menu" asp-route-search="@Model.Search" class="btn-menu-secondary">
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

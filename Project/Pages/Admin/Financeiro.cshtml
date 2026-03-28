@@ -1,0 +1,182 @@
+@page
+@model Project.Pages.Admin.FinanceiroModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Financeiro";
+    Layout = "_LayoutAdmin";
+
+    var culture = new CultureInfo("pt-BR");
+}
+
+<style>
+    :root {
+        --financial-brand: #9f0a10;
+        --financial-brand-dark: #76070c;
+        --financial-text: #1f2937;
+        --financial-muted: #6b7280;
+        --financial-border: #ececec;
+        --financial-bg: #fff7f7;
+        --financial-success: #15803d;
+    }
+
+    .financial-shell { display: grid; gap: 1.25rem; }
+    .financial-hero { border: 1px solid rgba(159, 10, 16, .10); border-radius: 1.25rem; background: linear-gradient(135deg, #221f1f 0%, #9f0a10 100%); color: #fff; padding: 1.5rem; box-shadow: 0 20px 45px rgba(17, 24, 39, .14); }
+    .financial-hero h1 { margin: 0; font-size: 1.5rem; font-weight: 800; }
+    .financial-hero p { margin: .35rem 0 0; color: rgba(255,255,255,.78); }
+    .financial-period { display: inline-flex; align-items: center; gap: .55rem; margin-top: 1rem; padding: .55rem .85rem; border-radius: 999px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.08); font-weight: 700; }
+    .financial-card { background: #fff; border: 1px solid var(--financial-border); border-radius: 1.1rem; box-shadow: 0 10px 28px rgba(0, 0, 0, .05); overflow: hidden; }
+    .financial-card-header { padding: 1.15rem 1.2rem 1rem; border-bottom: 1px solid var(--financial-border); background: linear-gradient(180deg, #fff 0%, #fff8f8 100%); }
+    .financial-card-title { margin: 0; font-size: 1.02rem; font-weight: 800; color: var(--financial-text); }
+    .financial-card-subtitle { margin: .2rem 0 0; color: var(--financial-muted); font-size: .9rem; }
+    .financial-card-body { padding: 1.2rem; }
+    .financial-filter-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; align-items: end; }
+    .financial-field label { display: block; margin-bottom: .45rem; color: var(--financial-text); font-weight: 800; font-size: .88rem; }
+    .financial-field select { width: 100%; min-height: 50px; border-radius: .95rem; border: 1px solid #dfdfdf; padding: .78rem 1rem; background: #fff; }
+    .financial-field select:focus { outline: none; border-color: rgba(159, 10, 16, .45); box-shadow: 0 0 0 4px rgba(159, 10, 16, .10); }
+    .financial-actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+    .financial-btn-primary, .financial-btn-secondary { min-height: 48px; border-radius: .95rem; padding: .75rem 1rem; display: inline-flex; align-items: center; justify-content: center; gap: .55rem; font-weight: 700; text-decoration: none; border: none; cursor: pointer; }
+    .financial-btn-primary { background: linear-gradient(135deg, var(--financial-brand-dark) 0%, var(--financial-brand) 100%); color: #fff; box-shadow: 0 12px 30px rgba(159, 10, 16, .22); }
+    .financial-btn-secondary { background: #fff; color: var(--financial-text); border: 1px solid var(--financial-border); }
+    .financial-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .financial-metric { border-radius: 1rem; border: 1px solid #f1e4e5; background: var(--financial-bg); padding: 1rem; }
+    .financial-metric-label { font-size: .82rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--financial-muted); margin-bottom: .4rem; }
+    .financial-metric-value { font-size: 1.65rem; font-weight: 800; color: var(--financial-text); line-height: 1.1; }
+    .financial-metric-help { margin-top: .45rem; color: var(--financial-muted); font-size: .86rem; }
+    .financial-metric.revenue .financial-metric-value, .financial-metric.ticket .financial-metric-value { color: var(--financial-success); }
+    .financial-list-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+    .financial-list-card { border: 1px solid var(--financial-border); border-radius: 1rem; background: #fff; padding: 1rem; box-shadow: 0 10px 24px rgba(0, 0, 0, .04); display: grid; gap: .85rem; }
+    .financial-vehicle-title { display: block; font-size: 1rem; font-weight: 800; color: var(--financial-text); margin: 0 0 .15rem; }
+    .financial-vehicle-meta { display: block; font-size: .88rem; color: var(--financial-muted); }
+    .financial-card-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+    .financial-detail { border-radius: .9rem; border: 1px solid #f1e4e5; background: var(--financial-bg); padding: .8rem; }
+    .financial-detail-label { display: block; font-size: .74rem; font-weight: 800; text-transform: uppercase; color: var(--financial-muted); letter-spacing: .05em; margin-bottom: .3rem; }
+    .financial-detail-value { color: var(--financial-text); font-size: .92rem; word-break: break-word; }
+    .financial-money { font-weight: 800; color: var(--financial-success); white-space: nowrap; font-size: 1.05rem; }
+    .financial-empty { border: 1px dashed #d8d8d8; border-radius: 1rem; padding: 2rem 1.25rem; text-align: center; color: var(--financial-muted); background: #fcfcfc; }
+
+    @@media (max-width: 992px) {
+        .financial-filter-grid,
+        .financial-metrics {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .financial-filter-grid,
+        .financial-metrics,
+        .financial-card-meta {
+            grid-template-columns: 1fr;
+        }
+
+        .financial-actions {
+            flex-direction: column;
+        }
+
+        .financial-btn-primary,
+        .financial-btn-secondary {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="financial-shell">
+    <section class="financial-hero">
+        <h1>Financeiro de Veículos Vendidos</h1>
+        <p>Consulte os carros vendidos no período e acompanhe o faturamento por mês e ano.</p>
+        <div class="financial-period">
+            <span>Período</span>
+            <strong>@Model.Resumo.Periodo.ToString("MMMM yyyy", culture)</strong>
+        </div>
+    </section>
+
+    <section class="financial-card">
+        <div class="financial-card-header">
+            <h2 class="financial-card-title">Filtros</h2>
+            <p class="financial-card-subtitle">Selecione o mês e o ano para apurar as vendas.</p>
+        </div>
+        <div class="financial-card-body">
+            <form method="get" class="financial-filter-grid">
+                <div class="financial-field">
+                    <label asp-for="Mes">Mês</label>
+                    <select asp-for="Mes">
+                        @foreach (var mes in Model.Meses)
+                        {
+                            <option value="@mes.Valor" selected="@mes.Selecionado">@culture.TextInfo.ToTitleCase(mes.Nome)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="financial-field">
+                    <label asp-for="Ano">Ano</label>
+                    <select asp-for="Ano">
+                        @foreach (var ano in Model.AnosDisponiveis)
+                        {
+                            <option value="@ano" selected="@(Model.Ano == ano)">@ano</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="financial-actions">
+                    <button type="submit" class="financial-btn-primary">Aplicar filtro</button>
+                    <a asp-page="/Admin/Financeiro" class="financial-btn-secondary">Mês atual</a>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <section class="financial-metrics">
+        <article class="financial-metric">
+            <div class="financial-metric-label">Veículos vendidos</div>
+            <div class="financial-metric-value">@Model.Resumo.TotalVeiculosVendidos</div>
+            <div class="financial-metric-help">Quantidade de carros vendidos no período filtrado.</div>
+        </article>
+
+        <article class="financial-metric revenue">
+            <div class="financial-metric-label">Faturamento bruto</div>
+            <div class="financial-metric-value">@Model.Resumo.FaturamentoBruto.ToString("C0", culture)</div>
+            <div class="financial-metric-help">Soma do valor principal de cada veículo vendido.</div>
+        </article>
+
+        <article class="financial-metric ticket">
+            <div class="financial-metric-label">Ticket médio</div>
+            <div class="financial-metric-value">@Model.Resumo.TicketMedio.ToString("C0", culture)</div>
+            <div class="financial-metric-help">Faturamento dividido pelo total de vendas do período.</div>
+        </article>
+    </section>
+
+    <section class="financial-card">
+        <div class="financial-card-header">
+            <h2 class="financial-card-title">Carros vendidos</h2>
+            <p class="financial-card-subtitle">Lista consolidada dos veículos baixados como vendidos no período.</p>
+        </div>
+        <div class="financial-card-body">
+            @if (Model.VeiculosVendidos.Any())
+            {
+                <div class="financial-list-grid">
+                    @foreach (var item in Model.VeiculosVendidos)
+                    {
+                        <article class="financial-list-card">
+                            <div>
+                                <span class="financial-vehicle-title">@item.Titulo</span>
+                                <span class="financial-vehicle-meta">@item.Marca • ID @item.Id</span>
+                            </div>
+                            <div class="financial-card-meta">
+                                <div class="financial-detail"><span class="financial-detail-label">Loja</span><div class="financial-detail-value">@item.Loja</div></div>
+                                <div class="financial-detail"><span class="financial-detail-label">Vendedor</span><div class="financial-detail-value">@item.Vendedor</div></div>
+                                <div class="financial-detail"><span class="financial-detail-label">Placa</span><div class="financial-detail-value">@item.Placa</div></div>
+                                <div class="financial-detail"><span class="financial-detail-label">Data venda</span><div class="financial-detail-value">@item.DataVenda.ToString("dd/MM/yyyy")</div></div>
+                            </div>
+                            <div class="financial-money">@item.ValorVenda.ToString("C0", culture)</div>
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="financial-empty">
+                    Nenhum carro vendido foi encontrado para @Model.Resumo.Periodo.ToString("MMMM/yyyy", culture).
+                </div>
+            }
+        </div>
+    </section>
+</div>

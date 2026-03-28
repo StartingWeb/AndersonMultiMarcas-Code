@@ -1,0 +1,197 @@
+.catalog-card {
+    border-radius: 1.25rem;
+}
+
+.catalog-thumb {
+    position: relative;
+    min-height: 180px;
+    padding: 0;
+    color: #fff;
+    display: flex;
+    align-items: stretch;
+    text-decoration: none;
+    overflow: hidden;
+    background: #eef1f5;
+}
+
+.catalog-thumb .vehicle-placeholder {
+    position: absolute;
+    inset: 0;
+    aspect-ratio: auto;
+}
+
+.catalog-thumb-track {
+    position: relative;
+    width: 100%;
+    min-height: 180px;
+}
+
+.catalog-thumb-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity .35s ease, transform .45s ease;
+}
+
+.catalog-thumb-image.is-active {
+    opacity: 1;
+}
+
+.catalog-thumb-carousel:hover .catalog-thumb-image.is-active {
+    transform: scale(1.01);
+}
+
+.catalog-thumb-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(17, 24, 39, 0.48);
+    color: #fff;
+    font-size: 24px;
+    line-height: 1;
+    z-index: 2;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease, background-color .2s ease;
+    backdrop-filter: blur(6px);
+}
+
+.catalog-thumb-prev {
+    left: .75rem;
+}
+
+.catalog-thumb-next {
+    right: .75rem;
+}
+
+.catalog-thumb-nav:hover {
+    background: rgba(166, 29, 36, 0.82);
+}
+
+.catalog-thumb-carousel:hover .catalog-thumb-nav,
+.catalog-thumb-carousel:focus-within .catalog-thumb-nav {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.catalog-thumb-dots {
+    position: absolute;
+    left: 50%;
+    bottom: .8rem;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: .38rem;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity .2s ease;
+}
+
+.catalog-thumb-carousel:hover .catalog-thumb-dots,
+.catalog-thumb-carousel:focus-within .catalog-thumb-dots {
+    opacity: 1;
+}
+
+.catalog-thumb-dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.48);
+    transition: transform .2s ease, background-color .2s ease, width .2s ease;
+}
+
+.catalog-thumb-dot.is-active {
+    width: 22px;
+    background: #ffffff;
+}
+
+.catalog-thumb-dot:hover {
+    background: rgba(255, 255, 255, 0.82);
+}
+
+.catalog-thumb .vehicle-tag {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    backdrop-filter: blur(4px);
+    z-index: 1;
+}
+
+.catalog-brandline {
+    font-size: .82rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--brand-primary);
+    font-weight: 800;
+    margin-bottom: .45rem;
+}
+
+.catalog-highlight-text {
+    color: var(--brand-muted);
+    font-size: .9rem;
+    line-height: 1.5;
+    margin-top: .35rem;
+}
+
+.catalog-specs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+    margin: .8rem 0;
+}
+
+.catalog-specs span {
+    border-radius: 999px;
+    padding: .38rem .72rem;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: .76rem;
+    font-weight: 700;
+}
+
+.catalog-actions {
+    margin-top: .85rem;
+}
+
+.catalog-card .vehicle-body {
+    padding: .9rem;
+}
+
+.catalog-card .vehicle-name {
+    min-height: auto;
+    margin-bottom: 0;
+    font-size: 1.05rem;
+    line-height: 1.25;
+}
+
+.catalog-card .vehicle-meta {
+    margin: .55rem 0;
+    font-size: .84rem;
+}
+
+.catalog-card .vehicle-price {
+    font-size: 1.2rem;
+    margin-bottom: .55rem;
+}
+
+@media (max-width: 767.98px) {
+    .catalog-thumb-nav,
+    .catalog-thumb-dots {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}

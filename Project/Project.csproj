@@ -21,8 +21,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Concessionaria\Concessionaria.csproj" />
     <ProjectReference Include="..\Core\Core.csproj" />
     <ProjectReference Include="..\Data\Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="temp-build\**\*.cs" />
+    <Content Remove="temp-build\**\*" />
+    <EmbeddedResource Remove="temp-build\**\*" />
+    <None Remove="temp-build\**\*" />
   </ItemGroup>
 
 </Project>

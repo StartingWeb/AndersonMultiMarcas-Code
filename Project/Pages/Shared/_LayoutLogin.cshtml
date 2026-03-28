@@ -1,0 +1,133 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Anderson Multimarcas</title>
+
+    <script type="importmap"></script>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: #0f1115;
+            color: #222222;
+            overflow-x: hidden;
+            scrollbar-color: #a61d24 #251014;
+            scrollbar-width: thin;
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #231014;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #a61d24 0%, #7f1419 100%);
+            border-radius: 999px;
+            border: 2px solid #231014;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
+        }
+
+        .login-shell {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-video {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .login-shell::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+                linear-gradient(135deg, rgba(12,14,18,0.84), rgba(97,12,18,0.68)),
+                radial-gradient(circle at top left, rgba(255,255,255,0.10), transparent 24%),
+                radial-gradient(circle at right center, rgba(166,29,36,0.16), transparent 28%);
+            z-index: 1;
+        }
+
+        .login-shell::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(to top, rgba(10,11,15,0.40), rgba(10,11,15,0.06));
+            z-index: 1;
+        }
+
+        .login-main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .login-container {
+            width: min(100%, 560px);
+            max-width: 560px;
+            min-width: 0;
+        }
+
+        @@media (max-width: 768px) {
+            .login-main {
+                padding: 16px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <partial name="~/Pages/Shared/Components/Message/_MessageToast.cshtml" />
+
+    <div class="login-shell">
+        <video class="login-video" autoplay muted loop playsinline>
+            <source src="~/video/videoHome.mp4" type="video/mp4" />
+        </video>
+        <main class="login-main">
+            <div class="login-container">
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,6 @@
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\temp-build\obj-auth-users\Debug\net9.0\Domain.csproj.AssemblyReference.cache
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\temp-build\obj-auth-users\Debug\net9.0\Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\temp-build\obj-auth-users\Debug\net9.0\Domain.AssemblyInfoInputs.cache
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\temp-build\obj-auth-users\Debug\net9.0\Domain.AssemblyInfo.cs
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\temp-build\obj-auth-users\Debug\net9.0\Domain.csproj.CoreCompileInputs.cache
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Domain\temp-build\obj-auth-users\Debug\net9.0\Domain.sourcelink.json

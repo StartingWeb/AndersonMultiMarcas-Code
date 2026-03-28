@@ -1,0 +1,169 @@
+@page
+@model Project.Pages.Admin.VeiculosVendaModel
+@{
+    ViewData["Title"] = "Venda de Veículos";
+    Layout = "_LayoutAdmin";
+}
+
+<style>
+    :root { --vehicle-brand: #9f0a10; --vehicle-brand-dark: #76070c; --vehicle-text: #1f2937; --vehicle-muted: #6b7280; --vehicle-border: #ececec; --vehicle-bg: #fff7f7; }
+    .vehicle-card { background: #fff; border: 1px solid var(--vehicle-border); border-radius: 1.1rem; box-shadow: 0 10px 28px rgba(0, 0, 0, .05); overflow: hidden; }
+    .vehicle-card-header { padding: 1.2rem 1.2rem 1rem; border-bottom: 1px solid var(--vehicle-border); background: linear-gradient(180deg, #fff 0%, #fff8f8 100%); }
+    .vehicle-card-title { margin: 0; font-size: 1.08rem; font-weight: 800; color: var(--vehicle-text); }
+    .vehicle-card-subtitle { margin: .2rem 0 0; color: var(--vehicle-muted); font-size: .9rem; }
+    .vehicle-card-body { padding: 1.2rem; }
+    .vehicle-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .vehicle-search-form { display: flex; gap: .75rem; width: 100%; flex: 1; }
+    .vehicle-search-form input { flex: 1; min-height: 50px; border-radius: .95rem; border: 1px solid #dfdfdf; padding: .75rem 1rem; }
+    .vehicle-search-form input:focus, .vehicle-input select:focus { outline: none; border-color: rgba(159, 10, 16, .45); box-shadow: 0 0 0 4px rgba(159, 10, 16, .10); }
+    .vehicle-stat { font-size: .92rem; color: var(--vehicle-muted); }
+    .vehicle-grid { margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+    .vehicle-list-card { border: 1px solid var(--vehicle-border); border-radius: 1rem; background: #fff; padding: 1rem; box-shadow: 0 10px 24px rgba(0, 0, 0, .04); display: grid; gap: .85rem; }
+    .vehicle-list-head { display: flex; justify-content: space-between; gap: .75rem; align-items: start; }
+    .vehicle-meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+    .vehicle-name { display: block; font-size: 1rem; font-weight: 800; color: var(--vehicle-text); margin: 0 0 .15rem; }
+    .vehicle-description { display: block; margin: 0; font-size: .88rem; color: var(--vehicle-muted); }
+    .vehicle-status { display: inline-flex; align-items: center; gap: .4rem; padding: .38rem .7rem; border-radius: 999px; font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+    .vehicle-status.available { background: #ebfaf1; color: #1f9d55; }
+    .vehicle-status.sold { background: #fff1f2; color: #b42318; }
+    .vehicle-detail { border-radius: .9rem; border: 1px solid #f0e6e7; background: var(--vehicle-bg); padding: .8rem; }
+    .vehicle-detail-label { display: block; font-size: .74rem; font-weight: 800; text-transform: uppercase; color: var(--vehicle-muted); letter-spacing: .05em; margin-bottom: .3rem; }
+    .vehicle-detail-value { color: var(--vehicle-text); font-size: .9rem; word-break: break-word; }
+    .vehicle-cell-muted { color: var(--vehicle-muted); }
+    .vehicle-row-actions { display: flex; justify-content: flex-end; gap: .6rem; min-width: 120px; }
+    .vehicle-empty { border: 1px dashed #d8d8d8; border-radius: 1rem; padding: 2rem 1.25rem; text-align: center; color: var(--vehicle-muted); background: #fcfcfc; margin-top: 1rem; }
+    .vehicle-modal-overlay { position: fixed; inset: 0; background: rgba(17, 24, 39, .52); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1.25rem; z-index: 1200; }
+    .vehicle-modal { width: min(100%, 720px); max-height: calc(100vh - 2.5rem); overflow: auto; background: #fff; border: 1px solid rgba(159, 10, 16, .12); border-radius: 1.25rem; box-shadow: 0 28px 70px rgba(17, 24, 39, .26); }
+    .vehicle-modal-header { padding: 1.15rem 1.2rem 1rem; border-bottom: 1px solid var(--vehicle-border); background: linear-gradient(180deg, #fff 0%, #fff8f8 100%); display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+    .vehicle-modal-header h2 { margin: 0; font-size: 1.12rem; font-weight: 800; color: var(--vehicle-text); }
+    .vehicle-modal-header p { margin: .2rem 0 0; color: var(--vehicle-muted); font-size: .9rem; }
+    .vehicle-modal-close { width: 42px; height: 42px; border-radius: 999px; border: 1px solid var(--vehicle-border); background: #fff; color: var(--vehicle-text); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 1.1rem; }
+    .vehicle-modal-body { padding: 1.2rem; }
+    .vehicle-form-grid { display: grid; gap: 1rem; }
+    .vehicle-input select { width: 100%; min-height: 50px; border-radius: .95rem; border: 1px solid #dfdfdf; padding: .78rem 1rem; background: #fff; }
+    .vehicle-label { display: block; margin-bottom: .45rem; color: var(--vehicle-text); font-weight: 800; font-size: .88rem; }
+    .vehicle-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+    .vehicle-actions { display: flex; justify-content: flex-end; gap: .75rem; flex-wrap: wrap; }
+    .btn-vehicle-primary, .btn-vehicle-secondary { min-height: 48px; border-radius: .95rem; padding: .75rem 1rem; display: inline-flex; align-items: center; justify-content: center; gap: .55rem; font-weight: 700; text-decoration: none; border: none; cursor: pointer; }
+    .btn-vehicle-primary { background: linear-gradient(135deg, var(--vehicle-brand-dark) 0%, var(--vehicle-brand) 100%); color: #fff; box-shadow: 0 12px 30px rgba(159, 10, 16, .22); }
+    .btn-vehicle-secondary { background: #fff; color: var(--vehicle-text); border: 1px solid var(--vehicle-border); }
+    .field-validation-error, .validation-summary-errors { color: #b42318; font-size: .85rem; }
+    .validation-summary-errors ul { margin: 0; padding-left: 1.15rem; }
+    @@media (max-width: 992px) { .vehicle-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @@media (max-width: 768px) { .vehicle-toolbar { flex-direction: column; align-items: stretch; } .vehicle-summary, .vehicle-meta-grid { grid-template-columns: 1fr; } .vehicle-search-form { flex-direction: column; } .btn-vehicle-primary, .btn-vehicle-secondary { width: 100%; } .vehicle-list-head, .vehicle-row-actions { flex-direction: column; align-items: stretch; } }
+</style>
+
+<section class="vehicle-card">
+    <div class="vehicle-card-header">
+        <h1 class="vehicle-card-title">Venda de Veículos</h1>
+        <p class="vehicle-card-subtitle">Pesquise o carro e registre a venda escolhendo o vendedor responsável.</p>
+    </div>
+    <div class="vehicle-card-body">
+        <div class="vehicle-toolbar">
+            <form method="get" class="vehicle-search-form">
+                <input asp-for="Search" placeholder="Pesquisar por título, placa, loja, marca ou chassi" />
+                <button type="submit" class="btn-vehicle-primary">Pesquisar</button>
+                @if (!string.IsNullOrWhiteSpace(Model.Search))
+                {
+                    <a asp-page="/Admin/VeiculosVenda" class="btn-vehicle-secondary">Limpar</a>
+                }
+            </form>
+        </div>
+        <div class="vehicle-stat">@Model.FilteredVehicles veículo(s) encontrado(s)</div>
+        @if (Model.Veiculos.Any())
+        {
+            <div class="vehicle-grid">
+                @foreach (var veiculo in Model.Veiculos)
+                {
+                    <article class="vehicle-list-card">
+                        <div class="vehicle-list-head">
+                            <div>
+                                <span class="vehicle-name">@veiculo.Titulo</span>
+                                <span class="vehicle-description">@veiculo.Marca - Loja @veiculo.Loja</span>
+                            </div>
+                            <span class="vehicle-status @(veiculo.Vendido ? "sold" : "available")">@(veiculo.Vendido ? "Vendido" : "Disponível")</span>
+                        </div>
+
+                        <div class="vehicle-meta-grid">
+                            <div class="vehicle-detail"><span class="vehicle-detail-label">Placa</span><div class="vehicle-detail-value">@veiculo.Placa</div></div>
+                            <div class="vehicle-detail"><span class="vehicle-detail-label">Cadastro</span><div class="vehicle-detail-value">@veiculo.DataCadastro.ToString("dd/MM/yyyy")</div></div>
+                            <div class="vehicle-detail"><span class="vehicle-detail-label">Data venda</span><div class="vehicle-detail-value">@(veiculo.DataVenda.HasValue ? veiculo.DataVenda.Value.ToString("dd/MM/yyyy") : "-")</div></div>
+                            <div class="vehicle-detail"><span class="vehicle-detail-label">Vendedor</span><div class="vehicle-detail-value">@(string.IsNullOrWhiteSpace(veiculo.Vendedor) ? "-" : veiculo.Vendedor)</div></div>
+                            <div class="vehicle-detail"><span class="vehicle-detail-label">Baixa por</span><div class="vehicle-detail-value">@(string.IsNullOrWhiteSpace(veiculo.VendidoPorUsuario) ? "-" : veiculo.VendidoPorUsuario)</div></div>
+                        </div>
+
+                        <div class="vehicle-row-actions">
+                            @if (!veiculo.Vendido)
+                            {
+                                <a asp-page="/Admin/VeiculosVenda" asp-route-editId="@veiculo.Id" asp-route-search="@Model.Search" class="btn-vehicle-primary">Vender</a>
+                            }
+                            else
+                            {
+                                <span class="vehicle-cell-muted">Baixado</span>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="vehicle-empty">Nenhum veículo encontrado para os filtros atuais.</div>
+        }
+    </div>
+</section>
+
+@if (Model.IsModalOpen)
+{
+    <div class="vehicle-modal-overlay">
+        <div class="vehicle-modal">
+            <div class="vehicle-modal-header">
+                <div>
+                    <h2>Confirmar venda</h2>
+                    <p>Selecione o vendedor antes de marcar o veículo como vendido.</p>
+                </div>
+                <a asp-page="/Admin/VeiculosVenda" asp-route-search="@Model.Search" class="vehicle-modal-close">x</a>
+            </div>
+            <div class="vehicle-modal-body">
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+                <form method="post" asp-page-handler="SaveSale" class="vehicle-form-grid">
+                    <input asp-for="Input.VeiculoId" type="hidden" />
+                    <input asp-for="Search" type="hidden" />
+                    <div class="vehicle-summary">
+                        <div class="vehicle-detail"><span class="vehicle-detail-label">Veículo</span><div class="vehicle-detail-value">@Model.Input.VeiculoTitulo</div></div>
+                        <div class="vehicle-detail"><span class="vehicle-detail-label">Loja</span><div class="vehicle-detail-value">@Model.Input.LojaNome</div></div>
+                        <div class="vehicle-detail"><span class="vehicle-detail-label">Placa</span><div class="vehicle-detail-value">@Model.Input.Placa</div></div>
+                    </div>
+                    <div>
+                        <label asp-for="Input.VendedorId" class="vehicle-label">Vendedor da venda</label>
+                        @if (Model.Vendedores.Any())
+                        {
+                            <div class="vehicle-input">
+                                <select asp-for="Input.VendedorId" data-no-select2="true">
+                                    <option value="0">Selecione o vendedor</option>
+                                    @foreach (var vendedor in Model.Vendedores)
+                                    {
+                                        <option value="@vendedor.Id">@vendedor.Nome @(string.IsNullOrWhiteSpace(vendedor.Loja) ? string.Empty : $"- {vendedor.Loja}")</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="vehicle-empty">Nenhum vendedor cadastrado. Cadastre em <a href="/Vendedor">Vendedor</a>.</div>
+                        }
+                        <span asp-validation-for="Input.VendedorId" class="field-validation-error"></span>
+                    </div>
+                    <div class="vehicle-actions">
+                        <button type="submit" class="btn-vehicle-primary">Confirmar venda</button>
+                        <a asp-page="/Admin/VeiculosVenda" asp-route-search="@Model.Search" class="btn-vehicle-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
