@@ -85,7 +85,9 @@ public static class IdentitySeed
         await EnsureRoleMenusAsync(db, roleManager, officeRoleName, menu =>
             string.Equals(menu.Url, "/Admin", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(menu.Url, "/Admin/VeiculosVenda", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(menu.Url, "/Veiculo/Importar", StringComparison.OrdinalIgnoreCase));
+            string.Equals(menu.Url, "/Admin/ConferenciaEstoque", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(menu.Url, "/Veiculo/ImportaJSON", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(menu.Url, "/Veiculo/ImportaMidia", StringComparison.OrdinalIgnoreCase));
     }
 
     private static async Task<List<AspNetMenu>> EnsureBaseMenusAsync(ApplicationDbContext db)
@@ -133,8 +135,10 @@ public static class IdentitySeed
         var principal = EnsureMenu("Principal", 10, "Grupo principal do painel.");
         EnsureMenu("Dashboard", 11, icone: "bi bi-speedometer2", url: "/Admin", menuPaiId: principal.Id);
         EnsureMenu("Veiculos", 12, icone: "bi bi-car-front-fill", url: "/Veiculo", menuPaiId: principal.Id);
-        EnsureMenu("Importar Veiculos", 13, descricao: "Importacao de veiculos do site antigo.", icone: "bi bi-box-arrow-in-down", url: "/Veiculo/Importar", menuPaiId: principal.Id);
-        EnsureMenu("Venda de Veículos", 14, descricao: "Operação de venda dos veículos.", icone: "bi bi-clipboard-check-fill", url: "/Admin/VeiculosVenda", menuPaiId: principal.Id);
+        EnsureMenu("Importar JSON", 13, descricao: "Importacao de veiculos via arquivo JSON legado.", icone: "bi bi-filetype-json", url: "/Veiculo/ImportaJSON", menuPaiId: principal.Id);
+        EnsureMenu("Importar Midia", 14, descricao: "Importacao de fotos legadas para os veiculos.", icone: "bi bi-images", url: "/Veiculo/ImportaMidia", menuPaiId: principal.Id);
+        EnsureMenu("Venda de Veículos", 15, descricao: "Operação de venda dos veículos.", icone: "bi bi-clipboard-check-fill", url: "/Admin/VeiculosVenda", menuPaiId: principal.Id);
+        EnsureMenu("Conferencia Estoque", 16, descricao: "Conferencia de estoque por planilha Excel.", icone: "bi bi-file-earmark-spreadsheet", url: "/Admin/ConferenciaEstoque", menuPaiId: principal.Id);
 
         var cadastros = EnsureMenu("Cadastros", 20, "Cadastros base do sistema.");
         EnsureMenu("Lojas", 21, icone: "bi bi-shop", url: "/Loja", menuPaiId: cadastros.Id);
@@ -203,15 +207,6 @@ public static class IdentitySeed
             .Select(link => link.MenuId)
             .ToHashSet();
 
-        var linksToRemove = existingLinks
-            .Where(link => !allowedMenuIds.Contains(link.MenuId))
-            .ToList();
-
-        if (linksToRemove.Count > 0)
-        {
-            db.MenuRoles.RemoveRange(linksToRemove);
-        }
-
         var linksToAdd = allowedMenuIds
             .Where(menuId => !existingMenuIds.Contains(menuId))
             .Select(menuId => new AspNetMenuRole
@@ -221,7 +216,7 @@ public static class IdentitySeed
             })
             .ToList();
 
-        if (linksToAdd.Count == 0 && linksToRemove.Count == 0)
+        if (linksToAdd.Count == 0)
         {
             return;
         }

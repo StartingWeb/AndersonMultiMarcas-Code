@@ -1,4 +1,4 @@
-@model Project.Pages.CatalogoModel.CatalogVehicleItem
+﻿@model Project.Pages.CatalogoModel.CatalogVehicleItem
 
 <article class="vehicle-card catalog-card">
     <a asp-page="/Veiculo" asp-route-id="@Model.Id" class="card-link-cover" aria-label="Abrir detalhes de @Model.Titulo"></a>
@@ -7,12 +7,15 @@
         <img src="@Model.ImageUrl"
              alt="@Model.Titulo"
              class="vehicle-thumb"
-             loading="lazy" />
+             width="640"
+             height="480"
+             loading="lazy"
+             decoding="async"
+             fetchpriority="low" />
         <span class="vehicle-tag">@Model.Tag</span>
     </div>
 
     <div class="vehicle-body">
-        <div class="catalog-brandline">@Model.Marca • @(Model.Ano?.ToString() ?? "Ano não informado")</div>
         <div class="vehicle-name">@Model.Titulo</div>
 
         @if (!string.IsNullOrWhiteSpace(Model.Highlight))
@@ -25,21 +28,40 @@
             <span>@Model.Combustivel</span>
         </div>
 
-        <div class="vehicle-meta">
-            @(Model.Quilometragem.HasValue ? $"{Model.Quilometragem.Value:N0} km rodados" : "Quilometragem não informada")
-        </div>
+        @{
+            var isZeroKm = !Model.Seminovo;
+        }
+
+        @if (isZeroKm || Model.Quilometragem.HasValue)
+        {
+            <div class="vehicle-meta">
+                @if (isZeroKm)
+                {
+                    @:0 km
+                }
+                else
+                {
+                    @($"{Model.Quilometragem!.Value:N0} km rodados")
+                }
+            </div>
+        }
 
         <div class="vehicle-price">
-            @(Model.Preco.HasValue ? Model.Preco.Value.ToString("C0", new System.Globalization.CultureInfo("pt-BR")) : "Consulte")
+            @(Model.Preco.HasValue ? Model.Preco.Value.ToBrazilianCurrency() : "Consulte")
         </div>
 
         @if (Model.PrecoDe.HasValue)
         {
-            <div class="catalog-price-old">De @Model.PrecoDe.Value.ToString("C0", new System.Globalization.CultureInfo("pt-BR"))</div>
+            <div class="catalog-price-old">De @Model.PrecoDe.Value.ToBrazilianCurrency()</div>
         }
 
         <div class="catalog-actions d-grid gap-2">
-            <a href="@Model.WhatsappUrl" target="_blank" class="btn btn-outline-brand w-100">Tenho interesse</a>
+            <button type="button"
+                    class="btn btn-outline-brand w-100"
+                    data-whatsapp-modal="true"
+                    data-vehicle-title="@Model.Titulo">
+                Tenho interesse
+            </button>
         </div>
     </div>
 </article>

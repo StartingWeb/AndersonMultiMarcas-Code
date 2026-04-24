@@ -1,0 +1,176 @@
+@page
+@model Project.Pages.Admin.ConferenciaEstoqueModel
+@{
+    ViewData["Title"] = "Conferencia de Estoque";
+    ViewData["TopbarTitle"] = "Conferencia de Estoque";
+    ViewData["TopbarSubtitle"] = "Envie a planilha e baixe o resultado da conferencia";
+    Layout = "_LayoutAdmin";
+}
+
+<section class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        <h2 class="h5 mb-3">Conferencia por planilha Excel</h2>
+        <p class="text-muted mb-4">Upload de arquivo <strong>.xlsx</strong> com leitura de blocos e validacao contra os veiculos do site.</p>
+
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger" role="alert">
+                @Model.ErrorMessage
+            </div>
+        }
+        @if (TempData["Success"] is string success && !string.IsNullOrWhiteSpace(success))
+        {
+            <div class="alert alert-success" role="alert">
+                @success
+            </div>
+        }
+        @if (TempData["Error"] is string error && !string.IsNullOrWhiteSpace(error))
+        {
+            <div class="alert alert-danger" role="alert">
+                @error
+            </div>
+        }
+
+        <form method="post" asp-page-handler="Processar" enctype="multipart/form-data" class="row g-3">
+            <div class="col-12 col-lg-8">
+                <label asp-for="Arquivo" class="form-label">Arquivo Excel</label>
+                <input asp-for="Arquivo" type="file" class="form-control" accept=".xlsx" />
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-dark">Processar arquivo</button>
+            </div>
+        </form>
+
+        @if (Model.ResultadoDisponivel)
+        {
+            <hr class="my-4" />
+
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">Carros cadastrados</div>
+                        <div class="fs-4 fw-bold">@Model.TotalCarrosCadastrados</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">Nao encontrados</div>
+                        <div class="fs-4 fw-bold text-danger">@Model.TotalCarrosNaoEncontrados</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">Diferentes</div>
+                        <div class="fs-4 fw-bold text-warning">@Model.TotalCarrosDiferentes</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <div class="d-flex gap-2 flex-wrap">
+                    <a asp-page-handler="Download" asp-route-token="@Model.DownloadToken" class="btn btn-success">
+                        Baixar arquivo de conferencia
+                    </a>
+                    <a asp-page-handler="DownloadNaoEncontrados" asp-route-token="@Model.DownloadToken" class="btn btn-outline-danger">
+                        Baixar nao encontrados
+                    </a>
+                    <form method="post" asp-page-handler="Corrigir" class="d-inline">
+                        <input type="hidden" name="token" value="@Model.DownloadToken" />
+                        <button type="submit" class="btn btn-primary">Corrigir no site (por placa)</button>
+                    </form>
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalConfirmarCadastroNaoEncontrados">
+                        Cadastrar nao encontrados
+                    </button>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.DownloadFileName))
+                {
+                    <div class="small text-muted mt-2">@Model.DownloadFileName</div>
+                }
+            </div>
+
+            @if (Model.ExibirProgressoCadastro)
+            {
+                <div class="mt-4 border rounded p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong>Progresso do cadastro dos nao encontrados</strong>
+                        <span id="cadastro-progress-percent">0%</span>
+                    </div>
+                    <div class="progress" role="progressbar" aria-label="Progresso de cadastro">
+                        <div id="cadastro-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%;">0%</div>
+                    </div>
+                    <div class="small text-muted mt-2" id="cadastro-progress-text">Preparando...</div>
+                </div>
+            }
+        }
+    </div>
+</section>
+
+@if (Model.ResultadoDisponivel)
+{
+    <div class="modal fade" id="modalConfirmarCadastroNaoEncontrados" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar cadastro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    Deseja cadastrar no site todos os veiculos marcados como nao encontrados?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form method="post" asp-page-handler="IniciarCadastroNaoEncontrados" class="d-inline">
+                        <input type="hidden" name="token" value="@Model.DownloadToken" />
+                        <button type="submit" class="btn btn-warning">Sim, cadastrar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (Model.ExibirProgressoCadastro && !string.IsNullOrWhiteSpace(Model.CadastroJobId))
+{
+    <script>
+        (() => {
+            const jobId = '@Model.CadastroJobId';
+            const progressBar = document.getElementById('cadastro-progress-bar');
+            const percentLabel = document.getElementById('cadastro-progress-percent');
+            const progressText = document.getElementById('cadastro-progress-text');
+            if (!jobId || !progressBar || !percentLabel || !progressText) return;
+
+            const update = async () => {
+                try {
+                    const response = await fetch(`?handler=CadastroProgresso&jobId=${encodeURIComponent(jobId)}`, { cache: 'no-store' });
+                    if (!response.ok) return;
+                    const data = await response.json();
+                    if (!data || data.found !== true) return;
+
+                    const percent = Number.isFinite(data.percentual) ? data.percentual : 0;
+                    const safePercent = Math.max(0, Math.min(100, percent));
+                    progressBar.style.width = `${safePercent}%`;
+                    progressBar.textContent = `${safePercent}%`;
+                    percentLabel.textContent = `${safePercent}%`;
+                    progressText.textContent = `${data.processados}/${data.total} processados | ${data.cadastrados} cadastrados | ${data.ignorados} ignorados${data.mensagem ? ` | ${data.mensagem}` : ''}`;
+
+                    if (data.completed === true) {
+                        progressBar.classList.remove('progress-bar-animated');
+                        if (safePercent < 100) {
+                            progressBar.style.width = '100%';
+                            progressBar.textContent = '100%';
+                            percentLabel.textContent = '100%';
+                        }
+                        return;
+                    }
+
+                    window.setTimeout(update, 900);
+                } catch {
+                    window.setTimeout(update, 1200);
+                }
+            };
+
+            update();
+        })();
+    </script>
+}

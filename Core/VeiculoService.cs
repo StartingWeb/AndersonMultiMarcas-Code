@@ -92,7 +92,7 @@ public class VeiculoService : IVeiculoService
             }
 
             veiculoBanco.LojaId = veiculo.LojaId;
-            veiculoBanco.Titulo = veiculo.Titulo;
+            veiculoBanco.Titulo = MontarTituloVeiculo(veiculo);
             veiculoBanco.MarcaId = veiculo.MarcaId;
             veiculoBanco.VendedorId = veiculo.VendedorId;
 
@@ -106,17 +106,14 @@ public class VeiculoService : IVeiculoService
             veiculoBanco.Quilometragem = veiculo.Quilometragem;
 
             veiculoBanco.Placa = veiculo.Placa;
-            veiculoBanco.Chassi = veiculo.Chassi;
-            veiculoBanco.Renavam = veiculo.Renavam;
 
             veiculoBanco.PrecoVenda = veiculo.PrecoVenda;
-            veiculoBanco.PrecoPromocional = veiculo.PrecoPromocional;
-            veiculoBanco.PrecoFipe = veiculo.PrecoFipe;
 
             veiculoBanco.AceitaTroca = veiculo.AceitaTroca;
             veiculoBanco.Financiavel = veiculo.Financiavel;
             veiculoBanco.Destaque = veiculo.Destaque;
             veiculoBanco.Seminovo = veiculo.Seminovo;
+            veiculoBanco.MotoEletrica = veiculo.MotoEletrica;
 
             veiculoBanco.Ativo = veiculo.Ativo;
 
@@ -263,6 +260,7 @@ public class VeiculoService : IVeiculoService
                 .Include(x => x.VendidoPorUsuario)
                 .Include(x => x.Caracteristica)
                 .Include(x => x.Midias)
+                .AsSplitQuery()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id);
 
@@ -310,6 +308,7 @@ public class VeiculoService : IVeiculoService
                 .Include(x => x.VendidoPorUsuario)
                 .Include(x => x.Caracteristica)
                 .Include(x => x.Midias)
+                .AsSplitQuery()
                 .AsNoTracking()
                 .OrderByDescending(x => x.DataCadastro)
                 .ToListAsync();
@@ -410,6 +409,7 @@ public class VeiculoService : IVeiculoService
                 .Include(x => x.VendidoPorUsuario)
                 .Include(x => x.Caracteristica)
                 .Include(x => x.Midias)
+                .AsSplitQuery()
                 .AsNoTracking()
                 .Where(x => x.Ativo && !x.Vendido)
                 .OrderByDescending(x => x.DataCadastro)
@@ -461,6 +461,7 @@ public class VeiculoService : IVeiculoService
                 .Include(x => x.VendidoPorUsuario)
                 .Include(x => x.Caracteristica)
                 .Include(x => x.Midias)
+                .AsSplitQuery()
                 .AsNoTracking()
                 .Where(x => x.LojaId == lojaId)
                 .OrderByDescending(x => x.DataCadastro)
@@ -512,6 +513,7 @@ public class VeiculoService : IVeiculoService
                 .Include(x => x.VendidoPorUsuario)
                 .Include(x => x.Caracteristica)
                 .Include(x => x.Midias)
+                .AsSplitQuery()
                 .AsNoTracking()
                 .Where(x => x.MarcaId == marcaId)
                 .OrderByDescending(x => x.DataCadastro)
@@ -563,6 +565,7 @@ public class VeiculoService : IVeiculoService
                 .Include(x => x.VendidoPorUsuario)
                 .Include(x => x.Caracteristica)
                 .Include(x => x.Midias)
+                .AsSplitQuery()
                 .AsNoTracking()
                 .Where(x => x.VendedorId == vendedorId)
                 .OrderByDescending(x => x.DataCadastro)
@@ -603,8 +606,13 @@ public class VeiculoService : IVeiculoService
         if (veiculo.MarcaId <= 0)
             return Erro("Marca inválida.", "MarcaId menor ou igual a zero.");
 
+        veiculo.Titulo = MontarTituloVeiculo(veiculo);
+
+        if (veiculo.IdLegado.HasValue && veiculo.IdLegado.Value <= 0)
+            return Erro("O Id legado informado é inválido.", "Campo IdLegado menor ou igual a zero.");
+
         if (string.IsNullOrWhiteSpace(veiculo.Titulo))
-            return Erro("Informe o título do veículo.", "Campo Titulo obrigatório.");
+            return Erro("Informe o modelo do veículo.", "Campo Modelo/Titulo obrigatório.");
 
         if (veiculo.Titulo.Length > 150)
             return Erro("O título deve ter no máximo 150 caracteres.", "Campo Titulo excedeu limite.");
@@ -627,12 +635,6 @@ public class VeiculoService : IVeiculoService
         if (!string.IsNullOrWhiteSpace(veiculo.Placa) && veiculo.Placa.Length > 20)
             return Erro("A placa deve ter no máximo 20 caracteres.", "Campo Placa excedeu limite.");
 
-        if (!string.IsNullOrWhiteSpace(veiculo.Chassi) && veiculo.Chassi.Length > 50)
-            return Erro("O chassi deve ter no máximo 50 caracteres.", "Campo Chassi excedeu limite.");
-
-        if (!string.IsNullOrWhiteSpace(veiculo.Renavam) && veiculo.Renavam.Length > 50)
-            return Erro("O renavam deve ter no máximo 50 caracteres.", "Campo Renavam excedeu limite.");
-
         if (!string.IsNullOrWhiteSpace(veiculo.Descricao) && veiculo.Descricao.Length > 1000)
             return Erro("A descrição deve ter no máximo 1000 caracteres.", "Campo Descricao excedeu limite.");
 
@@ -654,12 +656,6 @@ public class VeiculoService : IVeiculoService
         if (veiculo.PrecoVenda.HasValue && veiculo.PrecoVenda < 0)
             return Erro("Preço de venda inválido.", "PrecoVenda menor que zero.");
 
-        if (veiculo.PrecoPromocional.HasValue && veiculo.PrecoPromocional < 0)
-            return Erro("Preço promocional inválido.", "PrecoPromocional menor que zero.");
-
-        if (veiculo.PrecoFipe.HasValue && veiculo.PrecoFipe < 0)
-            return Erro("Preço FIPE inválido.", "PrecoFipe menor que zero.");
-
         var lojaExiste = await _context.Lojas.AnyAsync(x => x.Id == veiculo.LojaId);
         if (!lojaExiste)
             return Erro("Loja não encontrada.", "FK LojaId não existe.");
@@ -673,6 +669,16 @@ public class VeiculoService : IVeiculoService
             var vendedorExiste = await _context.Vendedores.AnyAsync(x => x.Id == veiculo.VendedorId.Value);
             if (!vendedorExiste)
                 return Erro("Vendedor não encontrado.", "FK VendedorId não existe.");
+        }
+
+        if (veiculo.IdLegado.HasValue)
+        {
+            var idLegadoDuplicado = await _context.Veiculos.AnyAsync(x =>
+                x.IdLegado == veiculo.IdLegado.Value &&
+                x.Id != veiculo.Id);
+
+            if (idLegadoDuplicado)
+                return Erro("Já existe um veículo com este Id legado.", "Campo IdLegado duplicado.");
         }
 
         if (veiculo.Vendido && !veiculo.DataVenda.HasValue)
@@ -708,6 +714,21 @@ public class VeiculoService : IVeiculoService
             UserMessage = userMessage,
             DebugMessage = debugMessage
         };
+    }
+
+    private static string MontarTituloVeiculo(Veiculo veiculo)
+    {
+        if (!string.IsNullOrWhiteSpace(veiculo.Modelo))
+        {
+            return veiculo.Modelo.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(veiculo.Titulo))
+        {
+            return veiculo.Titulo.Trim();
+        }
+
+        return string.Empty;
     }
 
     private void ExcluirArquivoFisicoSeExistir(string? urlRelativa)

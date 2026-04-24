@@ -1,23 +1,32 @@
-using Data;
+﻿using Data;
 using Domain.Application;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Net.Http.Headers;
 using Project.Config;
+using System.IO.Compression;
+using System.Globalization;
 
-var Producao = false;
+var Producao = true;
 var builder = WebApplication.CreateBuilder(args);
+var ptBrCulture = new CultureInfo("pt-BR");
+
+CultureInfo.DefaultThreadCurrentCulture = ptBrCulture;
+CultureInfo.DefaultThreadCurrentUICulture = ptBrCulture;
 
 // BANCO
 if (Producao)
 {
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
         options.UseSqlServer(
             builder.Configuration.GetConnectionString("DefaultConnectionProd")));
 }
 else
 {
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
         options.UseSqlServer(
             builder.Configuration.GetConnectionString("DefaultConnectionDev")));
 }
@@ -35,13 +44,28 @@ builder.Services
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
-// SEUS SERVIÇOS
+// SEUS SERVICOS
 builder.Services.AddProjectDependencies();
 
 builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizeFolder("/Admin");
     options.Conventions.AllowAnonymousToPage("/Admin/Login");
+});
+
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+});
+
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
+
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
 });
 
 builder.Services.ConfigureApplicationCookie(options =>
@@ -53,6 +77,13 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 var app = builder.Build();
+
+var localizationOptions = new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture(ptBrCulture),
+    SupportedCultures = [ptBrCulture],
+    SupportedUICultures = [ptBrCulture]
+};
 
 if (app.Environment.IsDevelopment())
 {
@@ -86,8 +117,36 @@ await using (var scope = app.Services.CreateAsyncScope())
     }
 }
 
+app.UseResponseCompression();
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = context =>
+    {
+        var extension = Path.GetExtension(context.File.Name);
+        if (string.IsNullOrWhiteSpace(extension))
+        {
+            return;
+        }
+
+        var headers = context.Context.Response.Headers;
+        var cacheDuration = extension.ToLowerInvariant() switch
+        {
+            ".css" or ".js" => TimeSpan.FromDays(30),
+            ".png" or ".jpg" or ".jpeg" or ".webp" or ".svg" or ".ico" or ".woff" or ".woff2" => TimeSpan.FromDays(30),
+            ".mp4" => TimeSpan.FromDays(7),
+            _ => TimeSpan.Zero
+        };
+
+        if (cacheDuration <= TimeSpan.Zero)
+        {
+            return;
+        }
+
+        headers[HeaderNames.CacheControl] = $"public,max-age={(int)cacheDuration.TotalSeconds}";
+    }
+});
+app.UseRequestLocalization(localizationOptions);
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();

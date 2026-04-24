@@ -1,4 +1,4 @@
-@model Project.Catalog.VehicleCatalogItem
+﻿@model Project.Catalog.VehicleCatalogItem
 
 <article class="vehicle-card catalog-card">
     <a asp-page="/Veiculo" asp-route-slug="@Model.Slug" class="catalog-thumb @(Model.Photos.Count > 1 ? "catalog-thumb-carousel" : null)" data-catalog-carousel>
@@ -49,7 +49,6 @@
     </a>
 
     <div class="vehicle-body">
-        <div class="catalog-brandline">@Model.Brand • @Model.Year</div>
         <div class="vehicle-name">@Model.Model</div>
         <div class="catalog-highlight-text">@Model.Highlight</div>
 
@@ -60,13 +59,16 @@
         </div>
 
         <div class="vehicle-meta">@Model.Mileage.ToString("N0") km rodados</div>
-        <div class="vehicle-price">@Model.Price.ToString("C0", new System.Globalization.CultureInfo("pt-BR"))</div>
+        <div class="vehicle-price">@Model.Price.ToBrazilianCurrency()</div>
 
         <div class="catalog-actions d-grid gap-2">
             <a asp-page="/Veiculo" asp-route-slug="@Model.Slug" class="btn btn-brand w-100">Ver detalhes</a>
-            <a href="@($"https://wa.me/551632523490?text=Ol%C3%A1%2C%20quero%20mais%20detalhes%20do%20{Uri.EscapeDataString($"{Model.Brand} {Model.Model}")}")" target="_blank" class="btn btn-outline-brand w-100">
+            <button type="button"
+                    class="btn btn-outline-brand w-100"
+                    data-whatsapp-modal="true"
+                    data-vehicle-title="@($"{Model.Brand} {Model.Model}")">
                 Tenho interesse
-            </a>
+            </button>
         </div>
     </div>
 </article>

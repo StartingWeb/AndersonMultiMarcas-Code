@@ -1,0 +1,387 @@
+.contact-page-section {
+    padding-top: 5.5rem;
+}
+
+.contact-section-header {
+    margin-bottom: 1.35rem;
+}
+
+.contact-store-accordion {
+    display: grid;
+    gap: 1rem;
+}
+
+.contact-store-card {
+    border-radius: 1.15rem;
+    border: 1px solid rgba(166, 29, 36, .10);
+    background: linear-gradient(180deg, #ffffff 0%, #fffafb 100%);
+    box-shadow: 0 14px 34px rgba(127, 20, 25, .08);
+}
+
+.contact-store-summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 1.15rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.contact-store-summary::-webkit-details-marker {
+    display: none;
+}
+
+.contact-store-summary-main h3 {
+    font-size: 1.2rem;
+    margin: .3rem 0;
+    font-weight: 800;
+    color: #7f1419;
+}
+
+.contact-store-summary-main p {
+    margin: 0;
+    color: #6b7280;
+    font-size: .94rem;
+}
+
+.contact-store-summary-side {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    flex-shrink: 0;
+}
+
+.contact-store-summary-metric {
+    display: grid;
+    text-align: right;
+}
+
+.contact-store-summary-metric strong {
+    font-size: 1.1rem;
+    color: #4b0f14;
+}
+
+.contact-store-summary-metric span {
+    font-size: .78rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.contact-store-summary-icon {
+    width: 14px;
+    height: 14px;
+    border-right: 2px solid #7f1419;
+    border-bottom: 2px solid #7f1419;
+    transform: rotate(45deg);
+    transition: transform .2s ease;
+}
+
+.contact-store-card[open] .contact-store-summary-icon {
+    transform: rotate(225deg);
+}
+
+.contact-store-content {
+    padding: 0 1.25rem 1.25rem;
+    display: grid;
+    gap: .9rem;
+}
+
+.contact-store-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: .35rem .65rem;
+    border-radius: 999px;
+    background: rgba(166, 29, 36, .08);
+    color: var(--brand-primary);
+    font-size: .74rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.contact-store-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .75rem;
+}
+
+.contact-info-card {
+    border-radius: .95rem;
+    border: 1px solid rgba(166, 29, 36, .10);
+    background: linear-gradient(180deg, #fffefe 0%, #fff5f5 100%);
+    padding: .78rem .85rem;
+}
+
+.contact-info-card-action {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.contact-info-label {
+    display: block;
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-weight: 800;
+    color: #6b7280;
+    margin-bottom: .45rem;
+}
+
+.contact-info-card strong,
+.contact-info-card a {
+    color: #4b0f14;
+    font-size: .94rem;
+    line-height: 1.35;
+    font-weight: 700;
+}
+
+.contact-info-card a:hover {
+    color: var(--brand-primary);
+}
+
+.contact-store-expand-grid {
+    display: grid;
+    grid-template-columns: minmax(220px, .62fr) minmax(0, 1.38fr);
+    gap: .9rem;
+    align-items: start;
+}
+
+.contact-store-map {
+    min-height: 150px;
+    height: 150px;
+    background: #f8e8e8;
+    border-radius: 1rem;
+    overflow: hidden;
+    border: 1px solid rgba(166, 29, 36, .10);
+    position: sticky;
+    top: 1rem;
+}
+
+.contact-store-map iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.contact-map-button {
+    padding-inline: 1rem;
+    min-height: 42px;
+    width: fit-content;
+}
+
+.contact-store-sellers-panel {
+    border-radius: 1rem;
+    border: 1px solid rgba(166, 29, 36, .10);
+    background: linear-gradient(180deg, #fffefe 0%, #fff7f7 100%);
+    padding: .95rem;
+}
+
+.contact-store-sellers-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: .9rem;
+}
+
+.contact-store-sellers-header h4 {
+    margin: 0;
+    color: #7f1419;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.contact-store-sellers-header span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: rgba(166, 29, 36, .08);
+    color: var(--brand-primary);
+    font-weight: 800;
+}
+
+.contact-empty-inline {
+    border-radius: .9rem;
+    border: 1px dashed rgba(166, 29, 36, .16);
+    background: #fff;
+    color: #6b7280;
+    padding: 1rem;
+    text-align: center;
+    font-size: .92rem;
+}
+
+.contact-seller-list {
+    display: grid;
+    gap: .7rem;
+}
+
+.contact-seller-list-item {
+    display: grid;
+    grid-template-columns: 68px minmax(0, 1fr) auto;
+    gap: .85rem;
+    align-items: center;
+    padding: .8rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(166, 29, 36, .10);
+    background: #fff;
+}
+
+.contact-seller-list-media {
+    width: 68px;
+}
+
+.contact-seller-list-photo {
+    width: 68px;
+    height: 68px;
+    object-fit: cover;
+    border-radius: .9rem;
+    background: linear-gradient(135deg, #f3d8d8, #fff1f1);
+}
+
+.contact-seller-photo-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #7f1419 0%, #c62830 100%);
+    color: #fff;
+}
+
+.contact-seller-photo-fallback i {
+    font-size: 2.2rem;
+}
+
+.contact-seller-list-body {
+    min-width: 0;
+}
+
+.contact-seller-store {
+    display: inline-block;
+    margin-bottom: .4rem;
+    color: var(--brand-primary);
+    font-size: .72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+}
+
+.contact-seller-list-body h3 {
+    font-size: 1.08rem;
+    font-weight: 800;
+    margin-bottom: .2rem;
+    color: #7f1419;
+}
+
+.contact-seller-role {
+    color: #6b7280;
+    margin-bottom: .7rem;
+    font-size: .85rem;
+}
+
+.contact-seller-list-actions {
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+    min-width: 132px;
+}
+
+.contact-action-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    border-radius: .8rem;
+    border: 1px solid rgba(166, 29, 36, .12);
+    background: linear-gradient(180deg, #fffefe 0%, #fff2f2 100%);
+    color: #5b1418;
+    padding: .62rem .72rem;
+    font-weight: 700;
+    font-size: .82rem;
+    line-height: 1;
+}
+
+.contact-action-link:hover {
+    border-color: rgba(166, 29, 36, .18);
+    color: var(--brand-primary);
+}
+
+.contact-action-icon {
+    width: .95rem;
+    height: .95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 .95rem;
+}
+
+.contact-action-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.contact-action-link.is-whatsapp {
+    background: #effbf4;
+    border-color: #ccefd8;
+    color: #15803d;
+}
+
+.contact-action-link.is-whatsapp:hover {
+    background: #25D366;
+    border-color: #25D366;
+    color: #fff;
+}
+
+@media (max-width: 991.98px) {
+    .contact-store-grid,
+    .contact-store-expand-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-store-map {
+        position: static;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .contact-page-section {
+        padding-top: 4rem;
+    }
+
+    .contact-store-summary {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .contact-store-summary-side {
+        justify-content: space-between;
+    }
+
+    .contact-store-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-store-map {
+        min-height: 140px;
+        height: 140px;
+    }
+
+    .contact-seller-list-item {
+        grid-template-columns: 56px minmax(0, 1fr);
+    }
+
+    .contact-seller-list-media,
+    .contact-seller-list-photo {
+        width: 56px;
+        height: 56px;
+    }
+
+    .contact-seller-list-actions {
+        grid-column: 1 / -1;
+        min-width: 0;
+    }
+}

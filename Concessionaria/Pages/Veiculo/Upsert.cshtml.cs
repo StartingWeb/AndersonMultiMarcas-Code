@@ -110,6 +110,13 @@ public class UpsertModel : PageModel
     {
         await CarregarCombosAsync();
 
+        Veiculo.Titulo = string.IsNullOrWhiteSpace(Veiculo.Modelo)
+            ? (Veiculo.Titulo ?? string.Empty).Trim()
+            : Veiculo.Modelo.Trim();
+
+        ModelState.Remove($"{nameof(Veiculo)}.{nameof(Veiculo.Titulo)}");
+        TryValidateModel(Veiculo, nameof(Veiculo));
+
         var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (Veiculo.Vendido &&
             Veiculo.VendidoPorUsuarioId == null &&

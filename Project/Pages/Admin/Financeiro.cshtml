@@ -133,13 +133,13 @@
 
         <article class="financial-metric revenue">
             <div class="financial-metric-label">Faturamento bruto</div>
-            <div class="financial-metric-value">@Model.Resumo.FaturamentoBruto.ToString("C0", culture)</div>
+            <div class="financial-metric-value">@Model.Resumo.FaturamentoBruto.ToBrazilianCurrency()</div>
             <div class="financial-metric-help">Soma do valor principal de cada veículo vendido.</div>
         </article>
 
         <article class="financial-metric ticket">
             <div class="financial-metric-label">Ticket médio</div>
-            <div class="financial-metric-value">@Model.Resumo.TicketMedio.ToString("C0", culture)</div>
+            <div class="financial-metric-value">@Model.Resumo.TicketMedio.ToBrazilianCurrency()</div>
             <div class="financial-metric-help">Faturamento dividido pelo total de vendas do período.</div>
         </article>
     </section>
@@ -166,7 +166,7 @@
                                 <div class="financial-detail"><span class="financial-detail-label">Placa</span><div class="financial-detail-value">@item.Placa</div></div>
                                 <div class="financial-detail"><span class="financial-detail-label">Data venda</span><div class="financial-detail-value">@item.DataVenda.ToString("dd/MM/yyyy")</div></div>
                             </div>
-                            <div class="financial-money">@item.ValorVenda.ToString("C0", culture)</div>
+                            <div class="financial-money">@item.ValorVenda.ToBrazilianCurrency()</div>
                         </article>
                     }
                 </div>

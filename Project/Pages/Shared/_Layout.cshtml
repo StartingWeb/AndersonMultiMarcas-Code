@@ -1,6 +1,60 @@
-﻿@{
+@using Data
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+@{
     var title = ViewData["Title"] as string ?? "Anderson Multimarcas";
     var showHero = ViewData["ShowHero"] as bool? ?? true;
+    var currentPath = Context.Request.Path.Value ?? string.Empty;
+    var lojasContato = await DbContext.Lojas
+        .AsNoTracking()
+        .Where(loja => loja.Ativo && loja.Telefone != null && loja.Telefone != string.Empty)
+        .OrderBy(loja => loja.Nome)
+        .Select(loja => new
+        {
+            loja.Nome,
+            loja.Telefone
+        })
+        .ToListAsync();
+
+    string NavClass(string targetPath) =>
+        string.Equals(currentPath, targetPath, StringComparison.OrdinalIgnoreCase)
+            ? "active"
+            : string.Empty;
+
+    string SomenteDigitos(string? valor) =>
+        new string((valor ?? string.Empty).Where(char.IsDigit).ToArray());
+
+    string NumeroDiscagem(string? valor)
+    {
+        var digitos = SomenteDigitos(valor);
+        if (string.IsNullOrWhiteSpace(digitos))
+        {
+            return string.Empty;
+        }
+
+        if (digitos.StartsWith("55", StringComparison.Ordinal))
+        {
+            return $"+{digitos}";
+        }
+
+        return $"+55{digitos}";
+    }
+
+    string LinkWhatsapp(string? valor)
+    {
+        var digitos = SomenteDigitos(valor);
+        if (string.IsNullOrWhiteSpace(digitos))
+        {
+            return "#";
+        }
+
+        if (digitos.StartsWith("55", StringComparison.Ordinal))
+        {
+            return $"https://wa.me/{digitos}";
+        }
+
+        return $"https://wa.me/55{digitos}";
+    }
 }
 
 <!DOCTYPE html>
@@ -10,13 +64,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@title - Anderson Multimarcas</title>
     <meta name="description" content="Anderson Multimarcas - veículos seminovos e zero km com atendimento personalizado em Taquaritinga/SP." />
+    <link rel="apple-touch-icon" sizes="180x180" href="~/favicon/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="~/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="~/favicon/favicon-16x16.png" />
+    <link rel="icon" type="image/x-icon" href="~/favicon/favicon.ico" />
+    <link rel="manifest" href="~/favicon/site.webmanifest" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="~/css/Layout.css" />
-    <link rel="stylesheet" href="~/css/VehicleCard.css" />
+    <link rel="stylesheet" href="~/css/Layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/VehicleCard.css" asp-append-version="true" />
+    @RenderSection("Styles", required: false)
 </head>
 <body id="topo">
 
@@ -30,45 +90,15 @@
 
             <div class="nav-menu-wrap" id="mobileMenu">
                 <ul class="nav-menu ms-lg-auto">
-                    <li><a asp-page="/Index">Início</a></li>
-                    <li><a asp-page="/Catalogo">Estoque</a></li>
+                    <li><a asp-page="/Index" class="@NavClass("/Index")">Início</a></li>
+                    <li><a asp-page="/Catalogo" class="@NavClass("/Catalogo")">Estoque</a></li>
                     <li><a asp-page="/Index" asp-fragment="troque-seu-carro">Troque seu carro</a></li>
-                    <li><a asp-page="/Empresa">Quem somos</a></li>
-                    <li><a asp-page="/Contato">Contato</a></li>
+                    <li><a asp-page="/Empresa" class="@NavClass("/Empresa")">Quem somos</a></li>
+                    <li><a asp-page="/Contato" class="@NavClass("/Contato")">Contato</a></li>
                 </ul>
             </div>
         </div>
     </nav>
-
-    @if (showHero)
-    {
-        <section id="heroSection" class="hero">
-            <video class="hero-video" autoplay muted loop playsinline>
-                <source src="/video/videoHome.mp4" type="video/mp4" />
-                Seu navegador não suporta vídeo em HTML5.
-            </video>
-
-            <div class="hero-overlay"></div>
-
-            <div class="container hero-content">
-                <div class="hero-search-modal">
-                    <div class="search-box">
-                        <div class="text-center mb-4">
-                            <img src="/img/logo.png"
-                                 alt="Anderson Multimarcas"
-                                 class="img-fluid"
-                                 style="max-width: 240px; width: 100%; filter: drop-shadow(0 10px 25px rgba(0,0,0,.18));" />
-
-                            <div class="search-title mt-3 mb-0">Encontre seu veículo</div>
-                            <p class="search-subtitle mb-0">Pesquise de forma ampla por marca, modelo ou ano.</p>
-                        </div>
-
-                        <partial name="_SiteSearchAutocomplete" />
-                    </div>
-                </div>
-            </div>
-        </section>
-    }
 
     <main>
         @RenderBody()
@@ -120,9 +150,24 @@
                     <h6 class="text-white fw-bold mb-3">Contato</h6>
                     <div class="d-flex flex-column gap-2">
                         <span>Taquaritinga/SP</span>
-                        <a href="tel:+551632523490">(16) 3252-3490</a>
-                        <a href="https://wa.me/551632523490" target="_blank">WhatsApp</a>
-                        <a href="mailto:contato@andersonmultimarcas.com.br">contato@andersonmultimarcas.com.br</a>
+                        @if (lojasContato.Count > 0)
+                        {
+                            @foreach (var loja in lojasContato)
+                            {
+                                var numeroDiscagem = NumeroDiscagem(loja.Telefone);
+                                var linkWhatsapp = LinkWhatsapp(loja.Telefone);
+                                <div class="d-flex flex-column">
+                                    <strong>@loja.Nome</strong>
+                                    <a href="tel:@numeroDiscagem">@loja.Telefone</a>
+                                    <a href="@linkWhatsapp" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <span>Nenhum telefone de loja cadastrado.</span>
+                        }
+                        <a href="mailto:leads@andersonmultimarcas.com.br">leads@andersonmultimarcas.com.br</a>
                     </div>
                 </div>
             </div>
@@ -142,12 +187,21 @@
         </svg>
     </button>
 
-    <a id="btnWhatsapp" class="floating-btn floating-whatsapp" href="https://wa.me/551632523490" target="_blank" aria-label="WhatsApp" title="WhatsApp">
+    <a id="btnWhatsapp"
+       class="floating-btn floating-whatsapp"
+       href="#"
+       data-whatsapp-modal="true"
+       data-vehicle-title="Atendimento Anderson Multimarcas"
+       data-no-track-link="true"
+       aria-label="WhatsApp"
+       title="WhatsApp">
         <svg viewBox="0 0 32 32" fill="currentColor">
             <path d="M19.11 17.34c-.27-.14-1.57-.77-1.81-.86-.24-.09-.41-.14-.59.14-.18.27-.68.86-.84 1.04-.15.18-.31.2-.58.07-.27-.14-1.12-.41-2.14-1.32-.79-.7-1.33-1.56-1.49-1.83-.15-.27-.02-.41.12-.54.12-.12.27-.31.41-.46.14-.15.18-.27.27-.45.09-.18.05-.34-.02-.48-.07-.14-.59-1.42-.8-1.95-.21-.5-.43-.43-.59-.44h-.5c-.18 0-.48.07-.73.34-.25.27-.96.93-.96 2.28 0 1.35.98 2.66 1.12 2.84.14.18 1.93 2.95 4.67 4.13.65.28 1.16.44 1.56.56.66.21 1.26.18 1.74.11.53-.08 1.57-.64 1.79-1.27.22-.63.22-1.17.15-1.28-.07-.11-.25-.18-.52-.32z"></path>
             <path d="M16.01 3.2c-7.07 0-12.8 5.73-12.8 12.8 0 2.25.58 4.45 1.69 6.39L3.2 28.8l6.57-1.67c1.87 1.02 3.97 1.56 6.24 1.56h.01c7.07 0 12.8-5.73 12.8-12.8S23.09 3.2 16.01 3.2zm0 23.35h-.01c-1.92 0-3.8-.52-5.45-1.5l-.39-.23-3.9.99 1.04-3.8-.25-.39a10.6 10.6 0 0 1-1.63-5.71c0-5.88 4.78-10.66 10.66-10.66 2.85 0 5.53 1.11 7.54 3.12a10.59 10.59 0 0 1 3.12 7.53c0 5.88-4.78 10.65-10.65 10.65z"></path>
         </svg>
     </a>
+
+    @await Component.InvokeAsync("SellerContactModal")
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
@@ -213,6 +267,7 @@
                 const input = root.querySelector('[data-search-input]');
                 const results = root.querySelector('[data-search-results]');
                 const resultsBody = root.querySelector('[data-search-results-body]');
+                const loading = root.querySelector('[data-search-loading]');
                 const endpoint = root.getAttribute('data-endpoint');
 
                 if (!input || !results || !resultsBody || !endpoint) {
@@ -220,11 +275,32 @@
                 }
 
                 let controller = null;
+                let loadingTimer = null;
+
+                function hideLoading() {
+                    window.clearTimeout(loadingTimer);
+                    loadingTimer = null;
+
+                    if (loading) {
+                        loading.hidden = true;
+                    }
+                }
+
+                function scheduleLoading() {
+                    hideLoading();
+
+                    loadingTimer = window.setTimeout(function () {
+                        if (loading) {
+                            loading.hidden = false;
+                        }
+                    }, 2000);
+                }
 
                 function hideResults() {
                     results.hidden = true;
                     input.setAttribute('aria-expanded', 'false');
                     resultsBody.innerHTML = '';
+                    hideLoading();
                 }
 
                 function showResults() {
@@ -304,6 +380,7 @@
                     }
 
                     controller = new AbortController();
+                    scheduleLoading();
 
                     try {
                         const response = await fetch(endpoint + '&term=' + encodeURIComponent(value.trim()), {
@@ -319,9 +396,11 @@
                         }
 
                         const data = await response.json();
+                        hideLoading();
                         renderSuggestions(data);
                     } catch (error) {
                         if (error && error.name === 'AbortError') {
+                            hideLoading();
                             return;
                         }
 

@@ -1,0 +1,545 @@
+﻿@page
+@model Concessionaria.Pages.Vendedor.IndexModel
+@{
+    ViewData["Title"] = "Vendedores";
+    ViewData["TopbarTitle"] = "Vendedores";
+    ViewData["TopbarSubtitle"] = "Gerencie os vendedores cadastrados";
+    Layout = "_LayoutAdmin";
+
+    var vendedores = Model.Vendedores ?? new List<Core.Dtos.VendedorDto>();
+    var totalVendedores = vendedores.Count();
+}
+
+<style>
+    :root {
+        --brand-primary: #9f0a10;
+        --brand-dark: #222222;
+        --brand-border: #ececec;
+        --brand-muted: #6c757d;
+        --brand-soft: rgba(159, 10, 16, 0.08);
+        --brand-soft-dark: rgba(34, 34, 34, 0.04);
+        --brand-success: #198754;
+        --brand-danger: #dc3545;
+        --brand-danger-soft: rgba(220, 53, 69, 0.08);
+    }
+
+    .seller-page {
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .page-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin: 0;
+    }
+
+    .page-subtitle {
+        font-size: .92rem;
+        color: var(--brand-muted);
+        margin: .2rem 0 0 0;
+    }
+
+    .search-card {
+        background: #fff;
+        border: 1px solid var(--brand-border);
+        border-radius: 1rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,.05);
+        margin-bottom: 1.25rem;
+    }
+
+        .search-card .card-body {
+            padding: 1.1rem;
+        }
+
+    .filter-label {
+        font-size: .82rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin-bottom: .45rem;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: .85rem;
+        border: 1px solid #e6e6e6;
+        min-height: 46px;
+        box-shadow: none !important;
+    }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: rgba(159, 10, 16, .35);
+            box-shadow: 0 0 0 .2rem rgba(159, 10, 16, .08) !important;
+        }
+
+    .input-icon-wrap {
+        position: relative;
+    }
+
+        .input-icon-wrap i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--brand-muted);
+            font-size: 1rem;
+        }
+
+        .input-icon-wrap .form-control {
+            padding-left: 2.7rem;
+        }
+
+    .btn-brand {
+        background: var(--brand-primary);
+        border-color: var(--brand-primary);
+        color: #fff;
+        border-radius: .85rem;
+        font-weight: 600;
+        min-height: 46px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+        .btn-brand:hover {
+            background: #86080d;
+            border-color: #86080d;
+            color: #fff;
+        }
+
+    .btn-soft-dark {
+        background: #fff;
+        border: 1px solid var(--brand-border);
+        color: var(--brand-dark);
+        border-radius: .85rem;
+        font-weight: 600;
+        min-height: 46px;
+    }
+
+        .btn-soft-dark:hover {
+            background: #f8f8f8;
+            color: var(--brand-dark);
+        }
+
+    .filters-actions-row {
+        margin-top: 1rem;
+    }
+
+    .filters-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: .75rem;
+        flex-wrap: wrap;
+    }
+
+        .filters-actions .btn {
+            min-width: 140px;
+        }
+
+    .results-topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .results-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin: 0;
+    }
+
+    .results-counter {
+        font-size: .92rem;
+        color: var(--brand-muted);
+    }
+
+    .list-card {
+        background: #fff;
+        border: 1px solid var(--brand-border);
+        border-radius: 1rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,.05);
+        overflow: hidden;
+    }
+
+    .seller-table {
+        margin: 0;
+        vertical-align: middle;
+    }
+
+    .seller-table thead th {
+        background: #f8f8f8;
+        color: var(--brand-dark);
+        font-size: .76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        border-bottom: 1px solid var(--brand-border);
+        padding: 1rem .9rem;
+        white-space: nowrap;
+    }
+
+    .seller-table tbody td {
+        padding: 1rem .9rem;
+        border-color: #f1f1f1;
+        color: var(--brand-dark);
+    }
+
+    .seller-identity {
+        display: flex;
+        align-items: center;
+        gap: .85rem;
+        min-width: 240px;
+    }
+
+    .seller-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, rgba(159, 10, 16, .12), rgba(159, 10, 16, .04));
+        color: var(--brand-primary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.05rem;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+        .seller-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .seller-badge {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        font-size: .78rem;
+        font-weight: 700;
+        padding: .38rem .7rem;
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+
+        .seller-badge.active {
+            background: rgba(25, 135, 84, .10);
+            color: var(--brand-success);
+        }
+
+        .seller-badge.inactive {
+            background: var(--brand-danger-soft);
+            color: var(--brand-danger);
+        }
+
+    .seller-name {
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--brand-dark);
+        margin: 0 0 .15rem;
+        line-height: 1.3;
+    }
+
+    .seller-role {
+        font-size: .84rem;
+        color: var(--brand-muted);
+        margin: 0;
+    }
+
+    .seller-muted {
+        color: var(--brand-muted);
+        font-size: .88rem;
+    }
+
+    .table-action {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        padding: 0;
+    }
+
+    .table-row-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: .6rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-danger-soft {
+        width: 42px;
+        height: 42px;
+        border-radius: .85rem;
+        font-weight: 700;
+        border: 1px solid #f4c7cb;
+        background: #fff4f4;
+        color: var(--brand-danger);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .btn-danger-soft:hover {
+            background: var(--brand-danger);
+            border-color: var(--brand-danger);
+            color: #fff;
+        }
+
+    .table-row-actions form {
+        margin: 0;
+    }
+
+    .empty-state {
+        border: 1px dashed #dadada;
+        border-radius: 1rem;
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+        background: #fff;
+    }
+
+    .empty-state-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 22px;
+        margin: 0 auto 1rem auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--brand-soft);
+        color: var(--brand-primary);
+        font-size: 1.8rem;
+    }
+
+    @@media (max-width: 768px) {
+        .page-header,
+        .results-topbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filters-actions {
+            justify-content: stretch;
+            flex-direction: column;
+        }
+
+            .filters-actions .btn {
+                width: 100%;
+            }
+
+        .table-action {
+            width: auto;
+        }
+    }
+</style>
+
+<div class="container-fluid seller-page">
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <i class="bi bi-people-fill me-2"></i>
+                Vendedores
+            </h1>
+            <p class="page-subtitle">Lista e gerenciamento dos vendedores cadastrados</p>
+        </div>
+
+        <a href="/Vendedor/Upsert" class="btn btn-brand px-3">
+            <i class="bi bi-plus-circle me-2"></i>
+            Novo vendedor
+        </a>
+    </div>
+
+    <div class="search-card card">
+        <div class="card-body">
+            <form method="get">
+                <div class="row g-3">
+                    <div class="col-12 col-lg-5">
+                        <label class="filter-label">Pesquisar vendedor</label>
+                        <div class="input-icon-wrap">
+                            <i class="bi bi-search"></i>
+                            <input type="text"
+                                   name="Filtro"
+                                   value="@Model.Filtro"
+                                   class="form-control"
+                                   placeholder="Digite nome, e-mail, telefone, CPF ou cargo..." />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <label class="filter-label">Loja</label>
+                        <select name="LojaId" class="form-select">
+                            <option value="">Todas as lojas</option>
+                            @if (Model.LojasFiltro != null)
+                            {
+                                @foreach (var loja in Model.LojasFiltro)
+                                {
+                                    <option value="@loja.Id" selected="@(Model.LojaId == loja.Id)">
+                                        @loja.Nome
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label class="filter-label">Ordenação</label>
+                        <select name="Ordem" class="form-select">
+                            <option value="" selected="@(string.IsNullOrWhiteSpace(Model.Ordem))">Nome (A-Z)</option>
+                            <option value="nome_desc" selected="@(Model.Ordem == "nome_desc")">Nome (Z-A)</option>
+                            <option value="loja" selected="@(Model.Ordem == "loja")">Loja</option>
+                            <option value="recentes" selected="@(Model.Ordem == "recentes")">Mais recentes</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row filters-actions-row">
+                    <div class="col-12">
+                        <div class="filters-actions">
+                            <a asp-page="./Index" class="btn btn-soft-dark px-4">
+                                <i class="bi bi-arrow-counterclockwise me-2"></i>
+                                Limpar
+                            </a>
+
+                            <button type="submit" class="btn btn-brand px-4">
+                                <i class="bi bi-search me-2"></i>
+                                Buscar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="results-topbar">
+        <h5 class="results-title">Vendedores cadastrados</h5>
+        <div class="results-counter">
+            <strong>@totalVendedores</strong> registro(s)
+        </div>
+    </div>
+
+    @if (vendedores.Any())
+    {
+        <div class="list-card">
+            <div class="table-responsive">
+                <table class="table seller-table admin-responsive-table">
+                    <thead>
+                        <tr>
+                            <th>Vendedor</th>
+                            <th>Status</th>
+                            <th>Loja</th>
+                            <th>Contato</th>
+                            <th>CPF</th>
+                            <th>Cadastro</th>
+                            <th class="text-end">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var vendedor in vendedores)
+                        {
+                            <tr>
+                                <td data-label="Vendedor">
+                                    <div class="seller-identity">
+                                        <div class="seller-avatar">
+                                            @if (!string.IsNullOrWhiteSpace(Convert.ToString(vendedor.FotoUrl)))
+                                            {
+                                                <img src="@vendedor.FotoUrl" alt="@vendedor.Nome" />
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-person-badge-fill"></i>
+                                            }
+                                        </div>
+
+                                        <div>
+                                            <h3 class="seller-name">@vendedor.Nome</h3>
+                                            <p class="seller-role">
+                                                @(string.IsNullOrWhiteSpace(Convert.ToString(vendedor.Cargo)) ? "Sem cargo informado" : vendedor.Cargo)
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td data-label="Status">
+                                    <span class="seller-badge @(vendedor.Ativo ? "active" : "inactive")">
+                                        @(vendedor.Ativo ? "Ativo" : "Inativo")
+                                    </span>
+                                </td>
+                                <td data-label="Loja">
+                                    <span class="seller-muted">@(string.IsNullOrWhiteSpace(Convert.ToString(vendedor.LojaNome)) ? "Não informada" : vendedor.LojaNome)</span>
+                                </td>
+                                <td data-label="Contato">
+                                    <span class="seller-muted">
+                                        @(string.IsNullOrWhiteSpace(Convert.ToString(vendedor.Telefone)) ? "Não informado" : vendedor.Telefone)
+                                        @if (!string.IsNullOrWhiteSpace(Convert.ToString(vendedor.Email)))
+                                        {
+                                            <br />
+                                            @vendedor.Email
+                                        }
+                                    </span>
+                                </td>
+                                <td data-label="CPF">
+                                    <span class="seller-muted">@(string.IsNullOrWhiteSpace(Convert.ToString(vendedor.Cpf)) ? "Não informado" : vendedor.Cpf)</span>
+                                </td>
+                                <td data-label="Cadastro">
+                                    <span class="seller-muted">@(vendedor.DataCadastro != null ? Convert.ToDateTime(vendedor.DataCadastro).ToString("dd/MM/yyyy") : "Não informado")</span>
+                                </td>
+                                <td class="text-end" data-label="Ação">
+                                    <div class="table-row-actions">
+                                        <a asp-page="./Upsert" asp-route-id="@vendedor.Id" class="btn btn-brand table-action">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
+
+                                        <form method="post" asp-page-handler="Delete">
+                                            <input type="hidden" name="id" value="@vendedor.Id" />
+                                            <input type="hidden" name="Filtro" value="@Model.Filtro" />
+                                            <input type="hidden" name="Ordem" value="@Model.Ordem" />
+                                            <input type="hidden" name="LojaId" value="@Model.LojaId" />
+                                            <button type="button" class="btn-danger-soft table-action" data-confirm-delete data-confirm-message="Deseja excluir este vendedor?">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="bi bi-people-fill"></i>
+            </div>
+
+            <h5 class="fw-bold mb-2">Nenhum vendedor encontrado</h5>
+            <p class="text-muted mb-4">
+                Não encontramos vendedores com os filtros informados.
+            </p>
+
+            <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
+                <a asp-page="./Index" class="btn btn-soft-dark">
+                    <i class="bi bi-arrow-counterclockwise me-2"></i>
+                    Limpar filtros
+                </a>
+
+                <a asp-page="/Vendedor/Upsert" class="btn btn-brand">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Cadastrar vendedor
+                </a>
+            </div>
+        </div>
+    }
+</div>

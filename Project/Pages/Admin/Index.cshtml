@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model Project.Pages.Admin.IndexModel
 @using System.Globalization
 @{
@@ -75,6 +75,11 @@
         font-weight: 800;
         color: var(--dash-ink);
         line-height: 1.05;
+    }
+
+    .commercial-metric-value.commercial-metric-value-large {
+        font-size: 1.45rem;
+        line-height: 1.15;
     }
 
     .commercial-metric-help {
@@ -399,6 +404,12 @@
 </style>
 
 <div class="container-fluid dashboard-shell">
+    @if (!string.IsNullOrWhiteSpace(Model.DashboardLoadMessage))
+    {
+        <div class="alert alert-warning mb-0" role="alert">
+            @Model.DashboardLoadMessage
+        </div>
+    }
 <section class="dashboard-metrics-grid">
         <article class="commercial-metric">
             <div class="commercial-metric-body">
@@ -415,14 +426,14 @@
             </div>
         </article>
 
-        @if (Model.CanViewFinancialData)
+        @if (!Model.IsRestrictedDashboard)
         {
             <article class="commercial-metric">
                 <div class="commercial-metric-body">
                     <div class="commercial-metric-top">
                         <div>
                             <div class="commercial-metric-label">Valor em estoque</div>
-                            <div class="commercial-metric-value">@dashboard.ValorEmEstoque.ToString("C0", culture)</div>
+                            <div class="commercial-metric-value @(dashboard.ValorEmEstoque >= 1000000m ? "commercial-metric-value-large" : string.Empty)">@dashboard.ValorEmEstoque.ToBrazilianCurrency()</div>
                         </div>
                         <div class="commercial-metric-icon gold">
                             <i class="bi bi-cash-stack"></i>
@@ -571,9 +582,9 @@
                             <h3 class="stock-commercial-title">@veiculo.Titulo</h3>
                             <div class="stock-commercial-meta">@veiculo.Marca â€¢ ID @veiculo.Id@if (!string.IsNullOrWhiteSpace(veiculo.Loja)) {<text> â€¢ @veiculo.Loja</text>}</div>
 
-                            @if (Model.CanViewFinancialData)
+                            @if (!Model.IsRestrictedDashboard)
                             {
-                                <div class="stock-commercial-price">@veiculo.Preco.ToString("C0", culture)</div>
+                                <div class="stock-commercial-price">@veiculo.Preco.ToBrazilianCurrency()</div>
                             }
 
                             <div class="stock-commercial-tip @veiculo.RecomendacaoTipo">
@@ -586,4 +597,5 @@
         }
     </section>
 </div>
+
 

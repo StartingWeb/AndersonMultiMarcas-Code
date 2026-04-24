@@ -6,6 +6,7 @@ using Domain.Application;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Project.Navigation;
+using Project.Services;
 
 namespace Project.Config;
 
@@ -19,6 +20,7 @@ public static class DependencyInjectionConfig
         services.AddScoped<IVeiculoService, VeiculoService>();
         services.AddScoped<IVeiculoCaracteristicaService, VeiculoCaracteristicaService>();
         services.AddScoped<IVeiculoMidiaService, VeiculoMidiaService>();
+        services.AddScoped<IEstoqueConferenciaExcelService, EstoqueConferenciaExcelService>();
         services.AddScoped<IAdminMenuService, AdminMenuService>();
         return services;
     }

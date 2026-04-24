@@ -1,28 +1,35 @@
-@page
+﻿@page
 @model Project.Pages.CatalogoModel
 @{
-    ViewData["Title"] = "Catalogo";
+    ViewData["Title"] = "Catálogo";
     ViewData["SearchValue"] = Model.Busca ?? string.Empty;
-    ViewData["SearchPlaceholder"] = "Ex.: Onix, Toyota, automatico, flex, Taquaritinga";
+    ViewData["SearchPlaceholder"] = "Ex.: Onix, Toyota, automático, flex, Taquaritinga";
     ViewData["SearchHiddenFields"] = new List<KeyValuePair<string, string>>
     {
         new("marca", Model.Marca ?? string.Empty),
+        new("condicao", Model.Condicao ?? string.Empty),
         new("cambio", Model.Cambio ?? string.Empty),
         new("combustivel", Model.Combustivel ?? string.Empty),
-        new("anoMinimo", Model.AnoMinimo?.ToString() ?? string.Empty),
+        new("motoEletrica", Model.MotoEletrica == true ? "true" : string.Empty),
+        new("zeroKm", Model.ZeroKm == true ? "true" : string.Empty),
         new("precoMinimo", Model.PrecoMinimo?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty),
         new("precoMaximo", Model.PrecoMaximo?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty)
     }.Where(item => !string.IsNullOrWhiteSpace(item.Value)).ToList();
 }
 
-<link rel="stylesheet" href="~/css/Catalogo.css" />
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+}
+
+<link rel="stylesheet" href="~/css/Catalogo.css" asp-append-version="true" />
 
 <section class="catalog-search-section">
     <div class="container">
         <div class="catalog-search-panel">
             <div>
                 <span class="catalog-kicker">Estoque multimarcas</span>
-                <h1 class="catalog-title">Encontre seu proximo veiculo</h1>
+                <h1 class="catalog-title">Encontre seu próximo veículo</h1>
                 <p class="catalog-subtitle">Pesquise por modelo, marca ou oportunidade e refine o restante nos filtros ao lado.</p>
             </div>
 
@@ -37,7 +44,7 @@
     <div class="container">
         <div class="catalog-shell" id="catalog-shell">
             <aside class="filter-panel">
-                <details class="filter-disclosure" open>
+                <details class="filter-disclosure">
                     <summary class="filter-summary">
                         <div class="filter-summary-copy">
                             <span class="filter-summary-label">Filtros de pesquisa</span>
@@ -49,13 +56,22 @@
                     <div class="filter-content">
                         <div class="filter-header">
                             <h2>Filtros de pesquisa</h2>
-                            <p>Combine os filtros para encontrar o veiculo certo mais rapido.</p>
+                            <p>Combine os filtros para encontrar o veículo certo mais rápido.</p>
                         </div>
 
                         <form method="get" class="filter-form" id="catalog-filter-form">
+                            @if (Model.ZeroKm == true)
+                            {
+                                <input type="hidden" asp-for="ZeroKm" />
+                            }
+                            @if (Model.MotoEletrica == true)
+                            {
+                                <input type="hidden" asp-for="MotoEletrica" />
+                            }
+
                             <div>
                                 <label class="form-label" asp-for="Marca">Marca</label>
-                                <select asp-for="Marca" class="form-select">
+                                <select asp-for="Marca" class="form-select" data-brand-select2="true">
                                     <option value="">Todas as marcas</option>
                                     @foreach (var item in Model.AvailableBrands)
                                     {
@@ -65,7 +81,16 @@
                             </div>
 
                             <div>
-                                <label class="form-label" asp-for="Cambio">Cambio</label>
+                                <label class="form-label" asp-for="Condicao">Condição</label>
+                                <select asp-for="Condicao" class="form-select">
+                                    <option value="">Todos</option>
+                                    <option value="zerokm">0Km</option>
+                                    <option value="seminovo">Seminovo</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="form-label" asp-for="Cambio">Câmbio</label>
                                 <select asp-for="Cambio" class="form-select">
                                     <option value="">Todos</option>
                                     @foreach (var item in Model.AvailableGearboxes)
@@ -76,7 +101,7 @@
                             </div>
 
                             <div>
-                                <label class="form-label" asp-for="Combustivel">Combustivel</label>
+                                <label class="form-label" asp-for="Combustivel">Combustível</label>
                                 <select asp-for="Combustivel" class="form-select">
                                     <option value="">Todos</option>
                                     @foreach (var item in Model.AvailableFuels)
@@ -86,22 +111,11 @@
                                 </select>
                             </div>
 
-                            <div>
-                                <label class="form-label" asp-for="AnoMinimo">Ano minimo</label>
-                                <select asp-for="AnoMinimo" class="form-select">
-                                    <option value="">Todos os anos</option>
-                                    @foreach (var item in Model.AvailableYears)
-                                    {
-                                        <option value="@item">@item em diante</option>
-                                    }
-                                </select>
-                            </div>
-
                             <div class="filter-price-grid">
                                 <div>
-                                    <label class="form-label" asp-for="PrecoMinimo">Preco minimo</label>
+                                    <label class="form-label" asp-for="PrecoMinimo">Preço mínimo</label>
                                     <select asp-for="PrecoMinimo" class="form-select">
-                                        <option value="">Sem minimo</option>
+                                        <option value="">Sem mínimo</option>
                                         <option value="30000">A partir de R$ 30 mil</option>
                                         <option value="50000">A partir de R$ 50 mil</option>
                                         <option value="80000">A partir de R$ 80 mil</option>
@@ -110,18 +124,19 @@
                                 </div>
 
                                 <div>
-                                    <label class="form-label" asp-for="PrecoMaximo">Preco maximo</label>
+                                    <label class="form-label" asp-for="PrecoMaximo">Preço máximo</label>
                                     <select asp-for="PrecoMaximo" class="form-select">
                                         <option value="">Sem limite</option>
-                                        <option value="60000">Ate R$ 60 mil</option>
-                                        <option value="90000">Ate R$ 90 mil</option>
-                                        <option value="130000">Ate R$ 130 mil</option>
-                                        <option value="180000">Ate R$ 180 mil</option>
+                                        <option value="60000">Até R$ 60 mil</option>
+                                        <option value="90000">Até R$ 90 mil</option>
+                                        <option value="130000">Até R$ 130 mil</option>
+                                        <option value="180000">Até R$ 180 mil</option>
                                     </select>
                                 </div>
                             </div>
 
                             <div class="filter-actions">
+                                <button type="submit" class="btn catalog-search-submit w-100">Pesquisar</button>
                                 <a asp-page="/Catalogo" class="btn btn-outline-brand w-100">Limpar busca</a>
                             </div>
                         </form>
@@ -141,7 +156,7 @@
                 {
                     <div class="empty-state">
                         <h3>Sem resultados no momento</h3>
-                        <p>Ajuste os filtros ou limpe a busca para ver novamente todo o catalogo.</p>
+                        <p>Ajuste os filtros ou limpe a busca para ver novamente todo o catálogo.</p>
                     </div>
                 }
                 else if (Model.HasActiveFilters)
@@ -161,7 +176,7 @@
                         <div class="vehicle-group-header vehicle-group-header-featured">
                             <div>
                                 <h3>Mais recentes</h3>
-                                <p>Os modelos mais novos do estoque com destaque na abertura da pagina.</p>
+                                <p>Os modelos mais novos do estoque com destaque na abertura da página.</p>
                             </div>
                         </div>
                         <div class="row g-4">
@@ -203,6 +218,7 @@
         const filterToggle = document.querySelector('#catalog-filter-toggle');
         const filterToggleText = document.querySelector('.catalog-filter-toggle-text');
         const filterDisclosure = document.querySelector('.filter-disclosure');
+        const desktopMediaQuery = window.matchMedia('(min-width: 992px)');
 
         if (!filterForm) {
             return;
@@ -217,25 +233,33 @@
             filterToggleText.textContent = collapsed ? 'Expandir filtros' : 'Ocultar filtros';
         };
 
-        const syncResponsiveState = () => {
+        const syncResponsiveState = (isDesktop) => {
             if (!catalogShell || !filterDisclosure) {
                 return;
             }
 
-            if (window.innerWidth < 992) {
+            if (isDesktop) {
+                filterDisclosure.setAttribute('open', 'open');
+            } else {
                 catalogShell.classList.remove('is-filter-collapsed');
                 filterDisclosure.removeAttribute('open');
-            }
-            else {
-                filterDisclosure.setAttribute('open', 'open');
             }
 
             syncToggleLabel();
         };
 
+        const closeFiltersOnMobile = () => {
+            if (desktopMediaQuery.matches || !filterDisclosure) {
+                return;
+            }
+
+            filterDisclosure.open = false;
+            filterDisclosure.removeAttribute('open');
+        };
+
         if (filterToggle && catalogShell) {
             filterToggle.addEventListener('click', () => {
-                if (window.innerWidth < 992) {
+                if (!desktopMediaQuery.matches) {
                     if (filterDisclosure) {
                         filterDisclosure.toggleAttribute('open');
                     }
@@ -248,17 +272,58 @@
             });
         }
 
-        syncResponsiveState();
-        window.addEventListener('resize', syncResponsiveState);
+        syncResponsiveState(desktopMediaQuery.matches);
+        desktopMediaQuery.addEventListener('change', (event) => {
+            syncResponsiveState(event.matches);
+        });
+        window.addEventListener('pageshow', closeFiltersOnMobile);
 
         let submitTimeout;
         const autoSubmit = () => {
             window.clearTimeout(submitTimeout);
+            closeFiltersOnMobile();
             submitTimeout = window.setTimeout(() => filterForm.requestSubmit(), 120);
         };
 
         filterForm.querySelectorAll('select').forEach((field) => {
             field.addEventListener('change', autoSubmit);
+
+            // select2 dispara eventos via jQuery; conectamos ambos para garantir auto-submit.
+            if (window.jQuery) {
+                window.jQuery(field).on('change.catalogAutoSubmit select2:select.catalogAutoSubmit select2:clear.catalogAutoSubmit', autoSubmit);
+            }
         });
     })();
 </script>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    (function () {
+        if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) {
+            return;
+        }
+
+        var $brand = window.jQuery('select[data-brand-select2="true"]');
+        if (!$brand.length || $brand.hasClass('select2-hidden-accessible')) {
+            return;
+        }
+
+        $brand.select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Todas as marcas',
+            allowClear: true
+        });
+
+        $brand.on('select2:select select2:clear change', function () {
+            var form = this.form || document.querySelector('#catalog-filter-form');
+            if (!form || typeof form.requestSubmit !== 'function') {
+                return;
+            }
+
+            window.setTimeout(function () { form.requestSubmit(); }, 50);
+        });
+    })();
+</script>
+

@@ -19,6 +19,9 @@ public class IndexModel : PageModel
     public string? Filtro { get; set; }
 
     [BindProperty(SupportsGet = true)]
+    public int? Codigo { get; set; }
+
+    [BindProperty(SupportsGet = true)]
     public string? Ordem { get; set; }
 
     [BindProperty(SupportsGet = true)]
@@ -64,6 +67,11 @@ public class IndexModel : PageModel
             );
         }
 
+        if (Codigo.HasValue && Codigo.Value > 0)
+        {
+            query = query.Where(x => x.Id == Codigo.Value);
+        }
+
         // =========================
         // FILTRO STATUS
         // =========================
@@ -85,8 +93,8 @@ public class IndexModel : PageModel
             "antigos" => query.OrderBy(x => x.DataCadastro),
             "titulo" => query.OrderBy(x => x.Titulo),
             "titulo_desc" => query.OrderByDescending(x => x.Titulo),
-            "preco_asc" => query.OrderBy(x => x.PrecoPromocional ?? x.PrecoVenda ?? decimal.MaxValue),
-            "preco_desc" => query.OrderByDescending(x => x.PrecoPromocional ?? x.PrecoVenda ?? 0),
+            "preco_asc" => query.OrderBy(x => x.PrecoVenda ?? decimal.MaxValue),
+            "preco_desc" => query.OrderByDescending(x => x.PrecoVenda ?? 0),
             _ => query.OrderByDescending(x => x.DataCadastro)
         };
 
@@ -105,6 +113,7 @@ public class IndexModel : PageModel
         return RedirectToPage("./Index", new
         {
             Filtro,
+            Codigo,
             Ordem,
             SomenteAtivos,
             SomenteVendidos

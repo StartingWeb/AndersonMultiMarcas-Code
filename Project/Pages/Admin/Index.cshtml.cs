@@ -26,132 +26,143 @@ public class IndexModel : PageModel
     }
 
     public DashboardViewModel Dashboard { get; private set; } = DashboardViewModel.Empty;
-    public bool CanViewFinancialData { get; private set; }
+    public bool IsRestrictedDashboard { get; private set; }
     public string? DashboardLoadMessage { get; private set; }
 
     public async Task OnGetAsync()
     {
-        CanViewFinancialData = User.IsInRole("Desenvolvedor") || User.IsInRole("Administrador");
+        IsRestrictedDashboard =
+            User.IsInRole("AdminConcessionaria") &&
+            !User.IsInRole("Administrador") &&
+            !User.IsInRole("Desenvolvedor");
 
-        var lojasTask = _lojaService.ListarAsync();
-        var vendedoresTask = _vendedorService.ListarAsync();
-        var veiculosTask = _veiculoService.ListarAsync();
-
-        await Task.WhenAll(lojasTask, vendedoresTask, veiculosTask);
-
-        var lojasResult = lojasTask.Result;
-        var vendedoresResult = vendedoresTask.Result;
-        var veiculosResult = veiculosTask.Result;
-
-        var lojas = lojasResult.Status == PackageStatus.Success && lojasResult.Data != null
-            ? lojasResult.Data
-            : [];
-
-        var vendedores = vendedoresResult.Status == PackageStatus.Success && vendedoresResult.Data != null
-            ? vendedoresResult.Data
-            : [];
-
-        var veiculos = veiculosResult.Status == PackageStatus.Success && veiculosResult.Data != null
-            ? veiculosResult.Data
-            : [];
-
-        var mensagensFalha = new[]
+        try
         {
-            lojasResult.Status != PackageStatus.Success ? lojasResult.UserMessage : null,
-            vendedoresResult.Status != PackageStatus.Success ? vendedoresResult.UserMessage : null,
-            veiculosResult.Status != PackageStatus.Success ? veiculosResult.UserMessage : null
-        }
-        .Where(message => !string.IsNullOrWhiteSpace(message))
-        .Distinct()
-        .ToList();
+            var hoje = DateTime.Today;
+            var inicioMes = new DateTime(hoje.Year, hoje.Month, 1);
+            var mensagensErro = new List<string>();
 
-        DashboardLoadMessage = mensagensFalha.Count > 0
-            ? string.Join(" ", mensagensFalha)
-            : null;
+            // Os services compartilham o mesmo DbContext scoped por request.
+            // Executar em paralelo dispara concorrência no EF Core.
+            var lojasResult = await _lojaService.ListarAsync();
+            var vendedoresResult = await _vendedorService.ListarAsync();
+            var veiculosResult = await _veiculoService.ListarAsync();
 
-        var hoje = DateTime.Today;
-        var veiculosAtivos = veiculos
-            .Where(veiculo => veiculo.Ativo && !veiculo.Vendido)
-            .ToList();
+            var lojas = lojasResult.Status == PackageStatus.Success
+                ? (lojasResult.Data ?? [])
+                : [];
 
-        var valorEmEstoque = veiculosAtivos.Sum(ObterPrecoPrincipal);
-        var vendidosHoje = veiculos.Count(veiculo =>
-            veiculo.Vendido &&
-            veiculo.DataVenda.HasValue &&
-            veiculo.DataVenda.Value.Date == hoje);
+            var vendedores = vendedoresResult.Status == PackageStatus.Success
+                ? (vendedoresResult.Data ?? [])
+                : [];
 
-        var veiculosCriticos = veiculosAtivos
-            .Select(veiculo => new
+            var veiculos = veiculosResult.Status == PackageStatus.Success
+                ? (veiculosResult.Data ?? [])
+                : [];
+
+            if (lojasResult.Status != PackageStatus.Success)
             {
-                Veiculo = veiculo,
-                DiasParado = CalcularDiasEmEstoque(veiculo, hoje)
-            })
-            .Where(item => item.DiasParado >= DiasEstoqueCritico)
-            .ToList();
+                mensagensErro.Add("lojas");
+            }
 
-        var inicioMes = new DateTime(hoje.Year, hoje.Month, 1);
-        var rankingVendedores = veiculos
-            .Where(veiculo =>
+            if (vendedoresResult.Status != PackageStatus.Success)
+            {
+                mensagensErro.Add("vendedores");
+            }
+
+            if (veiculosResult.Status != PackageStatus.Success)
+            {
+                mensagensErro.Add("veículos");
+            }
+
+            var veiculosAtivos = veiculos
+                .Where(veiculo => veiculo.Ativo && !veiculo.Vendido)
+                .ToList();
+
+            var valorEmEstoque = veiculosAtivos.Sum(ObterPrecoPrincipal);
+            var vendidosHoje = veiculos.Count(veiculo =>
                 veiculo.Vendido &&
                 veiculo.DataVenda.HasValue &&
-                veiculo.DataVenda.Value.Date >= inicioMes &&
-                veiculo.DataVenda.Value.Date <= hoje &&
-                veiculo.VendedorId.HasValue)
-            .GroupBy(veiculo => veiculo.VendedorId!.Value)
-            .Select(group =>
-            {
-                var primeiro = group
-                    .OrderByDescending(veiculo => veiculo.DataVenda)
-                    .First();
+                veiculo.DataVenda.Value.Date == hoje);
 
-                var vendedor = primeiro.Vendedor ?? vendedores.FirstOrDefault(item => item.Id == group.Key);
-
-                return new SellerRankingItem
+            var veiculosCriticos = veiculosAtivos
+                .Select(veiculo => new
                 {
-                    VendedorId = group.Key,
-                    Nome = !string.IsNullOrWhiteSpace(vendedor?.Nome)
-                        ? vendedor.Nome
-                        : $"Vendedor #{group.Key}",
-                    FotoUrl = NormalizarFotoVendedor(vendedor?.FotoUrl),
-                    Loja = vendedor?.Loja?.Nome,
-                    VeiculosVendidos = group.Count()
-                };
-            })
-            .OrderByDescending(item => item.VeiculosVendidos)
-            .ThenBy(item => item.Nome)
-            .Take(5)
-            .ToList();
+                    Veiculo = veiculo,
+                    DiasParado = CalcularDiasEmEstoque(veiculo, hoje)
+                })
+                .Where(item => item.DiasParado >= DiasEstoqueCritico)
+                .ToList();
 
-        var veiculosParaAcao = veiculosCriticos
-            .Where(item => item.DiasParado >= DiasEstoqueAcao)
-            .OrderByDescending(item => item.DiasParado)
-            .ThenByDescending(item => ObterPrecoPrincipal(item.Veiculo))
-            .Take(6)
-            .Select(item => DashboardVehicleItem.From(item.Veiculo, item.DiasParado))
-            .ToList();
+            var rankingVendedores = veiculos
+                .Where(veiculo =>
+                    veiculo.Vendido &&
+                    veiculo.DataVenda.HasValue &&
+                    veiculo.DataVenda.Value.Date >= inicioMes &&
+                    veiculo.DataVenda.Value.Date <= hoje &&
+                    veiculo.VendedorId.HasValue)
+                .GroupBy(veiculo => veiculo.VendedorId!.Value)
+                .Select(group =>
+                {
+                    var primeiro = group
+                        .OrderByDescending(veiculo => veiculo.DataVenda)
+                        .First();
 
-        var lojasFalhou = lojasResult.Status != PackageStatus.Success && lojas.Count == 0;
-        var vendedoresFalhou = vendedoresResult.Status != PackageStatus.Success && vendedores.Count == 0;
-        var veiculosFalhou = veiculosResult.Status != PackageStatus.Success && veiculos.Count == 0;
+                    var vendedor = primeiro.Vendedor ?? vendedores.FirstOrDefault(item => item.Id == group.Key);
 
-        Dashboard = new DashboardViewModel
+                    return new SellerRankingItem
+                    {
+                        VendedorId = group.Key,
+                        Nome = !string.IsNullOrWhiteSpace(vendedor?.Nome)
+                            ? vendedor.Nome
+                            : $"Vendedor #{group.Key}",
+                        FotoUrl = NormalizarFotoVendedor(vendedor?.FotoUrl),
+                        Loja = vendedor?.Loja?.Nome,
+                        VeiculosVendidos = group.Count()
+                    };
+                })
+                .OrderByDescending(item => item.VeiculosVendidos)
+                .ThenBy(item => item.Nome)
+                .Take(5)
+                .ToList();
+
+            var veiculosParaAcao = veiculosCriticos
+                .Where(item => item.DiasParado >= DiasEstoqueAcao)
+                .OrderByDescending(item => item.DiasParado)
+                .ThenByDescending(item => ObterPrecoPrincipal(item.Veiculo))
+                .Take(6)
+                .Select(item => DashboardVehicleItem.From(item.Veiculo, item.DiasParado))
+                .ToList();
+
+            Dashboard = new DashboardViewModel
+            {
+                DataReferencia = hoje,
+                TotalVeiculosNoSite = veiculosAtivos.Count,
+                ValorEmEstoque = valorEmEstoque,
+                VendidosHoje = vendidosHoje,
+                VeiculosParados90Dias = veiculosCriticos.Count,
+                TotalLojas = lojas.Count,
+                LojasAtivas = lojas.Count(loja => loja.Ativo),
+                VendedoresAtivos = vendedores.Count(vendedor => vendedor.Ativo),
+                VeiculosEmDestaque = veiculosAtivos.Count(veiculo => veiculo.Destaque),
+                RankingVendedoresMes = rankingVendedores,
+                VeiculosParaAcao = veiculosParaAcao,
+                FalhaAoCarregarDados = false
+            };
+
+            DashboardLoadMessage = mensagensErro.Count > 0
+                ? $"Alguns dados nao puderam ser carregados ({string.Join(", ", mensagensErro)}), mas o dashboard foi montado com o restante."
+                : null;
+        }
+        catch (Exception)
         {
-            DataReferencia = hoje,
-            TotalVeiculosNoSite = veiculosAtivos.Count,
-            ValorEmEstoque = valorEmEstoque,
-            VendidosHoje = vendidosHoje,
-            VeiculosParados90Dias = veiculosCriticos.Count,
-            TotalLojas = lojas.Count,
-            LojasAtivas = lojas.Count(loja => loja.Ativo),
-            VendedoresAtivos = vendedores.Count(vendedor => vendedor.Ativo),
-            VeiculosEmDestaque = veiculosAtivos.Count(veiculo => veiculo.Destaque),
-            RankingVendedoresMes = rankingVendedores,
-            VeiculosParaAcao = veiculosParaAcao,
-            FalhaAoCarregarDados =
-                lojasFalhou ||
-                vendedoresFalhou ||
-                veiculosFalhou
-        };
+            DashboardLoadMessage = "Nao foi possivel carregar os indicadores do dashboard.";
+            Dashboard = new DashboardViewModel
+            {
+                DataReferencia = DateTime.Today,
+                FalhaAoCarregarDados = true
+            };
+        }
     }
 
     private static int CalcularDiasEmEstoque(Veiculo veiculo, DateTime hoje)
@@ -161,10 +172,12 @@ public class IndexModel : PageModel
 
     private static decimal ObterPrecoPrincipal(Veiculo veiculo)
     {
-        return veiculo.PrecoPromocional
-            ?? veiculo.PrecoVenda
-            ?? veiculo.PrecoFipe
-            ?? 0m;
+        if (veiculo.PrecoVenda.HasValue && veiculo.PrecoVenda.Value > 0)
+        {
+            return veiculo.PrecoVenda.Value;
+        }
+
+        return 0m;
     }
 
     private static string NormalizarFotoVendedor(string? fotoUrl)
@@ -244,6 +257,14 @@ public class IndexModel : PageModel
 
         private static string MontarTitulo(Veiculo veiculo)
         {
+            var marcaModelo = string.Join(" ", new[] { veiculo.Marca?.Nome, veiculo.Modelo }
+                .Where(parte => !string.IsNullOrWhiteSpace(parte)));
+
+            if (!string.IsNullOrWhiteSpace(marcaModelo))
+            {
+                return marcaModelo;
+            }
+
             if (!string.IsNullOrWhiteSpace(veiculo.Titulo))
             {
                 return veiculo.Titulo;

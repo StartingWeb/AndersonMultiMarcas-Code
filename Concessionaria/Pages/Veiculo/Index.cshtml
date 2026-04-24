@@ -311,9 +311,9 @@
         </div>
 
         <div class="d-flex gap-2 flex-wrap">
-            <a href="/Veiculo/Importar" class="btn btn-soft-dark px-3">
-                <i class="bi bi-box-arrow-in-down me-2"></i>
-                Importar
+            <a href="/Veiculo/ImportaJSON" class="btn btn-soft-dark px-3">
+                <i class="bi bi-filetype-json me-2"></i>
+                Importar legado
             </a>
 
             <a href="/Veiculo/Upsert" class="btn btn-brand px-3">
@@ -327,7 +327,17 @@
         <div class="card-body">
             <form method="get">
                 <div class="row g-3">
-                    <div class="col-12 col-xl-4">
+                    <div class="col-12 col-md-4 col-xl-2">
+                        <label class="filter-label">Código</label>
+                        <input type="number"
+                               name="Codigo"
+                               value="@Model.Codigo"
+                               class="form-control"
+                               min="1"
+                               placeholder="Ex.: 123" />
+                    </div>
+
+                    <div class="col-12 col-md-8 col-xl-4">
                         <label class="filter-label">Pesquisar veículo</label>
                         <div class="input-icon-wrap">
                             <i class="bi bi-search"></i>
@@ -408,8 +418,7 @@
                             <th>Título</th>
                             <th>Placa</th>
                             <th>Mês/Ano</th>
-                            <th>Vendedor</th>
-                            <th>Baixa por</th>
+                            <th>Condição</th>
                             <th>Preço</th>
                             <th class="text-end">Ação</th>
                         </tr>
@@ -417,9 +426,9 @@
                     <tbody>
                         @foreach (var veiculo in veiculos)
                         {
-                            var titulo = string.IsNullOrWhiteSpace(veiculo.Titulo)
-                                ? $"{veiculo.Marca?.Nome} {veiculo.Modelo}".Trim()
-                                : veiculo.Titulo;
+                            var titulo = (!string.IsNullOrWhiteSpace(veiculo.Marca?.Nome) || !string.IsNullOrWhiteSpace(veiculo.Modelo))
+                                ? string.Join(" ", new[] { veiculo.Marca?.Nome, veiculo.Modelo }.Where(x => !string.IsNullOrWhiteSpace(x)))
+                                : (string.IsNullOrWhiteSpace(veiculo.Titulo) ? $"{veiculo.Marca?.Nome} {veiculo.Versao}".Trim() : veiculo.Titulo);
 
                             var subtitulo = string.Join(" • ", new[]
                             {
@@ -432,19 +441,9 @@
                                 ? veiculo.DataCadastro.ToString("MM/yyyy")
                                 : "-";
 
-                            var precoPrincipal = veiculo.PrecoPromocional.HasValue && veiculo.PrecoPromocional.Value > 0
-                                ? veiculo.PrecoPromocional
-                                : veiculo.PrecoVenda;
+                            var precoPrincipal = veiculo.PrecoVenda;
 
-                            var vendedorVenda = veiculo.Vendido
-                                ? (string.IsNullOrWhiteSpace(veiculo.Vendedor?.Nome) ? "-" : veiculo.Vendedor.Nome)
-                                : "-";
-
-                            var usuarioBaixa = veiculo.Vendido
-                                ? (!string.IsNullOrWhiteSpace(veiculo.VendidoPorUsuario?.NomeCompleto)
-                                    ? veiculo.VendidoPorUsuario.NomeCompleto
-                                    : (string.IsNullOrWhiteSpace(veiculo.VendidoPorUsuario?.UserName) ? "-" : veiculo.VendidoPorUsuario.UserName))
-                                : "-";
+                            var condicaoVeiculo = veiculo.Seminovo ? "Seminovo" : "0km";
 
                             <tr>
                                 <td data-label="Título">
@@ -464,15 +463,12 @@
                                 <td data-label="Mês/Ano">
                                     <span class="vehicle-muted">@mesAno</span>
                                 </td>
-                                <td data-label="Vendedor">
-                                    <span class="vehicle-muted">@vendedorVenda</span>
-                                </td>
-                                <td data-label="Baixa por">
-                                    <span class="vehicle-muted">@usuarioBaixa</span>
+                                <td data-label="Condição">
+                                    <span class="vehicle-muted">@condicaoVeiculo</span>
                                 </td>
                                 <td data-label="Preço">
                                     <span class="vehicle-price">
-                                        @(precoPrincipal.HasValue ? precoPrincipal.Value.ToString("C") : "Não informado")
+                                        @(precoPrincipal.HasValue ? precoPrincipal.Value.ToBrazilianCurrency() : "Não informado")
                                     </span>
                                 </td>
                                 <td class="text-end" data-label="Ação">
@@ -484,6 +480,7 @@
                                         <form method="post" asp-page-handler="Delete" class="m-0">
                                             <input type="hidden" name="id" value="@veiculo.Id" />
                                             <input type="hidden" name="Filtro" value="@Model.Filtro" />
+                                            <input type="hidden" name="Codigo" value="@Model.Codigo" />
                                             <input type="hidden" name="Ordem" value="@Model.Ordem" />
                                             <input type="hidden" name="SomenteAtivos" value="@Model.SomenteAtivos" />
                                             <input type="hidden" name="SomenteVendidos" value="@Model.SomenteVendidos" />
@@ -526,3 +523,4 @@
         </div>
     }
 </div>
+

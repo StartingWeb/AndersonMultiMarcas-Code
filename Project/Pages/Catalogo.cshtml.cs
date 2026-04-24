@@ -1,17 +1,20 @@
-using Core.Interfaces;
-using Domain;
+using Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using System.Globalization;
+using System.Text;
 
 namespace Project.Pages;
 
 public class CatalogoModel : PageModel
 {
-    private readonly IVeiculoService _veiculoService;
+    private const int RecentVehiclesCount = 3;
+    private readonly ApplicationDbContext _context;
 
-    public CatalogoModel(IVeiculoService veiculoService)
+    public CatalogoModel(ApplicationDbContext context)
     {
-        _veiculoService = veiculoService;
+        _context = context;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -33,7 +36,13 @@ public class CatalogoModel : PageModel
     public decimal? PrecoMaximo { get; set; }
 
     [BindProperty(SupportsGet = true)]
-    public int? AnoMinimo { get; set; }
+    public bool? ZeroKm { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? Condicao { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public bool? MotoEletrica { get; set; }
 
     public IReadOnlyList<CatalogVehicleItem> Vehicles { get; private set; } = [];
     public IReadOnlyList<CatalogVehicleItem> RecentVehicles { get; private set; } = [];
@@ -51,9 +60,11 @@ public class CatalogoModel : PageModel
         !string.IsNullOrWhiteSpace(Marca) ||
         !string.IsNullOrWhiteSpace(Cambio) ||
         !string.IsNullOrWhiteSpace(Combustivel) ||
+        !string.IsNullOrWhiteSpace(Condicao) ||
         PrecoMinimo.HasValue ||
         PrecoMaximo.HasValue ||
-        AnoMinimo.HasValue;
+        ZeroKm.HasValue ||
+        MotoEletrica == true;
 
     public async Task OnGetAsync()
     {
@@ -64,130 +75,435 @@ public class CatalogoModel : PageModel
             (PrecoMinimo, PrecoMaximo) = (PrecoMaximo, PrecoMinimo);
         }
 
-        var response = await _veiculoService.ListarAtivosAsync();
-        var veiculos = (response.Data ?? new List<Veiculo>())
-            .Where(veiculo => !veiculo.Vendido)
-            .ToList();
+        var baseQuery = _context.Veiculos
+            .AsNoTracking()
+            .Where(veiculo => veiculo.Ativo && !veiculo.Vendido);
 
-        AvailableBrands = veiculos
-            .Select(veiculo => veiculo.Marca?.Nome)
+        var filterMetadata = await baseQuery
+            .Select(veiculo => new VehicleFilterMetadataItem
+            {
+                Titulo = veiculo.Titulo,
+                Marca = veiculo.Marca != null ? veiculo.Marca.Nome : null,
+                Modelo = veiculo.Modelo,
+                Versao = veiculo.Versao,
+                Cambio = veiculo.Cambio,
+                Combustivel = veiculo.Combustivel,
+                MotoEletrica = veiculo.MotoEletrica,
+                Ano = veiculo.AnoModelo ?? veiculo.AnoFabricacao
+            })
+            .ToListAsync();
+
+        if (MotoEletrica == true)
+        {
+            filterMetadata = filterMetadata
+                .Where(item => item.MotoEletrica)
+                .ToList();
+        }
+        else
+        {
+            filterMetadata = filterMetadata
+                .Where(item => !IsMotorcycle(item))
+                .ToList();
+        }
+
+        var filteredQuery = AplicarFiltros(baseQuery);
+
+        var vehicles = await ProjetarVeiculos(filteredQuery)
+            .OrderByDescending(veiculo => veiculo.Destaque)
+            .ThenByDescending(veiculo => veiculo.Ano)
+            .ThenByDescending(veiculo => veiculo.DataCadastro)
+            .ToListAsync();
+
+        if (MotoEletrica == true)
+        {
+            vehicles = vehicles
+                .Where(item => item.MotoEletrica)
+                .ToList();
+        }
+        else
+        {
+            vehicles = vehicles
+                .Where(item => !IsMotorcycle(item))
+                .ToList();
+        }
+
+        if (!string.IsNullOrWhiteSpace(Combustivel))
+        {
+            vehicles = vehicles
+                .Where(item => CombustivelCompativel(item.Combustivel, Combustivel))
+                .ToList();
+        }
+
+        AvailableBrands = filterMetadata
+            .Select(item => item.Marca)
             .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value!)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(value => value)
-            .Cast<string>()
             .ToList();
 
-        AvailableGearboxes = veiculos
-            .Select(veiculo => veiculo.Cambio)
+        AvailableGearboxes = filterMetadata
+            .Select(item => item.Cambio)
             .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value!)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(value => value)
-            .Cast<string>()
             .ToList();
 
-        AvailableFuels = veiculos
-            .Select(veiculo => veiculo.Combustivel)
+        AvailableFuels = filterMetadata
+            .Select(item => item.Combustivel)
             .Where(value => !string.IsNullOrWhiteSpace(value))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(value => value!.Trim())
+            .GroupBy(value => NormalizarCombustivelChave(value), StringComparer.OrdinalIgnoreCase)
+            .Select(group => NormalizarCombustivelExibicao(group.Key))
             .OrderBy(value => value)
-            .Cast<string>()
             .ToList();
 
-        AvailableYears = veiculos
-            .Select(ObterAnoPrincipal)
+        AvailableYears = filterMetadata
+            .Select(item => item.Ano)
             .Where(value => value.HasValue)
             .Select(value => value!.Value)
             .Distinct()
             .OrderByDescending(value => value)
             .ToList();
 
-        IEnumerable<Veiculo> query = veiculos;
+        Vehicles = vehicles
+            .Select(MapToCatalogVehicleItem)
+            .ToList();
 
+        if (!HasActiveFilters)
+        {
+            RecentVehicles = Vehicles
+                .Take(RecentVehiclesCount)
+                .ToList();
+
+            var recentIds = RecentVehicles
+                .Select(vehicle => vehicle.Id)
+                .ToHashSet();
+
+            RemainingVehicles = Vehicles
+                .Where(veiculo => !recentIds.Contains(veiculo.Id))
+                .ToList();
+        }
+    }
+
+    private IQueryable<Domain.Veiculo> AplicarFiltros(IQueryable<Domain.Veiculo> query)
+    {
         if (!string.IsNullOrWhiteSpace(Busca))
         {
-            var busca = Busca.Trim();
-            query = query.Where(veiculo =>
-                Contem(veiculo.Titulo, busca) ||
-                Contem(veiculo.Modelo, busca) ||
-                Contem(veiculo.Versao, busca) ||
-                Contem(veiculo.Marca?.Nome, busca) ||
-                Contem(veiculo.Combustivel, busca) ||
-                Contem(veiculo.Cambio, busca) ||
-                Contem(veiculo.Cor, busca) ||
-                (ObterAnoPrincipal(veiculo)?.ToString().Contains(busca, StringComparison.OrdinalIgnoreCase) ?? false));
+            var termosBusca = Busca
+                .Trim()
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            foreach (var termo in termosBusca)
+            {
+                var like = $"%{termo}%";
+
+                query = query.Where(veiculo =>
+                    EF.Functions.Like(veiculo.Titulo, like) ||
+                    (veiculo.Modelo != null && EF.Functions.Like(veiculo.Modelo, like)) ||
+                    (veiculo.Versao != null && EF.Functions.Like(veiculo.Versao, like)) ||
+                    (veiculo.Combustivel != null && EF.Functions.Like(veiculo.Combustivel, like)) ||
+                    (veiculo.Cambio != null && EF.Functions.Like(veiculo.Cambio, like)) ||
+                    (veiculo.Cor != null && EF.Functions.Like(veiculo.Cor, like)) ||
+                    (veiculo.Marca != null && EF.Functions.Like(veiculo.Marca.Nome, like)) ||
+                    (veiculo.AnoModelo.HasValue && veiculo.AnoModelo.Value.ToString().Contains(termo)) ||
+                    (veiculo.AnoFabricacao.HasValue && veiculo.AnoFabricacao.Value.ToString().Contains(termo)));
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(Marca))
         {
-            query = query.Where(veiculo => string.Equals(veiculo.Marca?.Nome, Marca, StringComparison.OrdinalIgnoreCase));
+            var marcaSelecionada = Marca.Trim().ToUpper();
+            query = query.Where(veiculo =>
+                veiculo.Marca != null &&
+                veiculo.Marca.Nome != null &&
+                veiculo.Marca.Nome.Trim().ToUpper() == marcaSelecionada);
         }
 
         if (!string.IsNullOrWhiteSpace(Cambio))
         {
-            query = query.Where(veiculo => string.Equals(veiculo.Cambio, Cambio, StringComparison.OrdinalIgnoreCase));
+            query = query.Where(veiculo => veiculo.Cambio == Cambio);
         }
-
-        if (!string.IsNullOrWhiteSpace(Combustivel))
+        if (!string.IsNullOrWhiteSpace(Condicao))
         {
-            query = query.Where(veiculo => string.Equals(veiculo.Combustivel, Combustivel, StringComparison.OrdinalIgnoreCase));
+            var condicao = Condicao.Trim().ToLowerInvariant();
+
+            if (condicao == "seminovo")
+            {
+                query = query.Where(veiculo => veiculo.Seminovo);
+            }
+            else if (condicao == "zerokm" || condicao == "novo")
+            {
+                query = query.Where(veiculo => !veiculo.Seminovo);
+            }
         }
 
         if (PrecoMinimo.HasValue)
         {
-            query = query.Where(veiculo => (ObterPrecoPrincipal(veiculo) ?? 0m) >= PrecoMinimo.Value);
+            query = query.Where(veiculo =>
+                veiculo.PrecoVenda.HasValue &&
+                veiculo.PrecoVenda.Value > 0m &&
+                veiculo.PrecoVenda.Value >= PrecoMinimo.Value);
         }
 
         if (PrecoMaximo.HasValue)
         {
-            query = query.Where(veiculo => (ObterPrecoPrincipal(veiculo) ?? decimal.MaxValue) <= PrecoMaximo.Value);
+            query = query.Where(veiculo =>
+                veiculo.PrecoVenda.HasValue &&
+                veiculo.PrecoVenda.Value > 0m &&
+                veiculo.PrecoVenda.Value <= PrecoMaximo.Value);
         }
 
-        if (AnoMinimo.HasValue)
+        if (ZeroKm == true)
         {
-            query = query.Where(veiculo => (ObterAnoPrincipal(veiculo) ?? 0) >= AnoMinimo.Value);
+            query = query.Where(veiculo => !veiculo.Seminovo);
         }
 
-        Vehicles = query
-            .OrderByDescending(veiculo => veiculo.Destaque)
-            .ThenByDescending(veiculo => ObterAnoPrincipal(veiculo) ?? 0)
-            .ThenByDescending(veiculo => veiculo.DataCadastro)
-            .Select(CatalogVehicleItem.From)
-            .ToList();
+        if (MotoEletrica == true)
+        {
+            query = query.Where(veiculo => veiculo.MotoEletrica);
+        }
 
-        var orderedVehicles = veiculos
-            .OrderByDescending(veiculo => ObterAnoPrincipal(veiculo) ?? 0)
-            .ThenByDescending(veiculo => veiculo.DataCadastro)
-            .ToList();
-
-        RecentVehicles = orderedVehicles
-            .Take(3)
-            .Select(CatalogVehicleItem.From)
-            .ToList();
-
-        var recentIds = RecentVehicles
-            .Select(vehicle => vehicle.Id)
-            .ToHashSet();
-
-        RemainingVehicles = orderedVehicles
-            .Where(veiculo => !recentIds.Contains(veiculo.Id))
-            .Select(CatalogVehicleItem.From)
-            .ToList();
+        return query;
     }
 
-    private static bool Contem(string? value, string busca)
+    private static IQueryable<VehicleCardQueryItem> ProjetarVeiculos(IQueryable<Domain.Veiculo> query)
     {
-        return !string.IsNullOrWhiteSpace(value) &&
-               value.Contains(busca, StringComparison.OrdinalIgnoreCase);
+        return query.Select(veiculo => new VehicleCardQueryItem
+        {
+            Id = veiculo.Id,
+            Titulo = veiculo.Titulo,
+            Marca = veiculo.Marca != null ? veiculo.Marca.Nome : null,
+            Modelo = veiculo.Modelo,
+            Versao = veiculo.Versao,
+            Cambio = veiculo.Cambio,
+            Combustivel = veiculo.Combustivel,
+            Cor = veiculo.Cor,
+            Ano = veiculo.AnoModelo ?? veiculo.AnoFabricacao,
+            Seminovo = veiculo.Seminovo,
+            MotoEletrica = veiculo.MotoEletrica,
+            Quilometragem = veiculo.Quilometragem,
+            PrecoVenda = veiculo.PrecoVenda,
+            Destaque = veiculo.Destaque,
+            DataCadastro = veiculo.DataCadastro,
+            ImageUrl = veiculo.Midias
+                .Where(item => item.Ativo && item.Url != null && item.Url != string.Empty)
+                .OrderByDescending(item => item.Capa)
+                .ThenBy(item => item.Ordem)
+                .Select(item => item.Url)
+                .FirstOrDefault()
+        });
     }
 
-    private static decimal? ObterPrecoPrincipal(Veiculo veiculo)
+    private static CatalogVehicleItem MapToCatalogVehicleItem(VehicleCardQueryItem item)
     {
-        return veiculo.PrecoPromocional ?? veiculo.PrecoVenda ?? veiculo.PrecoFipe;
+        var titulo = !string.IsNullOrWhiteSpace(item.Marca) || !string.IsNullOrWhiteSpace(item.Modelo)
+            ? string.Join(" ", new[] { item.Marca, item.Modelo }.Where(value => !string.IsNullOrWhiteSpace(value)))
+            : string.IsNullOrWhiteSpace(item.Titulo)
+                ? string.Join(" ", new[] { item.Marca, item.Versao }
+                    .Where(value => !string.IsNullOrWhiteSpace(value)))
+                : item.Titulo!;
+
+        if (string.IsNullOrWhiteSpace(titulo))
+        {
+            titulo = $"Veiculo #{item.Id}";
+        }
+
+        var precoPrincipal = ObterPrecoPrincipal(item.PrecoVenda);
+        var precoDe = null as decimal?;
+
+        return new CatalogVehicleItem
+        {
+            Id = item.Id,
+            Titulo = titulo,
+            Marca = item.Marca ?? "Sem marca",
+            Modelo = item.Modelo ?? string.Empty,
+            Versao = item.Versao ?? string.Empty,
+            Cambio = string.IsNullOrWhiteSpace(item.Cambio) ? "-" : item.Cambio,
+            Combustivel = string.IsNullOrWhiteSpace(item.Combustivel) ? "-" : item.Combustivel,
+            Cor = item.Cor ?? string.Empty,
+            Ano = item.Ano,
+            Seminovo = item.Seminovo,
+            Quilometragem = item.Quilometragem,
+            Preco = precoPrincipal,
+            PrecoDe = precoDe,
+            Tag = item.Destaque ? "Destaque" : precoDe.HasValue ? "Promocao" : "Disponivel",
+            Highlight = string.Join(" • ", new[]
+            {
+                item.Cor,
+                item.Ano?.ToString()
+            }.Where(value => !string.IsNullOrWhiteSpace(value))),
+            ImageUrl = NormalizarImagem(item.ImageUrl),
+            WhatsappUrl = $"https://wa.me/5516996219214?text={Uri.EscapeDataString($"Ola, quero mais detalhes do {titulo}.")}"
+        };
     }
 
-    private static int? ObterAnoPrincipal(Veiculo veiculo)
+    private static string NormalizarImagem(string? imageUrl)
     {
-        return veiculo.AnoModelo ?? veiculo.AnoFabricacao;
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            return "/img/carroDefault.png";
+        }
+
+        if (Uri.TryCreate(imageUrl, UriKind.Absolute, out _))
+        {
+            return imageUrl;
+        }
+
+        return imageUrl.StartsWith('/') ? imageUrl : $"/{imageUrl.TrimStart('/')}";
+    }
+
+    private static decimal? ObterPrecoPrincipal(decimal? precoVenda)
+    {
+        if (precoVenda.HasValue && precoVenda.Value > 0m)
+        {
+            return precoVenda.Value;
+        }
+
+        return null;
+    }
+
+    private static bool IsMotorcycle(VehicleCardQueryItem item)
+    {
+        if (item.MotoEletrica)
+        {
+            return true;
+        }
+
+        var text = NormalizarTextoComparacao(string.Join(" ", new[] { item.Titulo, item.Marca, item.Modelo, item.Versao }
+            .Where(value => !string.IsNullOrWhiteSpace(value))));
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return false;
+        }
+
+        string[] keywords =
+        [
+            "MOTO", "MOTOCICLETA", "MOTONETA", "SCOOTER", "CG", "BIZ", "POP", "FAN", "TITAN",
+            "BROS", "BROZ", "XRE", "CB ", "CB-", "CBR", "HORNET", "PCX", "NMAX", "XMAX",
+            "FAZER", "LANDER", "CROSSER", "TENERE", "MT-", "FZ", "TWISTER", "HARLEY",
+            "DUCATI", "TRIUMPH", "ROYAL ENFIELD", "KAWASAKI", "KTM", "HAOJUE", "DAFRA", "BAJAJ"
+        ];
+
+        return keywords.Any(keyword => text.Contains(keyword, StringComparison.Ordinal));
+    }
+
+    private static bool IsMotorcycle(VehicleFilterMetadataItem item)
+    {
+        if (item.MotoEletrica)
+        {
+            return true;
+        }
+
+        var text = NormalizarTextoComparacao(string.Join(" ", new[] { item.Titulo, item.Marca, item.Modelo, item.Versao }
+            .Where(value => !string.IsNullOrWhiteSpace(value))));
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return false;
+        }
+
+        string[] keywords =
+        [
+            "MOTO", "MOTOCICLETA", "MOTONETA", "SCOOTER", "CG", "BIZ", "POP", "FAN", "TITAN",
+            "BROS", "BROZ", "XRE", "CB ", "CB-", "CBR", "HORNET", "PCX", "NMAX", "XMAX",
+            "FAZER", "LANDER", "CROSSER", "TENERE", "MT-", "FZ", "TWISTER", "HARLEY",
+            "DUCATI", "TRIUMPH", "ROYAL ENFIELD", "KAWASAKI", "KTM", "HAOJUE", "DAFRA", "BAJAJ"
+        ];
+
+        return keywords.Any(keyword => text.Contains(keyword, StringComparison.Ordinal));
+    }
+
+    private static string NormalizarTextoComparacao(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var normalized = value.Normalize(NormalizationForm.FormD);
+        var sb = new StringBuilder(normalized.Length);
+        foreach (var ch in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
+            {
+                sb.Append(ch);
+            }
+        }
+
+        return sb.ToString().Normalize(NormalizationForm.FormC).ToUpperInvariant();
+    }
+
+    private static bool CombustivelCompativel(string? valorVeiculo, string? filtroSelecionado)
+    {
+        var veiculo = NormalizarCombustivelChave(valorVeiculo ?? string.Empty);
+        var filtro = NormalizarCombustivelChave(filtroSelecionado ?? string.Empty);
+        if (string.IsNullOrWhiteSpace(filtro))
+        {
+            return true;
+        }
+
+        return veiculo == filtro;
+    }
+
+    private static string NormalizarCombustivelChave(string value)
+    {
+        var token = NormalizarTextoComparacao(value);
+        return token switch
+        {
+            "ACOOL" => "ALCOOL",
+            _ => token
+        };
+    }
+
+    private static string NormalizarCombustivelExibicao(string normalizedValue)
+    {
+        return normalizedValue switch
+        {
+            "ALCOOL" => "Álcool",
+            "DIESEL" => "Diesel",
+            "ELETRICO" => "Elétrico",
+            "FLEX" => "Flex",
+            "GASOLINA" => "Gasolina",
+            "HIBRIDO" => "Híbrido",
+            "GNV" => "GNV",
+            _ => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(normalizedValue.ToLowerInvariant())
+        };
+    }
+
+
+    private sealed class VehicleCardQueryItem
+    {
+        public int Id { get; init; }
+        public string? Titulo { get; init; }
+        public string? Marca { get; init; }
+        public string? Modelo { get; init; }
+        public string? Versao { get; init; }
+        public string? Cambio { get; init; }
+        public string? Combustivel { get; init; }
+        public string? Cor { get; init; }
+        public int? Ano { get; init; }
+        public bool Seminovo { get; init; }
+        public bool MotoEletrica { get; init; }
+        public int? Quilometragem { get; init; }
+        public decimal? PrecoVenda { get; init; }
+        public bool Destaque { get; init; }
+        public DateTime DataCadastro { get; init; }
+        public string? ImageUrl { get; init; }
+    }
+
+    private sealed class VehicleFilterMetadataItem
+    {
+        public string? Titulo { get; init; }
+        public string? Marca { get; init; }
+        public string? Modelo { get; init; }
+        public string? Versao { get; init; }
+        public string? Cambio { get; init; }
+        public string? Combustivel { get; init; }
+        public bool MotoEletrica { get; init; }
+        public int? Ano { get; init; }
     }
 
     public sealed class CatalogVehicleItem
@@ -201,6 +517,7 @@ public class CatalogoModel : PageModel
         public string Combustivel { get; init; } = "-";
         public string Cor { get; init; } = string.Empty;
         public int? Ano { get; init; }
+        public bool Seminovo { get; init; } = true;
         public int? Quilometragem { get; init; }
         public decimal? Preco { get; init; }
         public decimal? PrecoDe { get; init; }
@@ -208,72 +525,5 @@ public class CatalogoModel : PageModel
         public string Highlight { get; init; } = string.Empty;
         public string ImageUrl { get; init; } = string.Empty;
         public string WhatsappUrl { get; init; } = string.Empty;
-
-        public static CatalogVehicleItem From(Veiculo veiculo)
-        {
-            var titulo = string.IsNullOrWhiteSpace(veiculo.Titulo)
-                ? string.Join(" ", new[] { veiculo.Marca?.Nome, veiculo.Modelo, veiculo.Versao }
-                    .Where(value => !string.IsNullOrWhiteSpace(value)))
-                : veiculo.Titulo;
-
-            var precoPrincipal = ObterPrecoPrincipal(veiculo);
-            var precoDe = veiculo.PrecoPromocional.HasValue &&
-                          veiculo.PrecoVenda.HasValue &&
-                          veiculo.PrecoPromocional.Value < veiculo.PrecoVenda.Value
-                ? veiculo.PrecoVenda
-                : null;
-
-            return new CatalogVehicleItem
-            {
-                Id = veiculo.Id,
-                Titulo = string.IsNullOrWhiteSpace(titulo) ? $"Veiculo #{veiculo.Id}" : titulo,
-                Marca = veiculo.Marca?.Nome ?? "Sem marca",
-                Modelo = veiculo.Modelo ?? string.Empty,
-                Versao = veiculo.Versao ?? string.Empty,
-                Cambio = string.IsNullOrWhiteSpace(veiculo.Cambio) ? "-" : veiculo.Cambio!,
-                Combustivel = string.IsNullOrWhiteSpace(veiculo.Combustivel) ? "-" : veiculo.Combustivel!,
-                Cor = veiculo.Cor ?? string.Empty,
-                Ano = ObterAnoPrincipal(veiculo),
-                Quilometragem = veiculo.Quilometragem,
-                Preco = precoPrincipal,
-                PrecoDe = precoDe,
-                Tag = veiculo.Destaque ? "Destaque" : precoDe.HasValue ? "Promocao" : "Disponivel",
-                Highlight = MontarHighlight(veiculo),
-                ImageUrl = ObterImagem(veiculo),
-                WhatsappUrl = $"https://wa.me/551632523490?text={Uri.EscapeDataString($"Ola, quero mais detalhes do {titulo}.")}"
-            };
-        }
-
-        private static string MontarHighlight(Veiculo veiculo)
-        {
-            var partes = new[]
-            {
-                veiculo.Cor,
-                veiculo.AnoModelo?.ToString() ?? veiculo.AnoFabricacao?.ToString()
-            };
-
-            return string.Join(" • ", partes.Where(value => !string.IsNullOrWhiteSpace(value)));
-        }
-
-        private static string ObterImagem(Veiculo veiculo)
-        {
-            var midia = veiculo.Midias
-                .Where(item => item.Ativo && !string.IsNullOrWhiteSpace(item.Url))
-                .OrderByDescending(item => item.Capa)
-                .ThenBy(item => item.Ordem)
-                .FirstOrDefault();
-
-            if (midia == null)
-            {
-                return "/img/carroDefault.png";
-            }
-
-            if (Uri.TryCreate(midia.Url, UriKind.Absolute, out _))
-            {
-                return midia.Url;
-            }
-
-            return midia.Url.StartsWith('/') ? midia.Url : $"/{midia.Url.TrimStart('/')}";
-        }
     }
 }

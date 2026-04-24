@@ -125,6 +125,8 @@ public class ApplicationDbContext
 
             entity.Property(e => e.DataCadastro)
                 .HasDefaultValueSql("GETDATE()");
+
+            entity.HasIndex(e => e.Nome);
         });
     }
 
@@ -205,6 +207,9 @@ public class ApplicationDbContext
                 .IsRequired()
                 .HasMaxLength(150);
 
+            entity.Property(e => e.IdLegado)
+                .HasColumnType("int");
+
             entity.Property(e => e.Modelo)
                 .HasMaxLength(100);
 
@@ -223,19 +228,7 @@ public class ApplicationDbContext
             entity.Property(e => e.Placa)
                 .HasMaxLength(20);
 
-            entity.Property(e => e.Chassi)
-                .HasMaxLength(50);
-
-            entity.Property(e => e.Renavam)
-                .HasMaxLength(50);
-
             entity.Property(e => e.PrecoVenda)
-                .HasColumnType("decimal(18,2)");
-
-            entity.Property(e => e.PrecoPromocional)
-                .HasColumnType("decimal(18,2)");
-
-            entity.Property(e => e.PrecoFipe)
                 .HasColumnType("decimal(18,2)");
 
             entity.Property(e => e.Descricao)
@@ -259,6 +252,12 @@ public class ApplicationDbContext
             entity.Property(e => e.Seminovo)
                 .HasDefaultValue(false);
 
+            entity.Property(e => e.MotoEletrica)
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.ImportadoMidia)
+                .HasDefaultValue(false);
+
             entity.Property(e => e.Ativo)
                 .HasDefaultValue(true);
 
@@ -275,6 +274,11 @@ public class ApplicationDbContext
             entity.HasIndex(e => e.Ativo);
             entity.HasIndex(e => e.Vendido);
             entity.HasIndex(e => e.Destaque);
+            entity.HasIndex(e => new { e.Ativo, e.Vendido, e.Destaque, e.DataCadastro });
+            entity.HasIndex(e => new { e.Ativo, e.Vendido, e.DataCadastro });
+            entity.HasIndex(e => e.IdLegado)
+                .IsUnique()
+                .HasFilter("[IdLegado] IS NOT NULL");
         });
     }
 

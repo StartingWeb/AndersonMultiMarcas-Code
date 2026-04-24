@@ -1,0 +1,483 @@
+﻿@page
+@model Concessionaria.Pages.Marca.IndexModel
+@{
+    ViewData["Title"] = "Marcas";
+    ViewData["TopbarTitle"] = "Marcas";
+    ViewData["TopbarSubtitle"] = "Gerencie as marcas cadastradas";
+    Layout = "_LayoutAdmin";
+
+    var marcas = Model.Marcas ?? new List<Domain.Marca>();
+    var totalMarcas = marcas.Count();
+}
+
+<style>
+    :root {
+        --brand-primary: #9f0a10;
+        --brand-dark: #222222;
+        --brand-border: #ececec;
+        --brand-muted: #6c757d;
+        --brand-soft: rgba(159, 10, 16, 0.08);
+        --brand-soft-dark: rgba(34, 34, 34, 0.04);
+        --brand-success: #198754;
+        --brand-danger: #dc3545;
+        --brand-danger-soft: rgba(220, 53, 69, 0.08);
+    }
+
+    .brand-page {
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .page-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin: 0;
+    }
+
+    .page-subtitle {
+        font-size: .92rem;
+        color: var(--brand-muted);
+        margin: .2rem 0 0 0;
+    }
+
+    .search-card {
+        background: #fff;
+        border: 1px solid var(--brand-border);
+        border-radius: 1rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,.05);
+        margin-bottom: 1.25rem;
+    }
+
+        .search-card .card-body {
+            padding: 1.1rem;
+        }
+
+    .filter-label {
+        font-size: .82rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin-bottom: .45rem;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: .85rem;
+        border: 1px solid #e6e6e6;
+        min-height: 46px;
+        box-shadow: none !important;
+    }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: rgba(159, 10, 16, .35);
+            box-shadow: 0 0 0 .2rem rgba(159, 10, 16, .08) !important;
+        }
+
+    .input-icon-wrap {
+        position: relative;
+    }
+
+        .input-icon-wrap i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--brand-muted);
+            font-size: 1rem;
+        }
+
+        .input-icon-wrap .form-control {
+            padding-left: 2.7rem;
+        }
+
+    .btn-brand {
+        background: var(--brand-primary);
+        border-color: var(--brand-primary);
+        color: #fff;
+        border-radius: .85rem;
+        font-weight: 600;
+        min-height: 46px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+        .btn-brand:hover {
+            background: #86080d;
+            border-color: #86080d;
+            color: #fff;
+        }
+
+    .btn-soft-dark {
+        background: #fff;
+        border: 1px solid var(--brand-border);
+        color: var(--brand-dark);
+        border-radius: .85rem;
+        font-weight: 600;
+        min-height: 46px;
+    }
+
+        .btn-soft-dark:hover {
+            background: #f8f8f8;
+            color: var(--brand-dark);
+        }
+
+    .search-actions-row {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .search-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: .75rem;
+        width: 100%;
+    }
+
+        .search-actions .btn {
+            min-width: 140px;
+        }
+
+    .results-topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .results-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin: 0;
+    }
+
+    .results-counter {
+        font-size: .92rem;
+        color: var(--brand-muted);
+    }
+
+    .brand-card {
+        background: #fff;
+        border: 1px solid var(--brand-border);
+        border-radius: 1rem;
+        box-shadow: 0 8px 22px rgba(0,0,0,.05);
+        height: 100%;
+        transition: .2s ease;
+        overflow: hidden;
+    }
+
+        .brand-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 30px rgba(0,0,0,.08);
+        }
+
+    .brand-card-header {
+        padding: 1rem;
+        border-bottom: 1px solid #f2f2f2;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: .85rem;
+    }
+
+    .brand-avatar {
+        width: 58px;
+        height: 58px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, rgba(159, 10, 16, .12), rgba(159, 10, 16, .04));
+        color: var(--brand-primary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+        .brand-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .brand-badge-active,
+    .brand-badge-inactive {
+        font-size: .75rem;
+        font-weight: 700;
+        padding: .4rem .7rem;
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+
+    .brand-badge-active {
+        background: rgba(25, 135, 84, .10);
+        color: var(--brand-success);
+    }
+
+    .brand-badge-inactive {
+        background: var(--brand-danger-soft);
+        color: var(--brand-danger);
+    }
+
+    .brand-card-body {
+        padding: 1rem;
+    }
+
+    .brand-name {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin-bottom: .2rem;
+        line-height: 1.3;
+    }
+
+    .brand-code {
+        font-size: .84rem;
+        color: var(--brand-muted);
+        margin-bottom: 0;
+    }
+
+    .brand-info-list {
+        display: grid;
+        gap: .7rem;
+    }
+
+    .brand-info-item {
+        display: flex;
+        gap: .75rem;
+        align-items: flex-start;
+        color: var(--brand-dark);
+        font-size: .92rem;
+    }
+
+        .brand-info-item i {
+            color: var(--brand-primary);
+            margin-top: .15rem;
+            flex-shrink: 0;
+        }
+
+    .brand-card-footer {
+        display: flex;
+        gap: .75rem;
+        padding: 0 1rem 1rem 1rem;
+    }
+
+    .empty-state {
+        border: 1px dashed #dadada;
+        border-radius: 1rem;
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+        background: #fff;
+    }
+
+    .empty-state-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 22px;
+        margin: 0 auto 1rem auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--brand-soft);
+        color: var(--brand-primary);
+        font-size: 1.8rem;
+    }
+
+    @@media (max-width: 768px) {
+        .page-header,
+        .results-topbar,
+        .brand-card-footer,
+        .search-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+            .search-actions .btn {
+                min-width: 100%;
+            }
+    }
+</style>
+
+<div class="container-fluid brand-page">
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <i class="bi bi-tags me-2"></i>
+                Marcas
+            </h1>
+            <p class="page-subtitle">Lista e gerenciamento das marcas cadastradas</p>
+        </div>
+
+        <a href="/Marca/Upsert" class="btn btn-brand px-3">
+            <i class="bi bi-plus-circle me-2"></i>
+            Nova marca
+        </a>
+    </div>
+
+    <div class="search-card card">
+        <div class="card-body">
+            <form method="get">
+                <div class="row g-3">
+                    <div class="col-12 col-lg-5">
+                        <label class="filter-label">Pesquisar marca</label>
+                        <div class="input-icon-wrap">
+                            <i class="bi bi-search"></i>
+                            <input type="text"
+                                   name="Filtro"
+                                   value="@Model.Filtro"
+                                   class="form-control"
+                                   placeholder="Digite o nome da marca..." />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label class="filter-label">Ordenação</label>
+                        <select name="Ordem" class="form-select">
+                            <option value="" selected="@(string.IsNullOrWhiteSpace(Model.Ordem))">Nome (A-Z)</option>
+                            <option value="nome_desc" selected="@(Model.Ordem == "nome_desc")">Nome (Z-A)</option>
+                            <option value="recentes" selected="@(Model.Ordem == "recentes")">Mais recentes</option>
+                            <option value="antigas" selected="@(Model.Ordem == "antigas")">Mais antigas</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-2">
+                        <label class="filter-label">Status</label>
+                        <select name="SomenteAtivas" class="form-select">
+                            <option value="">Todas</option>
+                            <option value="true" selected="@(Model.SomenteAtivas == true)">Somente ativas</option>
+                            <option value="false" selected="@(Model.SomenteAtivas == false)">Somente inativas</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="search-actions-row">
+                            <div class="search-actions">
+                                <button type="submit" class="btn btn-brand">
+                                    <i class="bi bi-search me-2"></i>
+                                    Buscar
+                                </button>
+
+                                <a asp-page="./Index" class="btn btn-soft-dark">
+                                    <i class="bi bi-arrow-counterclockwise me-2"></i>
+                                    Limpar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="results-topbar">
+        <h5 class="results-title">Marcas cadastradas</h5>
+        <div class="results-counter">
+            <strong>@totalMarcas</strong> registro(s)
+        </div>
+    </div>
+
+    @if (marcas.Any())
+    {
+        <div class="row g-4">
+            @foreach (var marca in marcas)
+            {
+                <div class="col-12 col-md-6 col-xxl-4">
+                    <div class="brand-card">
+                        <div class="brand-card-header">
+                            <div class="d-flex gap-3">
+                                <div class="brand-avatar">
+                                    @if (!string.IsNullOrWhiteSpace(marca.LogoUrl))
+                                    {
+                                        <img src="@marca.LogoUrl" alt="Logo da marca @marca.Nome" />
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-tag-fill"></i>
+                                    }
+                                </div>
+
+                                <div>
+                                    <div class="brand-name">@marca.Nome</div>
+                                    <div class="brand-code">ID #@marca.Id</div>
+                                </div>
+                            </div>
+
+                            @if (marca.Ativo)
+                            {
+                                <span class="brand-badge-active">Ativa</span>
+                            }
+                            else
+                            {
+                                <span class="brand-badge-inactive">Inativa</span>
+                            }
+                        </div>
+
+                        <div class="brand-card-body">
+                            <div class="brand-info-list">
+                                @if (!string.IsNullOrWhiteSpace(marca.LogoUrl))
+                                {
+                                    <div class="brand-info-item">
+                                        <i class="bi bi-image-fill"></i>
+                                        <span class="text-break">@marca.LogoUrl</span>
+                                    </div>
+                                }
+
+                                <div class="brand-info-item">
+                                    <i class="bi bi-calendar-event-fill"></i>
+                                    <span>
+                                        Cadastro:
+                                        @(marca.DataCadastro != default
+                                            ? marca.DataCadastro.ToString("dd/MM/yyyy HH:mm")
+                                            : "Não informado")
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="brand-card-footer">
+                            <a asp-page="./Upsert" asp-route-id="@marca.Id" class="btn btn-brand flex-fill">
+                                <i class="bi bi-pencil-square me-2"></i>
+                                Editar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="bi bi-tags"></i>
+            </div>
+
+            <h5 class="fw-bold mb-2">Nenhuma marca encontrada</h5>
+            <p class="text-muted mb-4">
+                Não encontramos registros com os filtros informados.
+            </p>
+
+            <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
+                <a asp-page="./Index" class="btn btn-soft-dark">
+                    <i class="bi bi-arrow-counterclockwise me-2"></i>
+                    Limpar filtros
+                </a>
+
+                <a asp-page="/Marca/Upsert" class="btn btn-brand">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Cadastrar marca
+                </a>
+            </div>
+        </div>
+    }
+</div>

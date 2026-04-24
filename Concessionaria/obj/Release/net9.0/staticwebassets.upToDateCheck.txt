@@ -1,0 +1,3 @@
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Concessionaria\wwwroot\exampleJsInterop.js
+wwwroot\background.png
+wwwroot\exampleJsInterop.js

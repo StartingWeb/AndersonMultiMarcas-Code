@@ -1,0 +1,553 @@
+﻿@page "{id:int?}"
+@model Concessionaria.Pages.Marca.UpsertModel
+@{
+    var isEdit = Model.Marca.Id > 0;
+
+    ViewData["Title"] = isEdit ? "Editar Marca" : "Nova Marca";
+    ViewData["TopbarTitle"] = isEdit ? "Editar Marca" : "Nova Marca";
+    ViewData["TopbarSubtitle"] = isEdit ? "Atualize os dados da marca" : "Cadastre uma nova marca";
+    Layout = "_LayoutAdmin";
+}
+
+<style>
+    :root {
+        --brand-primary: #9f0a10;
+        --brand-dark: #222222;
+        --brand-border: #ececec;
+        --brand-muted: #6c757d;
+        --brand-soft: rgba(159, 10, 16, 0.08);
+        --brand-success: #198754;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .page-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin: 0;
+    }
+
+    .page-subtitle {
+        font-size: .92rem;
+        color: var(--brand-muted);
+        margin: .2rem 0 0 0;
+    }
+
+    .form-card {
+        background: #fff;
+        border: 1px solid var(--brand-border);
+        border-radius: 1rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,.05);
+        overflow: hidden;
+    }
+
+    .form-card-body {
+        padding: 1.25rem;
+    }
+
+    .form-label {
+        font-size: .84rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin-bottom: .35rem;
+    }
+
+    .form-help {
+        display: block;
+        font-size: .78rem;
+        color: var(--brand-muted);
+        margin-top: .4rem;
+        line-height: 1.35;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: .85rem;
+        border: 1px solid #e6e6e6;
+        min-height: 46px;
+        box-shadow: none !important;
+    }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: rgba(159, 10, 16, .35);
+            box-shadow: 0 0 0 .2rem rgba(159, 10, 16, .08) !important;
+        }
+
+    .text-danger {
+        font-size: .8rem;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: .75rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid #f2f2f2;
+        margin-top: 1.25rem;
+    }
+
+    .btn-brand {
+        background: var(--brand-primary);
+        border-color: var(--brand-primary);
+        color: #fff;
+        border-radius: .85rem;
+        font-weight: 600;
+        min-height: 46px;
+        padding: 0 1.25rem;
+    }
+
+        .btn-brand:hover {
+            background: #86080d;
+            border-color: #86080d;
+            color: #fff;
+        }
+
+    .btn-soft-dark {
+        background: #fff;
+        border: 1px solid var(--brand-border);
+        color: var(--brand-dark);
+        border-radius: .85rem;
+        font-weight: 600;
+        min-height: 46px;
+        padding: 0 1.25rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+        .btn-soft-dark:hover {
+            background: #f8f8f8;
+            color: var(--brand-dark);
+        }
+
+    .field-block {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .logo-preview-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border: 1px dashed #ddd;
+        border-radius: .85rem;
+        background: #fafafa;
+        min-height: 110px;
+        margin-top: .75rem;
+    }
+
+    .logo-preview-box {
+        width: 84px;
+        height: 84px;
+        border-radius: 1rem;
+        background: #fff;
+        border: 1px solid #ececec;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+        .logo-preview-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+    .logo-preview-placeholder {
+        color: var(--brand-muted);
+        font-size: .75rem;
+        text-align: center;
+        padding: .5rem;
+        line-height: 1.2;
+    }
+
+    .logo-preview-text {
+        display: flex;
+        flex-direction: column;
+        gap: .2rem;
+    }
+
+    .logo-preview-title {
+        font-size: .92rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin: 0;
+    }
+
+    .logo-preview-subtitle {
+        font-size: .78rem;
+        color: var(--brand-muted);
+        margin: 0;
+    }
+
+    .switch-field {
+        display: flex;
+        flex-direction: column;
+        gap: .45rem;
+    }
+
+    .switch-wrapper {
+        display: inline-flex;
+        align-items: center;
+        gap: .75rem;
+        user-select: none;
+        cursor: pointer;
+        width: fit-content;
+    }
+
+        .switch-wrapper * {
+            cursor: pointer !important;
+        }
+
+    .switch-input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        pointer-events: none;
+    }
+
+    .switch-slider {
+        position: relative;
+        width: 52px;
+        height: 30px;
+        border-radius: 999px;
+        background: #d9d9d9;
+        transition: background-color .25s ease, box-shadow .25s ease, transform .25s ease;
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+        flex-shrink: 0;
+    }
+
+        .switch-slider::before {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,.18);
+            transition: transform .25s ease;
+        }
+
+    .switch-input:checked + .switch-slider {
+        background: var(--brand-primary);
+    }
+
+        .switch-input:checked + .switch-slider::before {
+            transform: translateX(22px);
+        }
+
+    .switch-input:focus + .switch-slider {
+        box-shadow: 0 0 0 .2rem rgba(159, 10, 16, .15);
+    }
+
+    .switch-text {
+        display: flex;
+        flex-direction: column;
+        gap: .1rem;
+    }
+
+    .switch-title {
+        font-size: .92rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        line-height: 1.2;
+    }
+
+    .switch-subtitle {
+        font-size: .78rem;
+        color: var(--brand-muted);
+        line-height: 1.35;
+    }
+
+    .switch-status {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        padding: .22rem .6rem;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 700;
+        background: rgba(108, 117, 125, .12);
+        color: var(--brand-muted);
+        transition: all .2s ease;
+    }
+
+        .switch-status.active {
+            background: rgba(25, 135, 84, .12);
+            color: var(--brand-success);
+        }
+
+    @@media (max-width: 768px) {
+        .page-header,
+        .form-actions,
+        .logo-preview-wrapper {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .logo-preview-box {
+            margin: 0 auto;
+        }
+    }
+</style>
+
+<div class="container-fluid brand-form-page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <i class="bi @(isEdit ? "bi-pencil-square" : "bi-plus-circle") me-2"></i>
+                @(isEdit ? "Editar Marca" : "Nova Marca")
+            </h1>
+            <p class="page-subtitle">
+                @(isEdit ? "Atualize os dados da marca cadastrada" : "Preencha os dados para cadastrar uma nova marca")
+            </p>
+        </div>
+
+        <a asp-page="./Index" class="btn btn-soft-dark">
+            <i class="bi bi-arrow-left me-2"></i>
+            Voltar
+        </a>
+    </div>
+
+    <div class="form-card">
+        <div class="form-card-body">
+            <form method="post" enctype="multipart/form-data" id="formMarca">
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" asp-for="Marca.Id" />
+                <input type="hidden" asp-for="Marca.DataCadastro" />
+                <input type="hidden" asp-for="Marca.LogoUrl" id="Marca_LogoUrl" />
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="row g-3">
+                    <div class="col-12 col-lg-6">
+                        <div class="field-block">
+                            <label asp-for="Marca.Nome" class="form-label">Nome da marca</label>
+                            <input asp-for="Marca.Nome" class="form-control" placeholder="Ex.: Chevrolet" maxlength="100" />
+                            <small class="form-help">Nome da marca exibido no sistema.</small>
+                            <span asp-validation-for="Marca.Nome" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-6">
+                        <div class="field-block">
+                            <label asp-for="LogoArquivo" class="form-label">Logo da marca</label>
+                            <input asp-for="LogoArquivo" id="LogoArquivo" type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp,image/*" />
+                            <small class="form-help">Selecione uma imagem do computador. Formatos aceitos: JPG, JPEG, PNG, WEBP.</small>
+                            <span asp-validation-for="LogoArquivo" class="text-danger"></span>
+                            <span asp-validation-for="Marca.LogoUrl" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="logo-preview-wrapper">
+                            <div class="logo-preview-box">
+                                @if (!string.IsNullOrWhiteSpace(Model.Marca.LogoUrl))
+                                {
+                                    <img id="logoPreviewImage"
+                                         src="@Model.Marca.LogoUrl"
+                                         alt="Pré-visualização do logo"
+                                         style="display:block;" />
+                                    <div class="logo-preview-placeholder" id="logoPreviewPlaceholder" style="display:none;">
+                                        Sem logo
+                                    </div>
+                                }
+                                else
+                                {
+                                    <img id="logoPreviewImage"
+                                         alt="Pré-visualização do logo"
+                                         style="display:none;" />
+                                    <div class="logo-preview-placeholder" id="logoPreviewPlaceholder">
+                                        Sem logo
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="logo-preview-text">
+                                <p class="logo-preview-title">Pré-visualização do logo</p>
+                                <p class="logo-preview-subtitle">
+                                    Ao selecionar uma imagem, a prévia será exibida aqui automaticamente.
+                                </p>
+
+                                @if (!string.IsNullOrWhiteSpace(Model.Marca.LogoUrl))
+                                {
+                                    <p class="logo-preview-subtitle mb-0">
+                                        Logo atual cadastrada.
+                                    </p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <div class="row g-3 align-items-center">
+                    <div class="col-12 col-md-6">
+                        <div class="switch-field">
+                            <label class="switch-wrapper" for="Marca_Ativo">
+                                <input asp-for="Marca.Ativo" class="switch-input" id="Marca_Ativo" type="checkbox" />
+                                <span class="switch-slider"></span>
+                                <span class="switch-text">
+                                    <span class="switch-title">Marca ativa</span>
+                                    <span class="switch-subtitle">Define se a marca ficará disponível para uso no sistema.</span>
+                                </span>
+                            </label>
+
+                            <span id="statusMarcaAtiva" class="switch-status">Inativa</span>
+                            <span asp-validation-for="Marca.Ativo" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    @if (isEdit && Model.Marca.DataCadastro != default)
+                    {
+                        <div class="col-12 col-md-6 text-md-end">
+                            <small class="text-muted">
+                                Cadastro em: @Model.Marca.DataCadastro.ToString("dd/MM/yyyy HH:mm")
+                            </small>
+                        </div>
+                    }
+                </div>
+
+                <div class="form-actions">
+                    <a asp-page="./Index" class="btn btn-soft-dark">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Cancelar
+                    </a>
+
+                    <button type="submit" class="btn btn-brand">
+                        <i class="bi bi-check-circle me-2"></i>
+                        @(isEdit ? "Salvar alterações" : "Cadastrar marca")
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        (function () {
+            const form = document.getElementById('formMarca');
+            const fileInput = document.getElementById('LogoArquivo');
+            const logoUrlHidden = document.getElementById('Marca_LogoUrl');
+
+            const ativoInput = document.getElementById('Marca_Ativo');
+            const statusMarcaAtiva = document.getElementById('statusMarcaAtiva');
+
+            const logoPreviewImage = document.getElementById('logoPreviewImage');
+            const logoPreviewPlaceholder = document.getElementById('logoPreviewPlaceholder');
+
+            const originalLogoValue = logoUrlHidden ? (logoUrlHidden.value || '') : '';
+
+            function updateAtivoStatus() {
+                if (!ativoInput || !statusMarcaAtiva) return;
+
+                if (ativoInput.checked) {
+                    statusMarcaAtiva.textContent = 'Ativa';
+                    statusMarcaAtiva.classList.add('active');
+                } else {
+                    statusMarcaAtiva.textContent = 'Inativa';
+                    statusMarcaAtiva.classList.remove('active');
+                }
+            }
+
+            function showPlaceholder() {
+                if (logoPreviewImage) {
+                    logoPreviewImage.style.display = 'none';
+                    logoPreviewImage.removeAttribute('src');
+                }
+
+                if (logoPreviewPlaceholder) {
+                    logoPreviewPlaceholder.style.display = 'block';
+                }
+            }
+
+            function showImage(src) {
+                if (!logoPreviewImage || !logoPreviewPlaceholder) return;
+
+                logoPreviewImage.src = src;
+                logoPreviewImage.style.display = 'block';
+                logoPreviewPlaceholder.style.display = 'none';
+            }
+
+            function restoreCurrentLogo() {
+                if (!logoUrlHidden) return;
+
+                if (originalLogoValue) {
+                    showImage(originalLogoValue);
+                    logoUrlHidden.value = originalLogoValue;
+                } else {
+                    showPlaceholder();
+                    logoUrlHidden.value = '';
+                }
+            }
+
+            function updateLogoPreviewFromFile() {
+                if (!fileInput || !logoPreviewImage || !logoPreviewPlaceholder || !logoUrlHidden) return;
+
+                const file = fileInput.files && fileInput.files.length > 0
+                    ? fileInput.files[0]
+                    : null;
+
+                if (!file) {
+                    restoreCurrentLogo();
+                    return;
+                }
+
+                const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                if (!allowed.includes((file.type || '').toLowerCase())) {
+                    fileInput.value = '';
+                    restoreCurrentLogo();
+                    alert('Selecione uma imagem válida: JPG, JPEG, PNG ou WEBP.');
+                    return;
+                }
+
+                // Preenche o hidden para satisfazer a validação do model
+                // O backend depois substitui esse valor pelo caminho final do arquivo salvo.
+                logoUrlHidden.value = file.name;
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    showImage(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+
+            if (fileInput) {
+                fileInput.addEventListener('change', updateLogoPreviewFromFile);
+            }
+
+            if (ativoInput) {
+                ativoInput.addEventListener('change', updateAtivoStatus);
+                updateAtivoStatus();
+            }
+
+            if (form) {
+                form.addEventListener('reset', function () {
+                    setTimeout(function () {
+                        restoreCurrentLogo();
+                        updateAtivoStatus();
+                    }, 0);
+                });
+            }
+        })();
+    </script>
+}

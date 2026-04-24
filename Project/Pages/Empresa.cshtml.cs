@@ -1,17 +1,19 @@
 using Core.Interfaces;
+using Data;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 
 namespace Project.Pages;
 
 public class EmpresaModel : PageModel
 {
     private readonly ILojaService _lojaService;
-    private readonly IVeiculoService _veiculoService;
+    private readonly ApplicationDbContext _context;
 
-    public EmpresaModel(ILojaService lojaService, IVeiculoService veiculoService)
+    public EmpresaModel(ILojaService lojaService, ApplicationDbContext context)
     {
         _lojaService = lojaService;
-        _veiculoService = veiculoService;
+        _context = context;
     }
 
     public int TotalVeiculosAtivos { get; private set; }
@@ -22,18 +24,16 @@ public class EmpresaModel : PageModel
     {
         ViewData["ShowHero"] = false;
 
-        var lojasTask = _lojaService.ListarAsync();
-        var veiculosTask = _veiculoService.ListarAtivosAsync();
+        var lojasResult = await _lojaService.ListarAsync();
+        TotalVeiculosAtivos = await _context.Veiculos
+            .AsNoTracking()
+            .CountAsync(veiculo => veiculo.Ativo && !veiculo.Vendido);
 
-        await Task.WhenAll(lojasTask, veiculosTask);
-
-        var lojas = lojasTask.Result.Data ?? [];
-        var veiculos = veiculosTask.Result.Data ?? [];
+        var lojas = lojasResult.Data ?? [];
 
         var lojasAtivas = lojas.Where(loja => loja.Ativo).OrderBy(loja => loja.Nome).ToList();
 
         TotalLojasAtivas = lojasAtivas.Count;
-        TotalVeiculosAtivos = veiculos.Count(veiculo => veiculo.Ativo && !veiculo.Vendido);
 
         Stores = lojasAtivas
             .Select(loja => new StoreItem

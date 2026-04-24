@@ -1,4 +1,4 @@
-@page
+﻿@page
 @model Project.Pages.EmpresaModel
 @{
     ViewData["Title"] = "Quem Somos";
@@ -20,13 +20,18 @@
 
                     <div class="about-hero-actions">
                         <a asp-page="/Catalogo" class="btn btn-brand">Ver estoque</a>
-                        <a href="https://wa.me/551632523490?text=Ol%C3%A1%2C%20quero%20falar%20com%20a%20Anderson%20Multimarcas." target="_blank" class="btn btn-outline-brand">Falar no WhatsApp</a>
+                        <button type="button"
+                                class="btn btn-outline-brand"
+                                data-whatsapp-modal="true"
+                                data-vehicle-title="Atendimento Anderson Multimarcas">
+                            Falar no WhatsApp
+                        </button>
                     </div>
                 </div>
 
                 <div class="col-lg-5">
                     <div class="about-video-card">
-                        <video class="about-video" autoplay muted loop playsinline>
+                        <video class="about-video" autoplay muted loop playsinline webkit-playsinline="true" preload="auto" data-autoplay-video>
                             <source src="/video/videoHome.mp4" type="video/mp4" />
                             Seu navegador não suporta vídeo em HTML5.
                         </video>
@@ -56,8 +61,9 @@
                     <div class="about-stat-number">@Model.TotalVeiculosAtivos</div>
                     <h2>Opções em estoque</h2>
                     <p>
-                        Hoje o site exibe <strong>@Model.TotalVeiculosAtivos</strong> veículo(s) ativos puxados diretamente do backend,
-                        com atualização dinâmica da vitrine pública.
+                        Mais de <strong>@Model.TotalVeiculosAtivos</strong> oportunidades selecionadas para quem quer comprar com
+                        segurança, procedência e atendimento de verdade. Mantemos nossa vitrine sempre atualizada para apresentar
+                        as melhores opções disponíveis na loja.
                     </p>
                 </article>
             </div>
@@ -126,7 +132,12 @@
                     </p>
                 </div>
                 <div class="col-lg-4 text-lg-end">
-                    <a href="https://wa.me/551632523490?text=Ol%C3%A1%2C%20quero%20mais%20informa%C3%A7%C3%B5es%20sobre%20os%20ve%C3%ADculos%20da%20Anderson%20Multimarcas." target="_blank" class="btn btn-light btn-lg fw-semibold">Chamar no WhatsApp</a>
+                    <button type="button"
+                            class="btn btn-light btn-lg fw-semibold"
+                            data-whatsapp-modal="true"
+                            data-vehicle-title="Atendimento Anderson Multimarcas">
+                        Chamar no WhatsApp
+                    </button>
                 </div>
             </div>
         </div>

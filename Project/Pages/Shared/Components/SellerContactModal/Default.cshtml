@@ -1,0 +1,57 @@
+@model Project.ViewComponents.SellerContactModalViewComponent.SellerContactModalViewModel
+
+<div class="modal fade seller-contact-modal" id="sellerContactModal" tabindex="-1" aria-labelledby="sellerContactModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable seller-contact-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="sellerContactModalLabel">Fale com um vendedor</h5>
+                    <p class="seller-contact-modal-subtitle mb-0" data-seller-contact-context>Escolha um contato para continuar no WhatsApp.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body seller-contact-body">
+                @if (Model.Sellers.Any())
+                {
+                    <div class="seller-contact-list">
+                        @foreach (var seller in Model.Sellers)
+                        {
+                            var phone = !string.IsNullOrWhiteSpace(seller.Whatsapp) ? seller.Whatsapp : seller.Telefone;
+
+                            if (string.IsNullOrWhiteSpace(phone))
+                            {
+                                continue;
+                            }
+
+                            <div class="seller-contact-card">
+                                <img src="@seller.FotoUrl"
+                                     alt="@seller.Nome"
+                                     class="seller-contact-photo"
+                                     loading="lazy"
+                                     decoding="async"
+                                     width="52"
+                                     height="52" />
+                                <div class="seller-contact-details">
+                                    <div class="seller-contact-name">@seller.Nome</div>
+                                    <div class="seller-contact-phone">@phone</div>
+                                </div>
+                                <a href="#"
+                                   class="seller-contact-action"
+                                   data-seller-name="@seller.Nome"
+                                   data-seller-phone="@phone"
+                                   aria-label="Chamar @seller.Nome no WhatsApp"
+                                   title="Chamar no WhatsApp">
+                                    <span>Entrar em contato</span>
+                                </a>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="mb-0 text-muted">Nenhum vendedor com telefone cadastrado no momento.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

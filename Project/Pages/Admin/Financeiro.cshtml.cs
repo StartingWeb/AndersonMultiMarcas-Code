@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Project.Pages.Admin;
 
-[Authorize(Roles = "Desenvolvedor,Administrador,AdminConcessionaria")]
+[Authorize(Roles = "Desenvolvedor,Administrador")]
 public class FinanceiroModel : PageModel
 {
     private readonly IVeiculoService _veiculoService;
@@ -101,10 +101,7 @@ public class FinanceiroModel : PageModel
 
     private static decimal ObterPrecoPrincipal(Veiculo veiculo)
     {
-        return veiculo.PrecoVenda
-            ?? veiculo.PrecoPromocional
-            ?? veiculo.PrecoFipe
-            ?? 0m;
+        return veiculo.PrecoVenda ?? 0m;
     }
 
     public sealed class MesOptionItem
@@ -140,10 +137,16 @@ public class FinanceiroModel : PageModel
 
         public static VeiculoVendidoItem From(Veiculo veiculo)
         {
+            var titulo = !string.IsNullOrWhiteSpace(veiculo.Marca?.Nome) || !string.IsNullOrWhiteSpace(veiculo.Modelo)
+                ? string.Join(" ", new[] { veiculo.Marca?.Nome, veiculo.Modelo }.Where(parte => !string.IsNullOrWhiteSpace(parte)))
+                : string.IsNullOrWhiteSpace(veiculo.Titulo)
+                    ? $"Veículo #{veiculo.Id}"
+                    : veiculo.Titulo;
+
             return new VeiculoVendidoItem
             {
                 Id = veiculo.Id,
-                Titulo = string.IsNullOrWhiteSpace(veiculo.Titulo) ? $"Veículo #{veiculo.Id}" : veiculo.Titulo,
+                Titulo = titulo,
                 Loja = veiculo.Loja?.Nome ?? "-",
                 Marca = veiculo.Marca?.Nome ?? "-",
                 Vendedor = veiculo.Vendedor?.Nome ?? "-",

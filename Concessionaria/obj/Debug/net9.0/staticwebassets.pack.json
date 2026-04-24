@@ -1,11 +1,11 @@
 {
   "Files": [
     {
-      "Id": "c:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Concessionaria\\wwwroot\\background.png",
+      "Id": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Concessionaria\\wwwroot\\background.png",
       "PackagePath": "staticwebassets\\background.png"
     },
     {
-      "Id": "c:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Concessionaria\\wwwroot\\exampleJsInterop.js",
+      "Id": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Concessionaria\\wwwroot\\exampleJsInterop.js",
       "PackagePath": "staticwebassets\\exampleJsInterop.js"
     },
     {

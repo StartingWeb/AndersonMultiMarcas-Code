@@ -1,57 +1,249 @@
 @page
 @model IndexModel
 @{
-    ViewData["Title"] = "Inicio";
+    ViewData["Title"] = "In\u00edcio";
     ViewData["ShowHero"] = true;
+    ViewData["SearchPlaceholder"] = "Busque por marca, modelo, vers\u00e3o ou ano";
 }
 
-<section class="section">
-    <div class="container">
-        <h2 class="section-title">Ofertas em destaque</h2>
-        <p class="section-subtitle">
-            Oportunidades selecionadas para destacar os carros certos e acelerar sua próxima compra.
-        </p>
+@section Styles {
+    <link rel="stylesheet" href="~/css/Home.css" asp-append-version="true" />
+}
 
-        @if (Model.FeaturedVehicles.Any())
-        {
-            <div class="row g-4">
-                @foreach (var vehicle in Model.FeaturedVehicles)
+<section id="heroSection" class="home-hero">
+    <div class="home-hero-media" aria-hidden="true">
+        <video class="home-hero-video"
+               autoplay
+               muted
+               loop
+               playsinline
+               webkit-playsinline="true"
+               preload="metadata"
+               poster="/img/carroDefault.png"
+               data-autoplay-video>
+            <source src="/video/videoHome.mp4" type="video/mp4" />
+        </video>
+    </div>
+
+    <div class="home-hero-overlay"></div>
+
+    <div class="container hero-content home-hero-content">
+        <div class="hero-search-modal home-hero-shell">
+            <div class="search-box home-search-card">
+                <div class="mb-4">
+                    <div class="search-title mt-3 mb-0">Encontre seu ve&iacute;culo</div>
+                    <p class="search-subtitle mb-0">Pesquise de forma ampla por marca, modelo ou ano.</p>
+                </div>
+
+                <div class="home-search-component">
+                    <partial name="_SiteSearchAutocomplete" view-data="ViewData" />
+                </div>
+
+                @if (Model.FeaturedVehicles.Any())
                 {
-                    <div class="col-lg-3 col-md-6">
-                        @await Html.PartialAsync("_CatalogVehicleCardDb", vehicle)
+                    var featuredPreviewPages = Model.FeaturedVehicles.Chunk(3).ToArray();
+                    var hasFeaturedPreviewSlider = featuredPreviewPages.Length > 1;
+                    var featuredPreviewLoopPages = hasFeaturedPreviewSlider
+                        ? featuredPreviewPages.Concat(new[] { featuredPreviewPages[0] }).ToArray()
+                        : featuredPreviewPages;
+
+                    <div class="home-hero-preview" aria-labelledby="home-hero-preview-title">
+                        <div class="home-hero-preview-header">
+                            <div>
+                                <span class="home-preview-kicker">Destaques</span>
+                                <h2 id="home-hero-preview-title">&Uacute;ltimos ve&iacute;culos e destaques</h2>
+                            </div>
+                            <a asp-page="/Catalogo" class="btn btn-outline-brand home-preview-cta">Ver estoque</a>
+                        </div>
+
+                        <div class="home-hero-preview-slider @(hasFeaturedPreviewSlider ? "is-active" : string.Empty)"
+                             data-home-featured-slider="@(hasFeaturedPreviewSlider ? "true" : "false")"
+                             aria-label="Ve&iacute;culos em destaque">
+                            <div class="home-hero-preview-track" data-home-featured-track>
+                                @for (var pageIndex = 0; pageIndex < featuredPreviewLoopPages.Length; pageIndex++)
+                                {
+                                    var previewPage = featuredPreviewLoopPages[pageIndex];
+                                    var isInitialPage = pageIndex == 0;
+                                    var isClonedPage = hasFeaturedPreviewSlider && pageIndex == featuredPreviewLoopPages.Length - 1;
+
+                                    <div class="home-hero-preview-slide"
+                                         aria-hidden="@(!isInitialPage).ToString().ToLowerInvariant()"
+                                         data-home-featured-slide
+                                         data-home-featured-clone="@(isClonedPage ? "true" : "false")">
+                                        <div class="home-hero-preview-grid">
+                                            @foreach (var vehicle in previewPage)
+                                            {
+                                                <article class="home-preview-card">
+                                                    <a asp-page="/Veiculo" asp-route-id="@vehicle.Id" class="home-preview-link" aria-label="Abrir detalhes de @vehicle.Titulo"></a>
+                                                    <div class="home-preview-media">
+                                                        <img src="@vehicle.ImageUrl"
+                                                             alt="@vehicle.Titulo"
+                                                             class="home-preview-image"
+                                                             width="640"
+                                                             height="480"
+                                                             loading="@(isInitialPage ? "eager" : "lazy")"
+                                                             decoding="async"
+                                                             fetchpriority="@(isInitialPage ? "high" : "low")" />
+                                                        <span class="home-preview-tag">@vehicle.Tag</span>
+                                                    </div>
+                                                    <div class="home-preview-body">
+                                                        <div class="home-preview-title">@vehicle.Titulo</div>
+                                                        <div class="home-preview-price">
+                                                            @(vehicle.Preco.HasValue ? vehicle.Preco.Value.ToBrazilianCurrency() : "Consulte")
+                                                        </div>
+                                                    </div>
+                                                </article>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            @if (hasFeaturedPreviewSlider)
+                            {
+                                <div class="home-hero-preview-dots" aria-label="Paginas de destaque">
+                                    @for (var pageIndex = 0; pageIndex < featuredPreviewPages.Length; pageIndex++)
+                                    {
+                                        <button type="button"
+                                                class="home-hero-preview-dot @(pageIndex == 0 ? "is-active" : string.Empty)"
+                                                data-home-featured-dot
+                                                data-home-featured-index="@pageIndex"
+                                                aria-label="Ir para a página @(pageIndex + 1) de destaques"></button>
+                                    }
+                                </div>
+                            }
+                        </div>
                     </div>
                 }
             </div>
-        }
-        else
-        {
-            <div class="feature-card">
-                <h5 class="fw-bold mb-2">Nenhum veículo disponível</h5>
-                <p class="text-muted mb-0">A vitrine da home será preenchida automaticamente quando houver veículos ativos no sistema.</p>
-            </div>
-        }
+        </div>
 
-        <div class="text-center mt-4">
-            <a asp-page="/Catalogo" class="btn btn-outline-brand">Ver todos os veículos</a>
+        <a href="#home-featured-stock" class="home-scroll-indicator" data-scroll-target="#home-featured-stock" aria-label="Role para ver ve&iacute;culos dispon&iacute;veis">
+            <span>Role para ver mais ve&iacute;culos dispon&iacute;veis</span>
+            <span class="home-scroll-indicator-icon" aria-hidden="true"></span>
+        </a>
+    </div>
+</section>
+
+<section id="home-featured-stock" class="section home-featured-section">
+    <div class="container home-premium-container">
+        <div class="home-featured-shell home-premium-shell">
+            <div class="home-featured-intro">
+                <div>
+                    <span class="home-featured-kicker">Premium 0 km</span>
+                    <h2 class="section-title mb-0">Veículos premium para quem quer sair de zero</h2>
+                    <p class="section-subtitle mb-0">Selecionamos modelos 0 km com visual e acabamento de destaque para uma vitrine mais aspiracional.</p>
+                </div>
+                <a asp-page="/Catalogo" asp-route-zeroKm="true" class="btn btn-outline-brand">Ver premium</a>
+            </div>
+
+            @if (Model.PremiumVehicles.Any())
+            {
+                <div class="row g-4">
+                    @foreach (var vehicle in Model.PremiumVehicles)
+                    {
+                        <div class="col-xl-3 col-md-6">
+                            @await Html.PartialAsync("_CatalogVehicleCardDb", vehicle)
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="feature-card">
+                    <h5 class="fw-bold mb-2">Nenhum veículo premium disponível</h5>
+                    <p class="text-muted mb-0">A sessão premium será preenchida automaticamente quando houver veículos 0 km nessa faixa.</p>
+                </div>
+            }
         </div>
     </div>
 </section>
+
+@if (Model.HybridElectricCars.Count >= 1)
+{
+    <section class="section pt-0">
+        <div class="container home-premium-container">
+            <div class="home-featured-shell home-electrified-shell">
+                <div class="home-featured-intro">
+                    <div>
+                        <span class="home-featured-kicker">H&iacute;bridos e el&eacute;tricos</span>
+                        <h2 class="section-title mb-0">Carros h&iacute;bridos e el&eacute;tricos para um novo estilo de condu&ccedil;&atilde;o</h2>
+                    </div>
+                    <a asp-page="/Catalogo" asp-route-busca="hibrido eletrico" class="btn btn-outline-brand">Ver eletrificados</a>
+                </div>
+
+                <div class="row g-4">
+                    @foreach (var vehicle in Model.HybridElectricCars)
+                    {
+                        <div class="col-xl-3 col-md-6">
+                            @await Html.PartialAsync("_CatalogVehicleCardDb", vehicle)
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+@if (Model.ElectricMotorcycles.Count >= 1)
+{
+    <section class="section pt-0">
+        <div class="container home-premium-container">
+            <div class="home-featured-shell home-affordable-shell">
+                <div class="home-featured-intro">
+                    <div>
+                        <span class="home-featured-kicker">Motos elétricas</span>
+                        <h2 class="section-title mb-0">Uma sessão dedicada para quem está procurando duas rodas elétricas</h2>
+                    </div>
+                    <a asp-page="/Catalogo" asp-route-motoEletrica="true" class="btn btn-outline-brand">Ver motos elétricas</a>
+                </div>
+
+                <div class="row g-4">
+                    @foreach (var vehicle in Model.ElectricMotorcycles)
+                    {
+                        <div class="col-xl-3 col-md-6">
+                            @await Html.PartialAsync("_CatalogVehicleCardDb", vehicle)
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+}
 
 <section id="troque-seu-carro" class="section-sm">
     <div class="container">
         <div class="cta-sell">
             <div class="row align-items-center g-4">
                 <div class="col-lg-7">
-                    <p class="text-uppercase fw-bold mb-2" style="letter-spacing:.08em;">Troque seu carro</p>
-                    <h2 class="mb-3">Fale com um vendedor e descubra a melhor troca para você</h2>
+                    <p class="text-uppercase fw-bold mb-2 home-cta-kicker">Troque seu carro</p>
+                    <h2 class="mb-3">Depois de encontrar o modelo certo, fale com um vendedor e avance na troca.</h2>
                     <p class="mb-4 text-white-50">
-                        Quer trocar de carro com praticidade? Nossa equipe ajuda você a avaliar as melhores opções e seguir o atendimento direto pelo WhatsApp.
+                        Mantivemos o contato logo na sequ&ecirc;ncia do estoque para facilitar a convers&atilde;o sem interromper a jornada de pesquisa.
                     </p>
-                    <a href="https://wa.me/551632523490?text=Ol%C3%A1%2C%20quero%20falar%20com%20um%20vendedor%20sobre%20troca%20de%20carro." target="_blank" class="btn btn-light btn-lg fw-semibold">Falar com vendedor</a>
+                    <button type="button"
+                       data-whatsapp-modal="true"
+                       data-vehicle-title="Troca de veículo"
+                       class="btn btn-light btn-lg fw-semibold">
+                        Falar com vendedor
+                    </button>
                 </div>
                 <div class="col-lg-5">
-                    <div class="placeholder-box bg-white text-dark">
-                        Espaço para foto do casal / cliente feliz / imagem institucional
+                    <div class="home-seller-slider" data-home-seller-slider aria-label="Fotos da equipe de vendas">
+                        <div class="home-seller-slider-track" data-home-seller-slider-track>
+                            <div class="home-seller-slide">
+                                <img src="~/img/Vendedores1.JPG" alt="Equipe de vendas Anderson Multimarcas - foto 1" loading="lazy" decoding="async" />
+                            </div>
+                            <div class="home-seller-slide">
+                                <img src="~/img/Vendedores2.JPG" alt="Equipe de vendas Anderson Multimarcas - foto 2" loading="lazy" decoding="async" />
+                            </div>
+                            <div class="home-seller-slide">
+                                <img src="~/img/Vendedores3.JPG" alt="Equipe de vendas Anderson Multimarcas - foto 3" loading="lazy" decoding="async" />
+                            </div>
+                            <div class="home-seller-slide" aria-hidden="true">
+                                <img src="~/img/Vendedores1.JPG" alt="" loading="lazy" decoding="async" />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -59,12 +251,17 @@
     </div>
 </section>
 
-<section class="section">
+<section class="section pt-4">
     <div class="container">
-        <h2 class="section-title">Nossas lojas</h2>
-        <p class="section-subtitle">
-            Unidades carregadas do backend com endereço e rota direta no Google Maps.
-        </p>
+        <div class="home-featured-intro home-store-intro">
+            <div>
+                <span class="home-featured-kicker">Nossas lojas</span>
+                <h2 class="section-title mb-2">Continue a jornada com rota e atendimento presencial</h2>
+                <p class="section-subtitle mb-0">
+                    Depois da busca e da vitrine, o usu&aacute;rio encontra as unidades ativas com mapa e caminho r&aacute;pido para visita.
+                </p>
+            </div>
+        </div>
 
         @if (Model.Stores.Any())
         {
@@ -75,7 +272,8 @@
                         <div class="feature-card">
                             <div class="store-map ratio ratio-4x3 mb-3">
                                 <iframe
-                                    src="@store.MapsEmbedUrl"
+                                    data-map-frame
+                                    data-src="@store.MapsEmbedUrl"
                                     title="Mapa @store.Nome"
                                     style="border:0;"
                                     loading="lazy"
@@ -83,7 +281,7 @@
                             </div>
                             <h5 class="fw-bold">@store.Nome</h5>
                             <p class="text-muted mb-3">@store.EnderecoCompleto</p>
-                            <a href="@store.MapsLinkUrl" target="_blank" class="btn btn-outline-brand">Abrir rota</a>
+                            <a href="@store.MapsLinkUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline-brand">Abrir rota</a>
                         </div>
                     </div>
                 }
@@ -99,15 +297,257 @@
     </div>
 </section>
 
-<style>
-    .store-map {
-        overflow: hidden;
-        border-radius: 1rem;
-        background: #f3f4f6;
-    }
+<script id="home-seller-photo-prefetch" type="application/json">
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SellerPhotoPrefetchUrls))
+</script>
 
-    .store-map iframe {
-        width: 100%;
-        height: 100%;
-    }
-</style>
+@section Scripts {
+    <script>
+        (function () {
+            const mapFrames = Array.from(document.querySelectorAll('[data-map-frame]'));
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            function resolveScrollBehavior() {
+                return prefersReducedMotion ? 'auto' : 'smooth';
+            }
+
+            document.querySelectorAll('[data-scroll-target]').forEach(function (trigger) {
+                trigger.addEventListener('click', function (event) {
+                    const selector = trigger.getAttribute('data-scroll-target');
+                    if (!selector) {
+                        return;
+                    }
+
+                    const target = document.querySelector(selector);
+                    if (!target) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    target.scrollIntoView({
+                        behavior: resolveScrollBehavior(),
+                        block: 'start'
+                    });
+                });
+            });
+
+            const slider = document.querySelector('[data-home-seller-slider]');
+            const track = document.querySelector('[data-home-seller-slider-track]');
+            const featuredSlider = document.querySelector('[data-home-featured-slider="true"]');
+            const featuredTrack = document.querySelector('[data-home-featured-track]');
+            const featuredDots = Array.from(document.querySelectorAll('[data-home-featured-dot]'));
+
+            if (slider && track) {
+                const slides = Array.from(track.children);
+                const realSlidesCount = slides.length - 1;
+                let currentIndex = 0;
+                let intervalId = null;
+
+                function goToSlide(index, withTransition) {
+                    track.style.transition = withTransition ? 'transform .75s ease-in-out' : 'none';
+                    track.style.transform = `translateX(-${index * 100}%)`;
+                }
+
+                function startAutoplay() {
+                    if (intervalId || realSlidesCount <= 1 || prefersReducedMotion) {
+                        return;
+                    }
+
+                    intervalId = window.setInterval(function () {
+                        currentIndex += 1;
+                        goToSlide(currentIndex, true);
+                    }, 3500);
+                }
+
+                function stopAutoplay() {
+                    if (!intervalId) {
+                        return;
+                    }
+
+                    window.clearInterval(intervalId);
+                    intervalId = null;
+                }
+
+                track.addEventListener('transitionend', function () {
+                    if (currentIndex < realSlidesCount) {
+                        return;
+                    }
+
+                    currentIndex = 0;
+                    goToSlide(currentIndex, false);
+                });
+
+                document.addEventListener('visibilitychange', function () {
+                    if (document.hidden) {
+                        stopAutoplay();
+                        return;
+                    }
+
+                    startAutoplay();
+                });
+
+                goToSlide(0, false);
+                startAutoplay();
+            }
+
+            if (featuredSlider && featuredTrack) {
+                const slides = Array.from(featuredTrack.querySelectorAll('[data-home-featured-slide]'));
+                const realSlidesCount = Math.max(slides.length - 1, 1);
+                let currentIndex = 0;
+                let intervalId = null;
+
+                function syncFeaturedDots(index) {
+                    featuredDots.forEach(function (dot) {
+                        const dotIndex = Number(dot.getAttribute('data-home-featured-index'));
+                        dot.classList.toggle('is-active', dotIndex === index);
+                    });
+                }
+
+                function syncFeaturedAria(index) {
+                    slides.forEach(function (slide, slideIndex) {
+                        slide.setAttribute('aria-hidden', slideIndex === index ? 'false' : 'true');
+                    });
+                }
+
+                function goToFeaturedSlide(index, withTransition) {
+                    featuredTrack.style.transition = withTransition ? 'transform .75s ease-in-out' : 'none';
+                    featuredTrack.style.transform = `translateX(-${index * 100}%)`;
+                    syncFeaturedAria(index);
+                }
+
+                function startFeaturedAutoplay() {
+                    if (intervalId || realSlidesCount <= 1 || prefersReducedMotion) {
+                        return;
+                    }
+
+                    intervalId = window.setInterval(function () {
+                        currentIndex += 1;
+                        goToFeaturedSlide(currentIndex, true);
+                        syncFeaturedDots(currentIndex >= realSlidesCount ? 0 : currentIndex);
+                    }, 4200);
+                }
+
+                function stopFeaturedAutoplay() {
+                    if (!intervalId) {
+                        return;
+                    }
+
+                    window.clearInterval(intervalId);
+                    intervalId = null;
+                }
+
+                featuredTrack.addEventListener('transitionend', function () {
+                    if (currentIndex < realSlidesCount) {
+                        return;
+                    }
+
+                    currentIndex = 0;
+                    goToFeaturedSlide(currentIndex, false);
+                    syncFeaturedDots(currentIndex);
+                });
+
+                featuredDots.forEach(function (dot) {
+                    dot.addEventListener('click', function () {
+                        currentIndex = Number(dot.getAttribute('data-home-featured-index')) || 0;
+                        goToFeaturedSlide(currentIndex, true);
+                        syncFeaturedDots(currentIndex);
+                        stopFeaturedAutoplay();
+                        startFeaturedAutoplay();
+                    });
+                });
+
+                featuredSlider.addEventListener('mouseenter', stopFeaturedAutoplay);
+                featuredSlider.addEventListener('mouseleave', startFeaturedAutoplay);
+
+                document.addEventListener('visibilitychange', function () {
+                    if (document.hidden) {
+                        stopFeaturedAutoplay();
+                        return;
+                    }
+
+                    startFeaturedAutoplay();
+                });
+
+                goToFeaturedSlide(0, false);
+                syncFeaturedDots(0);
+                startFeaturedAutoplay();
+            }
+
+            if (mapFrames.length && 'IntersectionObserver' in window) {
+                const observer = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (!entry.isIntersecting) {
+                            return;
+                        }
+
+                        const frame = entry.target;
+                        const src = frame.getAttribute('data-src');
+
+                        if (src && !frame.getAttribute('src')) {
+                            frame.setAttribute('src', src);
+                        }
+
+                        observer.unobserve(frame);
+                    });
+                }, { rootMargin: '250px 0px' });
+
+                mapFrames.forEach(function (frame) {
+                    observer.observe(frame);
+                });
+            } else {
+                mapFrames.forEach(function (frame) {
+                    const src = frame.getAttribute('data-src');
+                    if (src) {
+                        frame.setAttribute('src', src);
+                    }
+                });
+            }
+
+            const prefetchNode = document.getElementById('home-seller-photo-prefetch');
+            if (prefetchNode) {
+                let urls = [];
+
+                try {
+                    urls = JSON.parse(prefetchNode.textContent || '[]');
+                } catch (_) {
+                    urls = [];
+                }
+
+                if (Array.isArray(urls) && urls.length) {
+                    const uniqueUrls = Array.from(new Set(
+                        urls
+                            .filter(function (url) { return typeof url === 'string'; })
+                            .map(function (url) { return url.trim(); })
+                            .filter(function (url) { return url.length > 0; })
+                    )).slice(0, 24);
+
+                    const warmSellerPhotoCache = function () {
+                        let cursor = 0;
+
+                        const prefetchNext = function () {
+                            if (cursor >= uniqueUrls.length) {
+                                return;
+                            }
+
+                            const img = new Image();
+                            img.decoding = 'async';
+                            img.referrerPolicy = 'no-referrer-when-downgrade';
+                            img.src = uniqueUrls[cursor];
+                            cursor += 1;
+
+                            window.setTimeout(prefetchNext, 140);
+                        };
+
+                        prefetchNext();
+                    };
+
+                    if ('requestIdleCallback' in window) {
+                        window.requestIdleCallback(warmSellerPhotoCache, { timeout: 3000 });
+                    } else {
+                        window.setTimeout(warmSellerPhotoCache, 1200);
+                    }
+                }
+            }
+        })();
+    </script>
+}

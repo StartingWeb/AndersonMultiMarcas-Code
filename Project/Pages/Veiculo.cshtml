@@ -42,8 +42,16 @@
                         </button>
                     }
 
-                    <button type="button" class="gallery-open-button" data-lightbox-index="0" aria-label="Abrir foto principal">
-                        <img id="mainVehicleImage" class="gallery-main-image" src="@vehicle.Photos[0].Url" alt="@vehicle.Photos[0].Alt" />
+                    <button type="button" class="gallery-open-button" id="mainGalleryOpenButton" aria-label="Abrir foto principal">
+                        <img id="mainVehicleImage"
+                             class="gallery-main-image"
+                             src="@vehicle.Photos[0].Url"
+                             alt="@vehicle.Photos[0].Alt"
+                             width="1280"
+                             height="960"
+                             loading="eager"
+                             decoding="async"
+                             fetchpriority="high" />
                     </button>
 
                     @if (vehicle.Photos.Count > 1)
@@ -72,7 +80,12 @@
                                     data-photo-alt="@photo.Alt"
                                     data-lightbox-index="@i"
                                     aria-label="Selecionar foto @(i + 1)">
-                                <img src="@photo.Url" alt="@photo.Alt" />
+                                <img src="@photo.Url"
+                                     alt="@photo.Alt"
+                                     width="320"
+                                     height="240"
+                                     loading="lazy"
+                                     decoding="async" />
                             </button>
                         }
                     </div>
@@ -108,10 +121,17 @@
                             <div><span>Combustível</span><strong>@(string.IsNullOrWhiteSpace(vehicle.Combustivel) ? "-" : vehicle.Combustivel)</strong></div>
                             <div><span>Cor</span><strong>@(string.IsNullOrWhiteSpace(vehicle.Cor) ? "-" : vehicle.Cor)</strong></div>
                             <div><span>KM</span><strong>@(vehicle.Quilometragem.HasValue ? $"{vehicle.Quilometragem.Value.ToString("N0", culture)} km" : "Não informado")</strong></div>
-                            <div><span>Placa</span><strong>@(string.IsNullOrWhiteSpace(vehicle.Placa) ? "-" : vehicle.Placa)</strong></div>
                             @if (!string.IsNullOrWhiteSpace(vehicle.Vendedor))
                             {
                                 <div><span>Vendedor</span><strong>@vehicle.Vendedor</strong></div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(vehicle.VendedorWhatsapp))
+                            {
+                                <div><span>WhatsApp</span><strong>@vehicle.VendedorWhatsapp</strong></div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(vehicle.VendedorTelefone))
+                            {
+                                <div><span>Telefone</span><strong>@vehicle.VendedorTelefone</strong></div>
                             }
                         </div>
                     </details>
@@ -121,11 +141,29 @@
             <div class="detail-info-stack">
                 <div class="detail-summary-card detail-commerce-card">
                     <div class="detail-price detail-sidebar-price">
-                        @(vehicle.Preco.HasValue ? vehicle.Preco.Value.ToString("C0", culture) : "Consulte")
+                        @(vehicle.Preco.HasValue ? vehicle.Preco.Value.ToBrazilianCurrency() : "Consulte")
                     </div>
                     <p>Fale com nossa equipe em poucos toques e tire suas dúvidas sobre este veículo com rapidez.</p>
+                    @if (!string.IsNullOrWhiteSpace(vehicle.VendedorWhatsapp) || !string.IsNullOrWhiteSpace(vehicle.VendedorTelefone))
+                    {
+                        <p class="mb-2">
+                            @if (!string.IsNullOrWhiteSpace(vehicle.VendedorWhatsapp))
+                            {
+                                <span>WhatsApp: <strong>@vehicle.VendedorWhatsapp</strong></span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(vehicle.VendedorTelefone))
+                            {
+                                <span class="d-block">Telefone: <strong>@vehicle.VendedorTelefone</strong></span>
+                            }
+                        </p>
+                    }
                     <div class="commerce-actions">
-                        <a href="@vehicle.WhatsappUrl" target="_blank" class="btn btn-brand">Quero falar no WhatsApp</a>
+                        <button type="button"
+                                class="btn btn-brand"
+                                data-whatsapp-modal="true"
+                                data-vehicle-title="@vehicle.Titulo">
+                            Falar com vendedor
+                        </button>
                     </div>
                 </div>
 
@@ -190,6 +228,14 @@
     <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Fechar galeria">&times;</button>
     <button type="button" class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Foto anterior">&#8249;</button>
     <div class="lightbox-content">
+        <div class="lightbox-zoom-controls" aria-label="Controles de zoom da galeria">
+            <button type="button" class="lightbox-zoom-btn" id="lightboxZoomIn" aria-label="Aproximar imagem">
+                <span aria-hidden="true">+</span>
+            </button>
+            <button type="button" class="lightbox-zoom-btn" id="lightboxZoomOut" aria-label="Diminuir zoom da imagem">
+                <span aria-hidden="true">−</span>
+            </button>
+        </div>
         <img id="lightboxImage" src="" alt="" />
         <div id="lightboxCaption" class="lightbox-caption"></div>
     </div>
@@ -219,6 +265,7 @@
             });
 
             const thumbnails = Array.from(document.querySelectorAll('.gallery-thumb'));
+            const mainOpenButton = document.getElementById('mainGalleryOpenButton');
             const mainImage = document.getElementById('mainVehicleImage');
             const lightbox = document.getElementById('vehicleLightbox');
             const lightboxImage = document.getElementById('lightboxImage');
@@ -226,10 +273,14 @@
             const lightboxClose = document.getElementById('lightboxClose');
             const lightboxPrev = document.getElementById('lightboxPrev');
             const lightboxNext = document.getElementById('lightboxNext');
+            const lightboxZoomIn = document.getElementById('lightboxZoomIn');
+            const lightboxZoomOut = document.getElementById('lightboxZoomOut');
             const openButtons = Array.from(document.querySelectorAll('[data-lightbox-index]'));
             const galleryNavButtons = Array.from(document.querySelectorAll('[data-gallery-direction]'));
             const thumbsTrack = document.getElementById('vehicleThumbsTrack');
             const thumbsNavButtons = Array.from(document.querySelectorAll('[data-thumbs-direction]'));
+            const galleryStage = document.querySelector('.gallery-stage');
+            const lightboxContent = lightbox.querySelector('.lightbox-content');
 
             const photos = thumbnails.map(function (button) {
                 return {
@@ -239,6 +290,60 @@
             });
 
             let currentIndex = 0;
+            let autoplayTimer = null;
+            let currentZoom = 1;
+            const minZoom = 1;
+            const maxZoom = 3;
+            const zoomStep = 0.25;
+
+            function updateLightboxZoom() {
+                if (!lightboxImage) {
+                    return;
+                }
+
+                lightboxImage.style.transform = `scale(${currentZoom})`;
+
+                if (lightboxZoomOut) {
+                    lightboxZoomOut.disabled = currentZoom <= minZoom;
+                }
+
+                if (lightboxZoomIn) {
+                    lightboxZoomIn.disabled = currentZoom >= maxZoom;
+                }
+            }
+
+            function setLightboxZoom(zoom) {
+                currentZoom = Math.min(maxZoom, Math.max(minZoom, zoom));
+                updateLightboxZoom();
+            }
+
+            function resetLightboxZoom() {
+                setLightboxZoom(minZoom);
+            }
+
+            function stopAutoplay() {
+                if (!autoplayTimer) {
+                    return;
+                }
+
+                clearInterval(autoplayTimer);
+                autoplayTimer = null;
+            }
+
+            function startAutoplay() {
+                if (photos.length <= 1 || autoplayTimer || (lightbox && lightbox.classList.contains('show'))) {
+                    return;
+                }
+
+                autoplayTimer = window.setInterval(function () {
+                    navigateGallery(1);
+                }, 3000);
+            }
+
+            function restartAutoplay() {
+                stopAutoplay();
+                startAutoplay();
+            }
 
             function updateMainImage(index) {
                 const photo = photos[index];
@@ -252,10 +357,16 @@
 
                 const activeThumb = thumbnails[index];
                 if (activeThumb && thumbsTrack) {
-                    activeThumb.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'nearest',
-                        inline: 'center'
+                    const trackRect = thumbsTrack.getBoundingClientRect();
+                    const thumbRect = activeThumb.getBoundingClientRect();
+                    const thumbOffsetWithinTrack = thumbRect.left - trackRect.left;
+                    const targetLeft = thumbsTrack.scrollLeft + thumbOffsetWithinTrack - ((trackRect.width - thumbRect.width) / 2);
+                    const maxScrollLeft = Math.max(thumbsTrack.scrollWidth - thumbsTrack.clientWidth, 0);
+                    const clampedLeft = Math.min(Math.max(targetLeft, 0), maxScrollLeft);
+
+                    thumbsTrack.scrollTo({
+                        left: clampedLeft,
+                        behavior: 'smooth'
                     });
                 }
             }
@@ -267,6 +378,7 @@
 
             function openLightbox(index) {
                 const photo = photos[index];
+                updateMainImage(index);
                 currentIndex = index;
                 lightboxImage.src = photo.url;
                 lightboxImage.alt = photo.alt;
@@ -274,12 +386,15 @@
                 lightbox.classList.add('show');
                 lightbox.setAttribute('aria-hidden', 'false');
                 document.body.classList.add('lightbox-open');
+                resetLightboxZoom();
             }
 
             function closeLightbox() {
                 lightbox.classList.remove('show');
                 lightbox.setAttribute('aria-hidden', 'true');
                 document.body.classList.remove('lightbox-open');
+                resetLightboxZoom();
+                startAutoplay();
             }
 
             function navigateLightbox(direction) {
@@ -288,9 +403,42 @@
                 openLightbox(nextIndex);
             }
 
+            function bindSwipe(root, onLeft, onRight) {
+                if (!root) {
+                    return;
+                }
+
+                let startX = 0;
+                let startY = 0;
+
+                root.addEventListener('touchstart', function (event) {
+                    const touch = event.changedTouches[0];
+                    startX = touch.clientX;
+                    startY = touch.clientY;
+                }, { passive: true });
+
+                root.addEventListener('touchend', function (event) {
+                    const touch = event.changedTouches[0];
+                    const deltaX = touch.clientX - startX;
+                    const deltaY = touch.clientY - startY;
+
+                    if (Math.abs(deltaX) < 45 || Math.abs(deltaX) <= Math.abs(deltaY)) {
+                        return;
+                    }
+
+                    if (deltaX < 0) {
+                        onLeft();
+                        return;
+                    }
+
+                    onRight();
+                }, { passive: true });
+            }
+
             thumbnails.forEach(function (button, index) {
                 button.addEventListener('click', function () {
                     updateMainImage(index);
+                    restartAutoplay();
                 });
             });
 
@@ -299,6 +447,7 @@
                     event.preventDefault();
                     event.stopPropagation();
                     navigateGallery(Number(button.dataset.galleryDirection || 0));
+                    restartAutoplay();
                 });
             });
 
@@ -322,17 +471,41 @@
 
             openButtons.forEach(function (button) {
                 button.addEventListener('click', function () {
+                    stopAutoplay();
                     openLightbox(Number(button.dataset.lightboxIndex || 0));
                 });
             });
+
+            if (mainOpenButton) {
+                mainOpenButton.addEventListener('click', function () {
+                    stopAutoplay();
+                    openLightbox(currentIndex);
+                });
+            }
 
             lightboxClose.addEventListener('click', closeLightbox);
             lightboxPrev.addEventListener('click', function () { navigateLightbox(-1); });
             lightboxNext.addEventListener('click', function () { navigateLightbox(1); });
 
+            if (lightboxZoomIn) {
+                lightboxZoomIn.addEventListener('click', function () {
+                    setLightboxZoom(currentZoom + zoomStep);
+                });
+            }
+
+            if (lightboxZoomOut) {
+                lightboxZoomOut.addEventListener('click', function () {
+                    setLightboxZoom(currentZoom - zoomStep);
+                });
+            }
+
+            bindSwipe(galleryStage, function () { navigateGallery(1); }, function () { navigateGallery(-1); });
+            bindSwipe(lightboxContent, function () { navigateLightbox(1); }, function () { navigateLightbox(-1); });
+
             lightbox.addEventListener('click', function (event) {
                 if (event.target === lightbox) {
                     closeLightbox();
+                    startAutoplay();
                 }
             });
 
@@ -343,6 +516,7 @@
 
                 if (event.key === 'Escape') {
                     closeLightbox();
+                    startAutoplay();
                 }
 
                 if (event.key === 'ArrowRight') {
@@ -353,6 +527,19 @@
                     navigateLightbox(-1);
                 }
             });
+
+            if (galleryStage) {
+                galleryStage.addEventListener('mouseenter', stopAutoplay);
+                galleryStage.addEventListener('mouseleave', startAutoplay);
+            }
+
+            if (thumbsTrack) {
+                thumbsTrack.addEventListener('mouseenter', stopAutoplay);
+                thumbsTrack.addEventListener('mouseleave', startAutoplay);
+            }
+
+            startAutoplay();
+            updateLightboxZoom();
         })();
     </script>
 }

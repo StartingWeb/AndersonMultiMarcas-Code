@@ -1,4 +1,4 @@
-using Core.Interfaces;
+﻿using Core.Interfaces;
 using Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -45,12 +45,12 @@ public class VeiculosVendaModel : PageModel
     {
         if (Input.VeiculoId <= 0)
         {
-            ModelState.AddModelError($"{nameof(Input)}.{nameof(Input.VeiculoId)}", "Selecione um veículo para registrar a venda.");
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(Input.VeiculoId)}", "Selecione um veÃ­culo para registrar a venda.");
         }
 
         if (Input.VendedorId <= 0)
         {
-            ModelState.AddModelError($"{nameof(Input)}.{nameof(Input.VendedorId)}", "Selecione o vendedor responsável pela venda.");
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(Input.VendedorId)}", "Selecione o vendedor responsÃ¡vel pela venda.");
         }
 
         var veiculoResponse = Input.VeiculoId > 0
@@ -60,7 +60,7 @@ public class VeiculosVendaModel : PageModel
         var veiculo = veiculoResponse?.Data;
         if (veiculo == null)
         {
-            ModelState.AddModelError(string.Empty, "Veículo não encontrado.");
+            ModelState.AddModelError(string.Empty, "VeÃ­culo nÃ£o encontrado.");
         }
         if (!ModelState.IsValid || veiculo == null)
         {
@@ -70,7 +70,7 @@ public class VeiculosVendaModel : PageModel
 
         if (veiculo.Vendido)
         {
-            TempData["Success"] = "Esse veículo já estava marcado como vendido.";
+            TempData["Success"] = "Esse veÃ­culo jÃ¡ estava marcado como vendido.";
             return RedirectToPage("/Admin/VeiculosVenda", new { search = Search });
         }
 
@@ -87,7 +87,7 @@ public class VeiculosVendaModel : PageModel
         var result = await _veiculoService.EditarAsync(veiculo);
         if (!result.Data)
         {
-            ModelState.AddModelError(string.Empty, result.UserMessage ?? "Não foi possível registrar a venda.");
+            ModelState.AddModelError(string.Empty, result.UserMessage ?? "NÃ£o foi possÃ­vel registrar a venda.");
             await LoadPageAsync();
             return Page();
         }
@@ -114,7 +114,6 @@ public class VeiculosVendaModel : PageModel
                 Contains(veiculo.Modelo, searchValue) ||
                 Contains(veiculo.Versao, searchValue) ||
                 Contains(veiculo.Placa, searchValue) ||
-                Contains(veiculo.Chassi, searchValue) ||
                 Contains(veiculo.Marca?.Nome, searchValue) ||
                 Contains(veiculo.Loja?.Nome, searchValue));
         }
@@ -200,9 +199,9 @@ public class VeiculosVendaModel : PageModel
             {
                 VeiculoId = veiculo.Id,
                 VendedorId = 0,
-                VeiculoTitulo = string.IsNullOrWhiteSpace(veiculo.Titulo)
-                    ? $"Veículo #{veiculo.Id}"
-                    : veiculo.Titulo,
+                VeiculoTitulo = !string.IsNullOrWhiteSpace(veiculo.Marca?.Nome) || !string.IsNullOrWhiteSpace(veiculo.Modelo)
+                    ? string.Join(" ", new[] { veiculo.Marca?.Nome, veiculo.Modelo }.Where(parte => !string.IsNullOrWhiteSpace(parte)))
+                    : (string.IsNullOrWhiteSpace(veiculo.Titulo) ? $"Veiculo #{veiculo.Id}" : veiculo.Titulo),
                 LojaNome = veiculo.Loja?.Nome ?? "-",
                 Placa = string.IsNullOrWhiteSpace(veiculo.Placa) ? "-" : veiculo.Placa
             };
@@ -216,7 +215,7 @@ public class VeiculosVendaModel : PageModel
         public string Marca { get; init; } = "-";
         public string Loja { get; init; } = "-";
         public string Placa { get; init; } = "-";
-        public string Status { get; init; } = "Disponível";
+        public string Status { get; init; } = "DisponÃ­vel";
         public bool Vendido { get; init; }
         public string? Vendedor { get; init; }
         public string? VendidoPorUsuario { get; init; }
@@ -228,11 +227,13 @@ public class VeiculosVendaModel : PageModel
             return new VeiculoListItem
             {
                 Id = veiculo.Id,
-                Titulo = string.IsNullOrWhiteSpace(veiculo.Titulo) ? $"Veículo #{veiculo.Id}" : veiculo.Titulo,
+                Titulo = !string.IsNullOrWhiteSpace(veiculo.Marca?.Nome) || !string.IsNullOrWhiteSpace(veiculo.Modelo)
+                    ? string.Join(" ", new[] { veiculo.Marca?.Nome, veiculo.Modelo }.Where(parte => !string.IsNullOrWhiteSpace(parte)))
+                    : (string.IsNullOrWhiteSpace(veiculo.Titulo) ? $"Veiculo #{veiculo.Id}" : veiculo.Titulo),
                 Marca = veiculo.Marca?.Nome ?? "-",
                 Loja = veiculo.Loja?.Nome ?? "-",
                 Placa = string.IsNullOrWhiteSpace(veiculo.Placa) ? "-" : veiculo.Placa,
-                Status = veiculo.Vendido ? "Vendido" : "Disponível",
+                Status = veiculo.Vendido ? "Vendido" : "DisponÃ­vel",
                 Vendido = veiculo.Vendido,
                 Vendedor = veiculo.Vendedor?.Nome,
                 VendidoPorUsuario = !string.IsNullOrWhiteSpace(veiculo.VendidoPorUsuario?.NomeCompleto)
@@ -251,3 +252,4 @@ public class VeiculosVendaModel : PageModel
         public string? Loja { get; init; }
     }
 }
+

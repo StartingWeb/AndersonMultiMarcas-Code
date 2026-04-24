@@ -67,6 +67,11 @@ public sealed class AdminMenuService : IAdminMenuService
             .Distinct()
             .ToListAsync(cancellationToken);
 
+        if (allowedMenuIds.Count == 0)
+        {
+            allowedMenuIds = ResolveFallbackMenuIds(allMenus, roleNames);
+        }
+
         var menuLookup = allMenus.ToDictionary(menu => menu.Id);
         var visibleIds = new HashSet<Guid>(allowedMenuIds);
 
@@ -157,5 +162,43 @@ public sealed class AdminMenuService : IAdminMenuService
 
         var normalized = value.Trim();
         return normalized == "/" ? "/" : normalized.TrimEnd('/');
+    }
+
+    private static List<Guid> ResolveFallbackMenuIds(
+        IReadOnlyCollection<AspNetMenu> allMenus,
+        IEnumerable<string> roleNames)
+    {
+        var normalizedRoles = roleNames
+            .Where(role => !string.IsNullOrWhiteSpace(role))
+            .Select(role => role.Trim())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (normalizedRoles.Contains("Desenvolvedor"))
+        {
+            return allMenus.Select(menu => menu.Id).ToList();
+        }
+
+        if (normalizedRoles.Contains("Administrador"))
+        {
+            return allMenus
+                .Where(menu => !string.Equals(menu.Nome, "Auth", StringComparison.OrdinalIgnoreCase))
+                .Select(menu => menu.Id)
+                .ToList();
+        }
+
+        if (normalizedRoles.Contains("AdminConcessionaria"))
+        {
+            return allMenus
+                .Where(menu =>
+                    string.Equals(menu.Url, "/Admin", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(menu.Url, "/Admin/VeiculosVenda", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(menu.Url, "/Admin/ConferenciaEstoque", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(menu.Url, "/Veiculo/ImportaJSON", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(menu.Url, "/Veiculo/ImportaMidia", StringComparison.OrdinalIgnoreCase))
+                .Select(menu => menu.Id)
+                .ToList();
+        }
+
+        return [];
     }
 }

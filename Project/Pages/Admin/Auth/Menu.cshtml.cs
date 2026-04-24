@@ -1,12 +1,14 @@
 using System.ComponentModel.DataAnnotations;
 using Data;
 using Domain.Application;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 
 namespace Project.Pages.Admin.Auth;
 
+[Authorize(Roles = "Desenvolvedor")]
 public class MenuModel : PageModel
 {
     private readonly ApplicationDbContext _db;

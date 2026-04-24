@@ -171,6 +171,8 @@ public class ImportarModel : PageModel
         }
 
         preview.Seminuovo = ContainsValue(preview.Status, "seminovo");
+        preview.MotoEletrica = ContainsValue(preview.Status, "moto eletrica")
+            || ContainsValue(preview.Status, "moto elétrica");
         preview.Vendido = preview.DataVenda.HasValue;
         preview.Titulo = BuildTitulo(preview.MarcaNome, preview.ModeloNome);
         preview.ObservacoesInternas = BuildObservacoesInternas(preview);
@@ -459,14 +461,67 @@ public class ImportarModel : PageModel
             return null;
         }
 
-        if (decimal.TryParse(value.Trim(), NumberStyles.Number, new CultureInfo("pt-BR"), out var parsed))
+        var sanitized = new string(value.Trim()
+            .Where(ch => char.IsDigit(ch) || ch == '.' || ch == ',')
+            .ToArray());
+
+        if (string.IsNullOrWhiteSpace(sanitized))
         {
-            return parsed;
+            return null;
         }
 
-        var normalized = value.Replace(".", string.Empty).Replace(",", ".");
-        return decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out parsed)
-            ? parsed
+        var lastDot = sanitized.LastIndexOf('.');
+        var lastComma = sanitized.LastIndexOf(',');
+        char? decimalSeparator = null;
+
+        if (lastDot >= 0 && lastComma >= 0)
+        {
+            decimalSeparator = lastDot > lastComma ? '.' : ',';
+        }
+        else if (lastDot >= 0 || lastComma >= 0)
+        {
+            var separator = lastDot >= 0 ? '.' : ',';
+            var lastIndex = sanitized.LastIndexOf(separator);
+            var trailingDigits = sanitized.Length - lastIndex - 1;
+
+            if (trailingDigits is 1 or 2)
+            {
+                decimalSeparator = separator;
+            }
+        }
+
+        var digits = new string(sanitized.Where(char.IsDigit).ToArray());
+        if (string.IsNullOrWhiteSpace(digits))
+        {
+            return null;
+        }
+
+        string normalized;
+        if (decimalSeparator.HasValue)
+        {
+            var decimalIndex = sanitized.LastIndexOf(decimalSeparator.Value);
+            var decimalDigits = sanitized.Length - decimalIndex - 1;
+
+            if (decimalDigits <= 0)
+            {
+                normalized = digits;
+            }
+            else if (digits.Length <= decimalDigits)
+            {
+                normalized = $"0.{digits.PadLeft(decimalDigits, '0')}";
+            }
+            else
+            {
+                normalized = $"{digits[..^decimalDigits]}.{digits[^decimalDigits..]}";
+            }
+        }
+        else
+        {
+            normalized = digits;
+        }
+
+        return decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed)
+            ? decimal.Round(parsed, 2, MidpointRounding.AwayFromZero)
             : null;
     }
 
@@ -546,6 +601,7 @@ public class ImportarModel : PageModel
         public string? DataVendaTexto { get; set; }
         public DateTime? DataVenda { get; set; }
         public bool Seminuovo { get; set; }
+        public bool MotoEletrica { get; set; }
         public bool Vendido { get; set; }
         public string? ObservacoesInternas { get; set; }
         public VeiculoCaracteristica Carateristica { get; set; } = new();
@@ -569,6 +625,7 @@ public class ImportarModel : PageModel
                 Placa = Placa,
                 ObservacoesInternas = ObservacoesInternas,
                 Seminovo = Seminuovo,
+                MotoEletrica = MotoEletrica,
                 Vendido = Vendido,
                 DataVenda = DataVenda,
                 Ativo = !Vendido

@@ -109,3 +109,4 @@ C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Concessionaria\obj\D
 C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Concessionaria\obj\Debug\net9.0\staticwebassets.build.json
 C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Concessionaria\obj\Debug\net9.0\staticwebassets.build.json
 C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Concessionaria\obj\Debug\net9.0\staticwebassets.build.json
+C:\StartingWeb\AndersonMultimarcas\AndersonMultiMarcas-Code\Concessionaria\obj\Debug\net9.0\staticwebassets.build.json

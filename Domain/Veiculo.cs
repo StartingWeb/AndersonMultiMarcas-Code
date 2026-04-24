@@ -10,6 +10,8 @@ public class Veiculo
     [Key]
     public int Id { get; set; }
 
+    public int? IdLegado { get; set; }
+
     [Required]
     public int LojaId { get; set; }
     public Loja? Loja { get; set; }
@@ -54,28 +56,18 @@ public class Veiculo
     [MaxLength(20)]
     public string? Placa { get; set; }
 
-    [MaxLength(50)]
-    public string? Chassi { get; set; }
-
-    [MaxLength(50)]
-    public string? Renavam { get; set; }
-
     // =========================
     // COMERCIAL
     // =========================
     [Column(TypeName = "decimal(18,2)")]
     public decimal? PrecoVenda { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal? PrecoPromocional { get; set; }
-
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal? PrecoFipe { get; set; }
-
     public bool AceitaTroca { get; set; }
     public bool Financiavel { get; set; }
     public bool Destaque { get; set; }
     public bool Seminovo { get; set; }
+    public bool MotoEletrica { get; set; }
+    public bool ImportadoMidia { get; set; }
 
     // =========================
     // STATUS

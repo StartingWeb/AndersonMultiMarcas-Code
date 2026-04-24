@@ -296,6 +296,8 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Nome");
+
                     b.ToTable("Marca", (string)null);
                 });
 
@@ -326,10 +328,6 @@ namespace Data.Migrations
                     b.Property<string>("Cambio")
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
-
-                    b.Property<string>("Chassi")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Combustivel")
                         .HasMaxLength(30)
@@ -364,6 +362,14 @@ namespace Data.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
+                    b.Property<int?>("IdLegado")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("ImportadoMidia")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<int>("LojaId")
                         .HasColumnType("int");
 
@@ -374,6 +380,11 @@ namespace Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<bool>("MotoEletrica")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("ObservacoesInternas")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
@@ -382,21 +393,11 @@ namespace Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<decimal?>("PrecoFipe")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("PrecoPromocional")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<decimal?>("PrecoVenda")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int?>("Quilometragem")
                         .HasColumnType("int");
-
-                    b.Property<string>("Renavam")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
 
                     b.Property<bool>("Seminovo")
                         .ValueGeneratedOnAdd()
@@ -433,6 +434,10 @@ namespace Data.Migrations
 
                     b.HasIndex("Destaque");
 
+                    b.HasIndex("IdLegado")
+                        .IsUnique()
+                        .HasFilter("[IdLegado] IS NOT NULL");
+
                     b.HasIndex("LojaId");
 
                     b.HasIndex("MarcaId");
@@ -442,6 +447,10 @@ namespace Data.Migrations
                     b.HasIndex("Vendido");
 
                     b.HasIndex("VendidoPorUsuarioId");
+
+                    b.HasIndex("Ativo", "Vendido", "DataCadastro");
+
+                    b.HasIndex("Ativo", "Vendido", "Destaque", "DataCadastro");
 
                     b.ToTable("Veiculo", (string)null);
                 });
