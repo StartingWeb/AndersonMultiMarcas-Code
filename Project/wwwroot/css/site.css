@@ -15,10 +15,47 @@ html {
 html {
   position: relative;
   min-height: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
   margin-bottom: 60px;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+}
+
+main {
+  min-height: 70vh;
+}
+
+a, button, .btn, .nav-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: #0d6efd;
+  color: #fff;
+  padding: 0.75rem 1rem;
+  z-index: 1050;
+}
+
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+}
+
+.breadcrumb {
+  font-size: 0.95rem;
 }
 
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {

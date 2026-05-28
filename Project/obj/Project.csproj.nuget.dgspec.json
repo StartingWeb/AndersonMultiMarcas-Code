@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Project\\Project.csproj": {}
+    "C:\\Projetos\\AndersonMultiMarcas-Code\\Project\\Project.csproj": {}
   },
   "projects": {
-    "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Core\\Core.csproj": {
+    "C:\\Projetos\\AndersonMultiMarcas-Code\\Core\\Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Core\\Core.csproj",
+        "projectUniqueName": "C:\\Projetos\\AndersonMultiMarcas-Code\\Core\\Core.csproj",
         "projectName": "Core",
-        "projectPath": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Core\\Core.csproj",
-        "packagesPath": "C:\\Users\\StartingWeb\\.nuget\\packages\\",
-        "outputPath": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Core\\obj\\",
+        "projectPath": "C:\\Projetos\\AndersonMultiMarcas-Code\\Core\\Core.csproj",
+        "packagesPath": "C:\\Users\\Pedro\\.nuget\\packages\\",
+        "outputPath": "C:\\Projetos\\AndersonMultiMarcas-Code\\Core\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\StartingWeb\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Pedro\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -30,6 +30,7 @@
         },
         "frameworks": {
           "net9.0": {
+            "framework": "net9.0",
             "targetAlias": "net9.0",
             "projectReferences": {}
           }
@@ -44,11 +45,20 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
         "net9.0": {
+          "framework": "net9.0",
           "targetAlias": "net9.0",
+          "dependencies": {
+            "Microsoft.EntityFrameworkCore.Tools": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[10.0.8, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -65,24 +75,24 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.300/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Data\\Data.csproj": {
+    "C:\\Projetos\\AndersonMultiMarcas-Code\\Data\\Data.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Data\\Data.csproj",
+        "projectUniqueName": "C:\\Projetos\\AndersonMultiMarcas-Code\\Data\\Data.csproj",
         "projectName": "Data",
-        "projectPath": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Data\\Data.csproj",
-        "packagesPath": "C:\\Users\\StartingWeb\\.nuget\\packages\\",
-        "outputPath": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Data\\obj\\",
+        "projectPath": "C:\\Projetos\\AndersonMultiMarcas-Code\\Data\\Data.csproj",
+        "packagesPath": "C:\\Users\\Pedro\\.nuget\\packages\\",
+        "outputPath": "C:\\Projetos\\AndersonMultiMarcas-Code\\Data\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\StartingWeb\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Pedro\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -95,10 +105,11 @@
         },
         "frameworks": {
           "net9.0": {
+            "framework": "net9.0",
             "targetAlias": "net9.0",
             "projectReferences": {
-              "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Domain\\Domain.csproj": {
-                "projectPath": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Domain\\Domain.csproj"
+              "C:\\Projetos\\AndersonMultiMarcas-Code\\Domain\\Domain.csproj": {
+                "projectPath": "C:\\Projetos\\AndersonMultiMarcas-Code\\Domain\\Domain.csproj"
               }
             }
           }
@@ -113,10 +124,11 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
         "net9.0": {
+          "framework": "net9.0",
           "targetAlias": "net9.0",
           "dependencies": {
             "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
@@ -160,24 +172,24 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.300/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Domain\\Domain.csproj": {
+    "C:\\Projetos\\AndersonMultiMarcas-Code\\Domain\\Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Domain\\Domain.csproj",
+        "projectUniqueName": "C:\\Projetos\\AndersonMultiMarcas-Code\\Domain\\Domain.csproj",
         "projectName": "Domain",
-        "projectPath": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Domain\\Domain.csproj",
-        "packagesPath": "C:\\Users\\StartingWeb\\.nuget\\packages\\",
-        "outputPath": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Domain\\obj\\",
+        "projectPath": "C:\\Projetos\\AndersonMultiMarcas-Code\\Domain\\Domain.csproj",
+        "packagesPath": "C:\\Users\\Pedro\\.nuget\\packages\\",
+        "outputPath": "C:\\Projetos\\AndersonMultiMarcas-Code\\Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\StartingWeb\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Pedro\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -190,6 +202,7 @@
         },
         "frameworks": {
           "net9.0": {
+            "framework": "net9.0",
             "targetAlias": "net9.0",
             "projectReferences": {}
           }
@@ -204,10 +217,11 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
         "net9.0": {
+          "framework": "net9.0",
           "targetAlias": "net9.0",
           "dependencies": {
             "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
@@ -251,24 +265,24 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.300/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Project\\Project.csproj": {
+    "C:\\Projetos\\AndersonMultiMarcas-Code\\Project\\Project.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Project\\Project.csproj",
+        "projectUniqueName": "C:\\Projetos\\AndersonMultiMarcas-Code\\Project\\Project.csproj",
         "projectName": "Project",
-        "projectPath": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Project\\Project.csproj",
-        "packagesPath": "C:\\Users\\StartingWeb\\.nuget\\packages\\",
-        "outputPath": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Project\\obj\\",
+        "projectPath": "C:\\Projetos\\AndersonMultiMarcas-Code\\Project\\Project.csproj",
+        "packagesPath": "C:\\Users\\Pedro\\.nuget\\packages\\",
+        "outputPath": "C:\\Projetos\\AndersonMultiMarcas-Code\\Project\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\StartingWeb\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Pedro\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -281,13 +295,14 @@
         },
         "frameworks": {
           "net9.0": {
+            "framework": "net9.0",
             "targetAlias": "net9.0",
             "projectReferences": {
-              "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Core\\Core.csproj": {
-                "projectPath": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Core\\Core.csproj"
+              "C:\\Projetos\\AndersonMultiMarcas-Code\\Core\\Core.csproj": {
+                "projectPath": "C:\\Projetos\\AndersonMultiMarcas-Code\\Core\\Core.csproj"
               },
-              "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Data\\Data.csproj": {
-                "projectPath": "C:\\StartingWeb\\AndersonMultimarcas\\AndersonMultiMarcas-Code\\Data\\Data.csproj"
+              "C:\\Projetos\\AndersonMultiMarcas-Code\\Data\\Data.csproj": {
+                "projectPath": "C:\\Projetos\\AndersonMultiMarcas-Code\\Data\\Data.csproj"
               }
             }
           }
@@ -302,10 +317,11 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
         "net9.0": {
+          "framework": "net9.0",
           "targetAlias": "net9.0",
           "dependencies": {
             "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
@@ -352,7 +368,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.300/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

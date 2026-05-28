@@ -22,6 +22,9 @@ namespace Project.Pages
         public void OnGet()
         {
             RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
+            ViewData["SeoTitle"] = "Erro | Anderson Multi Marcas";
+            ViewData["MetaDescription"] = "Ocorreu um erro ao processar a solicitacao.";
+            ViewData["Robots"] = "noindex, nofollow";
         }
     }
 

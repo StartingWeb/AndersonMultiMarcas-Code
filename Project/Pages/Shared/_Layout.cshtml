@@ -1,30 +1,85 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+@{
+    var pageTitle = (ViewData["SeoTitle"] as string) ?? (ViewData["Title"] as string) ?? "Anderson Multi Marcas";
+    var metaDescription = (ViewData["MetaDescription"] as string) ?? "Anderson Multi Marcas: veiculos revisados, procedencia e atendimento especializado.";
+    var canonicalUrl = (ViewData["CanonicalUrl"] as string) ?? $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}";
+    var ogImage = (ViewData["OgImage"] as string) ?? $"{Context.Request.Scheme}://{Context.Request.Host}/favicon.ico";
+    var keywords = (ViewData["MetaKeywords"] as string) ?? "carros seminovos, veiculos, revenda";
+    var robots = (ViewData["Robots"] as string) ?? "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1";
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Project</title>
-    <script type="importmap"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@pageTitle</title>
+    <meta name="description" content="@metaDescription" />
+    <meta name="keywords" content="@keywords" />
+    <meta name="robots" content="@robots" />
+    <link rel="canonical" href="@canonicalUrl" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="@pageTitle" />
+    <meta property="og:description" content="@metaDescription" />
+    <meta property="og:url" content="@canonicalUrl" />
+    <meta property="og:site_name" content="Anderson Multi Marcas" />
+    <meta property="og:image" content="@ogImage" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@pageTitle" />
+    <meta name="twitter:description" content="@metaDescription" />
+    <meta name="twitter:image" content="@ogImage" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Project.styles.css" asp-append-version="true" />
+    <script type="application/ld+json">
+        {
+          "@@context":"https://schema.org",
+          "@@type":"Organization",
+          "name":"Anderson Multi Marcas",
+          "url":"@($"{Context.Request.Scheme}://{Context.Request.Host}")",
+          "logo":"@($"{Context.Request.Scheme}://{Context.Request.Host}/favicon.ico")"
+        }
+    </script>
+    <script type="application/ld+json">
+        {
+          "@@context":"https://schema.org",
+          "@@type":"LocalBusiness",
+          "name":"Anderson Multi Marcas",
+          "url":"@($"{Context.Request.Scheme}://{Context.Request.Host}")",
+          "telephone":"+55-00-0000-0000",
+          "address":{
+            "@@type":"PostalAddress",
+            "addressLocality":"Sao Paulo",
+            "addressRegion":"SP",
+            "addressCountry":"BR"
+          }
+        }
+    </script>
+    @if (ViewData["BreadcrumbSchema"] is string breadcrumbSchema)
+    {
+        <script type="application/ld+json">@Html.Raw(breadcrumbSchema)</script>
+    }
+    @if (ViewData["FaqSchema"] is string faqSchema)
+    {
+        <script type="application/ld+json">@Html.Raw(faqSchema)</script>
+    }
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3" aria-label="Navegacao principal">
             <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">Project</a>
+                <a class="navbar-brand" asp-area="" asp-page="/Index" aria-label="Pagina inicial">Anderson Multi Marcas</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                        aria-expanded="false" aria-label="Abrir menu">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Inicio</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacidade</a>
                         </li>
                     </ul>
                 </div>
@@ -32,20 +87,20 @@
         </nav>
     </header>
     <div class="container">
-        <main role="main" class="pb-3">
+        <main id="main-content" role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <footer class="border-top footer text-muted" role="contentinfo">
         <div class="container">
-            &copy; 2026 - Project - <a asp-area="" asp-page="/Privacy">Privacy</a>
+            &copy; 2026 - Anderson Multi Marcas - <a asp-area="" asp-page="/Privacy">Privacidade</a>
         </div>
     </footer>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js" defer></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="~/js/site.js" asp-append-version="true" defer></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
