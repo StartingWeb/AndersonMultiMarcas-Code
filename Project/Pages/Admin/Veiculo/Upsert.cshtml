@@ -1,0 +1,1475 @@
+@page "/Veiculo/Upsert/{id:int?}"
+@model Project.Pages.Admin.Veiculo.UpsertModel
+@using Domain.Enums
+@using System.Globalization
+
+@{
+    ViewData["Title"] = Model.PageTitle;
+    var br = new CultureInfo("pt-BR");
+    var combustiveis = Enum.GetValues<Combustivel>().Where(x => x != Combustivel.NaoInformado);
+    var cambios = Enum.GetValues<Cambio>().Where(x => x != Cambio.NaoInformado);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+}
+
+<style>
+    :root {
+        --brand-primary: #9f0a10;
+        --brand-primary-dark: #86080d;
+        --brand-dark: #222222;
+        --brand-border: #ececec;
+        --brand-muted: #6c757d;
+        --brand-soft: rgba(159, 10, 16, 0.08);
+        --brand-success: #198754;
+        --brand-card-shadow: 0 8px 24px rgba(0,0,0,.05);
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .page-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin: 0;
+    }
+
+    .page-subtitle {
+        font-size: .92rem;
+        color: var(--brand-muted);
+        margin: .2rem 0 0 0;
+    }
+
+    .form-card {
+        background: #fff;
+        border: 1px solid var(--brand-border);
+        border-radius: 1rem;
+        box-shadow: var(--brand-card-shadow);
+        overflow: hidden;
+    }
+
+    .form-card-body {
+        padding: 1.25rem;
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin-bottom: .2rem;
+    }
+
+    .section-subtitle {
+        font-size: .85rem;
+        color: var(--brand-muted);
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-size: .84rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin-bottom: .35rem;
+    }
+
+    .form-help {
+        display: block;
+        font-size: .78rem;
+        color: var(--brand-muted);
+        margin-top: .4rem;
+        line-height: 1.35;
+    }
+
+    .form-control,
+    .form-select,
+    textarea.form-control {
+        border-radius: .85rem;
+        border: 1px solid #e6e6e6;
+        min-height: 46px;
+        box-shadow: none !important;
+    }
+
+    .form-control:focus,
+    .form-select:focus,
+    textarea.form-control:focus {
+        border-color: rgba(159, 10, 16, .35);
+        box-shadow: 0 0 0 .2rem rgba(159, 10, 16, .08) !important;
+    }
+
+    textarea.form-control {
+        min-height: 120px;
+    }
+
+    .text-danger {
+        font-size: .8rem;
+    }
+
+    .btn-brand {
+        background: var(--brand-primary);
+        border-color: var(--brand-primary);
+        color: #fff;
+        border-radius: .85rem;
+        font-weight: 600;
+        min-height: 46px;
+        padding: 0 1.25rem;
+    }
+
+    .btn-brand:hover {
+        background: var(--brand-primary-dark);
+        border-color: var(--brand-primary-dark);
+        color: #fff;
+    }
+
+    .btn-soft-dark {
+        background: #fff;
+        border: 1px solid var(--brand-border);
+        color: var(--brand-dark);
+        border-radius: .85rem;
+        font-weight: 600;
+        min-height: 46px;
+        padding: 0 1.25rem;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        text-decoration: none;
+    }
+
+    .btn-soft-dark:hover {
+        background: #f8f8f8;
+        color: var(--brand-dark);
+    }
+
+    .btn-soft-primary {
+        background: rgba(159, 10, 16, .06);
+        border: 1px solid rgba(159, 10, 16, .14);
+        color: var(--brand-primary);
+        border-radius: .85rem;
+        font-weight: 600;
+        min-height: 46px;
+        padding: 0 1rem;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .btn-soft-primary:hover {
+        background: rgba(159, 10, 16, .1);
+        color: var(--brand-primary-dark);
+        border-color: rgba(159, 10, 16, .22);
+    }
+
+    .switch-field {
+        display: flex;
+        flex-direction: column;
+        gap: .45rem;
+    }
+
+    .switch-wrapper {
+        display: inline-flex;
+        align-items: center;
+        gap: .75rem;
+        user-select: none;
+        cursor: pointer;
+        width: fit-content;
+    }
+
+    .switch-wrapper * {
+        cursor: pointer !important;
+    }
+
+    .switch-input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        pointer-events: none;
+    }
+
+    .switch-slider {
+        position: relative;
+        width: 52px;
+        height: 30px;
+        border-radius: 999px;
+        background: #d9d9d9;
+        transition: background-color .25s ease, box-shadow .25s ease;
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+        flex-shrink: 0;
+    }
+
+    .switch-slider::before {
+        content: "";
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,.18);
+        transition: transform .25s ease;
+    }
+
+    .switch-input:checked + .switch-slider {
+        background: var(--brand-primary);
+    }
+
+    .switch-input:checked + .switch-slider::before {
+        transform: translateX(22px);
+    }
+
+    .switch-input:focus + .switch-slider {
+        box-shadow: 0 0 0 .2rem rgba(159, 10, 16, .15);
+    }
+
+    .switch-text {
+        display: flex;
+        flex-direction: column;
+        gap: .1rem;
+    }
+
+    .switch-title {
+        font-size: .92rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        line-height: 1.2;
+    }
+
+    .switch-subtitle {
+        font-size: .78rem;
+        color: var(--brand-muted);
+        line-height: 1.35;
+    }
+
+    .switch-status {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        padding: .22rem .6rem;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 700;
+        background: rgba(108, 117, 125, .12);
+        color: var(--brand-muted);
+        transition: all .2s ease;
+    }
+
+    .switch-status.active {
+        background: rgba(25, 135, 84, .12);
+        color: var(--brand-success);
+    }
+
+    .brand-select-group {
+        display: flex;
+        gap: .75rem;
+        align-items: stretch;
+    }
+
+    .brand-select-group .form-select {
+        flex: 1 1 auto;
+    }
+
+    .accordion-clean .accordion-item {
+        border: 1px solid var(--brand-border);
+        border-radius: 1rem !important;
+        overflow: hidden;
+        margin-bottom: .85rem;
+        background: #fff;
+    }
+
+    .accordion-clean .accordion-button {
+        font-weight: 700;
+        color: var(--brand-dark);
+        background: #fff;
+        box-shadow: none !important;
+        padding: 1rem 1.1rem;
+    }
+
+    .feature-accordion-header {
+        display: flex;
+        gap: .65rem;
+        align-items: stretch;
+        flex-wrap: wrap;
+    }
+
+    .feature-accordion-header .accordion-button {
+        flex: 1 1 auto;
+        min-width: 0;
+        border-radius: 1rem 0 0 0 !important;
+    }
+
+    .feature-accordion-header .btn-selecionar-todos {
+        align-self: stretch;
+        border-radius: 0 1rem 0 0;
+        min-height: auto;
+        padding-inline: .9rem;
+        white-space: nowrap;
+    }
+
+    .accordion-clean .accordion-button:not(.collapsed) {
+        color: var(--brand-primary);
+        background: rgba(159, 10, 16, .04);
+    }
+
+    .accordion-clean .accordion-body {
+        padding: 1rem 1.1rem 1.1rem;
+    }
+
+    .feature-toolbar {
+        display: flex;
+        justify-content: flex-end;
+        gap: .65rem;
+        margin-bottom: .9rem;
+    }
+
+    .feature-toolbar-global {
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .feature-toolbar-note {
+        font-size: .82rem;
+        color: var(--brand-muted);
+    }
+
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: .75rem;
+    }
+
+    .feature-check {
+        display: flex;
+        align-items: center;
+        gap: .55rem;
+        min-height: 44px;
+        padding: .75rem .9rem;
+        border: 1px solid #eee;
+        border-radius: .85rem;
+        background: #fff;
+        transition: all .2s ease;
+    }
+
+    .feature-check:hover {
+        background: #fafafa;
+        border-color: #ddd;
+    }
+
+    .feature-check input[type="checkbox"] {
+        transform: scale(1.08);
+        accent-color: var(--brand-primary);
+    }
+
+    .feature-check label {
+        font-size: .88rem;
+        color: var(--brand-dark);
+        cursor: pointer;
+        margin: 0;
+        width: 100%;
+    }
+
+    .media-dropzone {
+        border: 2px dashed #d9d9d9;
+        border-radius: 1rem;
+        background: #fafafa;
+        padding: 1.25rem;
+        text-align: center;
+        transition: all .2s ease;
+    }
+
+    .media-dropzone.dragover {
+        border-color: var(--brand-primary);
+        background: rgba(159, 10, 16, .04);
+    }
+
+    .media-dropzone-icon {
+        font-size: 2rem;
+        color: var(--brand-primary);
+        margin-bottom: .4rem;
+    }
+
+    .media-dropzone-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin-bottom: .25rem;
+    }
+
+    .media-dropzone-subtitle {
+        font-size: .84rem;
+        color: var(--brand-muted);
+        margin-bottom: .9rem;
+    }
+
+    .media-input-hidden {
+        display: none;
+    }
+
+    .media-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: .75rem;
+        margin-top: 1rem;
+        margin-bottom: .75rem;
+        flex-wrap: wrap;
+    }
+
+    .media-sort-help {
+        font-size: .8rem;
+        color: var(--brand-muted);
+    }
+
+    .media-list {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+        margin-top: .75rem;
+    }
+
+    .media-item {
+        border: 1px solid var(--brand-border);
+        border-radius: 1rem;
+        background: #fff;
+        overflow: hidden;
+        box-shadow: var(--brand-card-shadow);
+        position: relative;
+        cursor: grab;
+    }
+
+    .media-item.dragging {
+        opacity: .55;
+        transform: scale(.98);
+    }
+
+    .media-thumb {
+        width: 100%;
+        height: 180px;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .media-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .media-body {
+        padding: .85rem;
+    }
+
+    .media-name {
+        font-size: .82rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin: 0 0 .45rem 0;
+        word-break: break-word;
+    }
+
+    .media-meta {
+        font-size: .76rem;
+        color: var(--brand-muted);
+        margin-bottom: .75rem;
+    }
+
+    .media-actions {
+        display: flex;
+        flex-direction: column;
+        gap: .45rem;
+    }
+
+    .media-badge {
+        position: absolute;
+        top: .75rem;
+        left: .75rem;
+        z-index: 2;
+        background: rgba(0,0,0,.65);
+        color: #fff;
+        font-size: .7rem;
+        font-weight: 700;
+        padding: .25rem .55rem;
+        border-radius: 999px;
+    }
+
+    .media-remove-btn {
+        width: 100%;
+        border-radius: .75rem;
+    }
+
+    .media-order-label {
+        font-size: .75rem;
+        color: var(--brand-muted);
+        font-weight: 700;
+    }
+
+    .input-with-prefix {
+        position: relative;
+    }
+
+    .input-with-prefix .prefix {
+        position: absolute;
+        top: 50%;
+        left: 14px;
+        transform: translateY(-50%);
+        font-size: .9rem;
+        color: var(--brand-muted);
+        font-weight: 700;
+        pointer-events: none;
+    }
+
+    .input-with-prefix .form-control {
+        padding-left: 40px;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: .75rem;
+        flex-wrap: wrap;
+        margin-top: 1.5rem;
+    }
+
+    @@media (max-width: 1200px) {
+        .media-list {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 992px) {
+        .feature-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .media-list {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .page-header,
+        .form-actions,
+        .media-toolbar,
+        .brand-select-group {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .feature-accordion-header .accordion-button,
+        .feature-accordion-header .btn-selecionar-todos {
+            width: 100%;
+        }
+
+        .feature-accordion-header .accordion-button {
+            border-radius: 1rem 1rem 0 0 !important;
+        }
+
+        .feature-accordion-header .btn-selecionar-todos {
+            border-radius: 0 0 1rem 1rem;
+        }
+
+        .feature-grid,
+        .media-list {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <i class="bi @(Model.IsEdit ? "bi-pencil-square" : "bi-plus-circle") me-2"></i>
+                @Model.PageTitle
+            </h1>
+            <p class="page-subtitle">@Model.PageSubtitle</p>
+        </div>
+
+        <a class="btn btn-soft-dark" href="/Veiculo">
+            <i class="bi bi-arrow-left me-2"></i>
+            Voltar
+        </a>
+    </div>
+
+    <div class="form-card">
+        <div class="form-card-body">
+            <form method="post" enctype="multipart/form-data" id="formVeiculo" novalidate>
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <input type="hidden" asp-for="Veiculo.Id">
+                <input type="hidden" asp-for="Veiculo.Titulo">
+                <input type="hidden" asp-for="MidiasOrdenadasJson" id="MidiasOrdenadasJson">
+                <input type="hidden" asp-for="CapaItemKey" id="CapaItemKey">
+
+                <div class="mb-4">
+                    <div class="section-title">Dados principais</div>
+                    <div class="section-subtitle">Informações básicas do veículo.</div>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-4">
+                            <label class="form-label" asp-for="Veiculo.LojaId">Loja</label>
+                            <select class="form-select" asp-for="Veiculo.LojaId">
+                                <option value="">Selecione</option>
+                                @foreach (var loja in Model.Lojas)
+                                {
+                                    <option value="@loja.Id">@loja.Nome</option>
+                                }
+                            </select>
+                            <span class="text-danger" asp-validation-for="Veiculo.LojaId"></span>
+                        </div>
+
+                        <div class="col-12 col-lg-8">
+                            <label class="form-label" asp-for="Veiculo.MarcaId">Marca</label>
+                            <div class="brand-select-group">
+                                <select class="form-select" asp-for="Veiculo.MarcaId">
+                                    <option value="">Selecione</option>
+                                    @foreach (var marca in Model.Marcas)
+                                    {
+                                        <option value="@marca.Id">@marca.Nome</option>
+                                    }
+                                </select>
+
+                                <button type="button" style="display:none" class="btn btn-soft-primary">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    Cadastrar marca
+                                </button>
+                            </div>
+                            <span class="text-danger" asp-validation-for="Veiculo.MarcaId"></span>
+                        </div>
+
+                        <div class="col-12 col-lg-6">
+                            <label class="form-label" asp-for="Veiculo.Modelo">Modelo</label>
+                            <input class="form-control" asp-for="Veiculo.Modelo" maxlength="100" placeholder="Ex.: Onix">
+                            <span class="text-danger" asp-validation-for="Veiculo.Modelo"></span>
+                        </div>
+
+                        <div class="col-12 col-lg-6">
+                            <label class="form-label" asp-for="Veiculo.Versao">Versão</label>
+                            <input class="form-control" asp-for="Veiculo.Versao" maxlength="100" placeholder="Ex.: LTZ">
+                            <span class="text-danger" asp-validation-for="Veiculo.Versao"></span>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label" asp-for="Veiculo.AnoFabricacao">Ano fabricação</label>
+                            <input class="form-control" asp-for="Veiculo.AnoFabricacao" type="number" placeholder="Ex.: 2022">
+                            <span class="text-danger" asp-validation-for="Veiculo.AnoFabricacao"></span>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label" asp-for="Veiculo.AnoModelo">Ano modelo</label>
+                            <input class="form-control" asp-for="Veiculo.AnoModelo" type="number" placeholder="Ex.: 2023">
+                            <span class="text-danger" asp-validation-for="Veiculo.AnoModelo"></span>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label" asp-for="Veiculo.Cor">Cor</label>
+                            <input class="form-control" asp-for="Veiculo.Cor" maxlength="30" placeholder="Ex.: Branco">
+                            <span class="text-danger" asp-validation-for="Veiculo.Cor"></span>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label" asp-for="Veiculo.Quilometragem">Quilometragem</label>
+                            <input class="form-control js-mask-km" asp-for="Veiculo.Quilometragem" type="text" inputmode="numeric" maxlength="15" placeholder="Ex.: 45.000">
+                            <span class="text-danger" asp-validation-for="Veiculo.Quilometragem"></span>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label" asp-for="Veiculo.Combustivel">Combustível</label>
+                            <select class="form-select" asp-for="Veiculo.Combustivel">
+                                <option value="">Selecione</option>
+                                @foreach (var combustivel in combustiveis)
+                                {
+                                    <option value="@((int)combustivel)">@combustivel</option>
+                                }
+                            </select>
+                            <span class="text-danger" asp-validation-for="Veiculo.Combustivel"></span>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label" asp-for="Veiculo.Cambio">Câmbio</label>
+                            <select class="form-select" asp-for="Veiculo.Cambio">
+                                <option value="">Selecione</option>
+                                @foreach (var cambio in cambios)
+                                {
+                                    <option value="@((int)cambio)">@cambio</option>
+                                }
+                            </select>
+                            <span class="text-danger" asp-validation-for="Veiculo.Cambio"></span>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <label class="form-label" asp-for="Veiculo.Placa">Placa</label>
+                            <input class="form-control js-mask-placa text-uppercase" asp-for="Veiculo.Placa" maxlength="8" placeholder="ABC1D23">
+                            <span class="text-danger" asp-validation-for="Veiculo.Placa"></span>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <label class="form-label" asp-for="Veiculo.PrecoVenda">Preço de venda</label>
+                            <div class="input-with-prefix">
+                                <span class="prefix">R$</span>
+                                <input class="form-control js-mask-money" asp-for="Veiculo.PrecoVenda" type="text" inputmode="decimal" placeholder="0,00">
+                            </div>
+                            <span class="text-danger" asp-validation-for="Veiculo.PrecoVenda"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label" asp-for="Veiculo.Descricao">Descrição</label>
+                            <textarea class="form-control" asp-for="Veiculo.Descricao" maxlength="4000" placeholder="Descreva os detalhes do veículo..."></textarea>
+                            <span class="text-danger" asp-validation-for="Veiculo.Descricao"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="mb-4">
+                    <div class="section-title">Status e flags</div>
+                    <div class="section-subtitle">Defina disponibilidade e condicoes comerciais.</div>
+
+                    <div class="row g-3">
+                        @await Html.PartialAsync("_SwitchField", ("Veiculo.Ativo", "Veiculo_Ativo", Model.Veiculo.Ativo, "Ativo", "Veículo disponível no sistema.", "statusVeiculoAtivo"))
+                        @await Html.PartialAsync("_SwitchField", ("Veiculo.Vendido", "Veiculo_Vendido", Model.Veiculo.Vendido, "Vendido", "Marca o veículo como vendido.", "statusVeiculoVendido"))
+                        @await Html.PartialAsync("_SwitchField", ("Veiculo.Destaque", "Veiculo_Destaque", Model.Veiculo.Destaque, "Destaque", "Prioriza o veículo na vitrine.", "statusVeiculoDestaque"))
+                        @await Html.PartialAsync("_SwitchField", ("Veiculo.Seminovo", "Veiculo_Seminovo", Model.Veiculo.Seminovo, "Seminovo", "Identifica como seminovo.", "statusVeiculoSeminovo"))
+                        @await Html.PartialAsync("_SwitchField", ("Veiculo.MotoEletrica", "Veiculo_MotoEletrica", Model.Veiculo.MotoEletrica, "Moto elétrica", "Identifica como moto elétrica.", "statusVeiculoMotoEletrica"))
+                        @await Html.PartialAsync("_SwitchField", ("Veiculo.AceitaTroca", "Veiculo_AceitaTroca", Model.Veiculo.AceitaTroca, "Aceita troca", "Indica negociação com troca.", "statusVeiculoAceitaTroca"))
+                        @await Html.PartialAsync("_SwitchField", ("Veiculo.Financiavel", "Veiculo_Financiavel", Model.Veiculo.Financiavel, "Financiável", "Permite financiamento.", "statusVeiculoFinanciavel"))
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="mb-4">
+                    <div class="section-title">Caracteristicas</div>
+                    <div class="section-subtitle">Expanda os grupos abaixo e marque o que o veículo possui.</div>
+
+                    <div class="feature-toolbar feature-toolbar-global mt-3">
+                        <span class="feature-toolbar-note">Use o atalho para preencher rapidamente um pacote basico.</span>
+                        <button type="button" class="btn btn-soft-primary" id="btnBaseCarro">
+                            <i class="bi bi-magic me-2"></i>
+                            Base Carro
+                        </button>
+                    </div>
+
+                    <div class="accordion accordion-clean" id="accordionCaracteristicas">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingConforto">
+                                <div class="feature-accordion-header">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConforto" aria-expanded="true">
+                                        <i class="bi bi-stars me-2"></i> Conforto
+                                    </button>
+                                    <button type="button" class="btn btn-soft-primary btn-selecionar-todos" data-target="#collapseConforto">
+                                        <i class="bi bi-check2-square me-2"></i>
+                                        Selecionar todas
+                                    </button>
+                                </div>
+                            </h2>
+                            <div id="collapseConforto" class="accordion-collapse collapse show" data-bs-parent="#accordionCaracteristicas">
+                                <div class="accordion-body">
+                                    <div class="feature-grid">
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "ArCondicionado", Label: "Ar-condicionado", Checked: Model.Caracteristica.ArCondicionado))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "DirecaoHidraulica", Label: "Direção hidráulica", Checked: Model.Caracteristica.DirecaoHidraulica))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "DirecaoEletrica", Label: "Direção elétrica", Checked: Model.Caracteristica.DirecaoEletrica))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "VidroEletrico", Label: "Vidro elétrico", Checked: Model.Caracteristica.VidroEletrico))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "TravaEletrica", Label: "Trava elétrica", Checked: Model.Caracteristica.TravaEletrica))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "BancoDeCouro", Label: "Banco de couro", Checked: Model.Caracteristica.BancoDeCouro))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "VolanteMultifuncional", Label: "Volante multifuncional", Checked: Model.Caracteristica.VolanteMultifuncional))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "ComputadorBordo", Label: "Computador de bordo", Checked: Model.Caracteristica.ComputadorBordo))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "SensorChuva", Label: "Sensor de chuva", Checked: Model.Caracteristica.SensorChuva))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "TetoSolar", Label: "Teto solar", Checked: Model.Caracteristica.TetoSolar))
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingSeguranca">
+                                <div class="feature-accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeguranca">
+                                        <i class="bi bi-shield-check me-2"></i> Seguranca
+                                    </button>
+                                    <button type="button" class="btn btn-soft-primary btn-selecionar-todos" data-target="#collapseSeguranca">
+                                        <i class="bi bi-check2-square me-2"></i>
+                                        Selecionar todas
+                                    </button>
+                                </div>
+                            </h2>
+                            <div id="collapseSeguranca" class="accordion-collapse collapse" data-bs-parent="#accordionCaracteristicas">
+                                <div class="accordion-body">
+                                    <div class="feature-grid">
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "AirbagMotorista", Label: "Airbag motorista", Checked: Model.Caracteristica.AirbagMotorista))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "AirbagPassageiro", Label: "Airbag passageiro", Checked: Model.Caracteristica.AirbagPassageiro))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "AirbagLateral", Label: "Airbag lateral", Checked: Model.Caracteristica.AirbagLateral))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "AirbagCortina", Label: "Airbag cortina", Checked: Model.Caracteristica.AirbagCortina))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "FreiosAbs", Label: "Freios ABS", Checked: Model.Caracteristica.FreiosAbs))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "Alarme", Label: "Alarme", Checked: Model.Caracteristica.Alarme))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "CameraDeRe", Label: "Câmera de ré", Checked: Model.Caracteristica.CameraDeRe))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "FarolLed", Label: "Farol em LED", Checked: Model.Caracteristica.FarolLed))
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingMultimidia">
+                                <div class="feature-accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMultimidia">
+                                        <i class="bi bi-speaker me-2"></i> Multimídia
+                                    </button>
+                                    <button type="button" class="btn btn-soft-primary btn-selecionar-todos" data-target="#collapseMultimidia">
+                                        <i class="bi bi-check2-square me-2"></i>
+                                        Selecionar todas
+                                    </button>
+                                </div>
+                            </h2>
+                            <div id="collapseMultimidia" class="accordion-collapse collapse" data-bs-parent="#accordionCaracteristicas">
+                                <div class="accordion-body">
+                                    <div class="feature-grid">
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "CentralMultimidia", Label: "Central multimídia", Checked: Model.Caracteristica.CentralMultimidia))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "Som", Label: "Som", Checked: Model.Caracteristica.Som))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "Bluetooth", Label: "Bluetooth", Checked: Model.Caracteristica.Bluetooth))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "Usb", Label: "USB", Checked: Model.Caracteristica.Usb))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "Radio", Label: "Rádio", Checked: Model.Caracteristica.Radio))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "CarregadorInducao", Label: "Carregador por indução", Checked: Model.Caracteristica.CarregadorInducao))
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingEstrutura">
+                                <div class="feature-accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEstrutura">
+                                        <i class="bi bi-truck me-2"></i> Estrutura
+                                    </button>
+                                    <button type="button" class="btn btn-soft-primary btn-selecionar-todos" data-target="#collapseEstrutura">
+                                        <i class="bi bi-check2-square me-2"></i>
+                                        Selecionar todas
+                                    </button>
+                                </div>
+                            </h2>
+                            <div id="collapseEstrutura" class="accordion-collapse collapse" data-bs-parent="#accordionCaracteristicas">
+                                <div class="accordion-body">
+                                    <div class="feature-grid">
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "RodaLigaLeve", Label: "Roda de liga leve", Checked: Model.Caracteristica.RodaLigaLeve))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "Engate", Label: "Engate", Checked: Model.Caracteristica.Engate))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "CapotaMaritima", Label: "Capota marítima", Checked: Model.Caracteristica.CapotaMaritima))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "SantoAntonio", Label: "Santo Antônio", Checked: Model.Caracteristica.SantoAntonio))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "ProtetorCacamba", Label: "Protetor de caçamba", Checked: Model.Caracteristica.ProtetorCacamba))
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingMecanica">
+                                <div class="feature-accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMecanica">
+                                        <i class="bi bi-gear-wide-connected me-2"></i> Mecanica
+                                    </button>
+                                    <button type="button" class="btn btn-soft-primary btn-selecionar-todos" data-target="#collapseMecanica">
+                                        <i class="bi bi-check2-square me-2"></i>
+                                        Selecionar todas
+                                    </button>
+                                </div>
+                            </h2>
+                            <div id="collapseMecanica" class="accordion-collapse collapse" data-bs-parent="#accordionCaracteristicas">
+                                <div class="accordion-body">
+                                    <div class="feature-grid">
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "CambioAutomatico", Label: "Câmbio automático", Checked: Model.Caracteristica.CambioAutomatico))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "CambioManual", Label: "Câmbio manual", Checked: Model.Caracteristica.CambioManual))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "Turbo", Label: "Turbo", Checked: Model.Caracteristica.Turbo))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "TracaoDianteira", Label: "Tração dianteira", Checked: Model.Caracteristica.TracaoDianteira))
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingEletricos">
+                                <div class="feature-accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEletricos">
+                                        <i class="bi bi-lightning-charge me-2"></i> Elétricos / Híbridos
+                                    </button>
+                                    <button type="button" class="btn btn-soft-primary btn-selecionar-todos" data-target="#collapseEletricos">
+                                        <i class="bi bi-check2-square me-2"></i>
+                                        Selecionar todas
+                                    </button>
+                                </div>
+                            </h2>
+                            <div id="collapseEletricos" class="accordion-collapse collapse" data-bs-parent="#accordionCaracteristicas">
+                                <div class="accordion-body">
+                                    <div class="feature-grid">
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "Hibrido", Label: "Híbrido", Checked: Model.Caracteristica.Hibrido))
+                                        @await Html.PartialAsync("_FeatureCheck", (Property: "Eletrico", Label: "Elétrico", Checked: Model.Caracteristica.Eletrico))
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="mb-3">
+                    <div class="section-title">Fotos do veículo</div>
+                    <div class="section-subtitle">Envie varias imagens, arraste para ordenar e marque qual sera a capa.</div>
+
+                    <div class="media-dropzone" id="mediaDropzone">
+                        <div class="media-dropzone-icon">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                        </div>
+                        <div class="media-dropzone-title">Arraste imagens aqui</div>
+                        <div class="media-dropzone-subtitle">
+                            ou clique no botao abaixo para selecionar varias imagens de uma vez.
+                        </div>
+
+                        <button type="button" class="btn btn-soft-dark" id="btnSelecionarMidias">
+                            <i class="bi bi-images me-2"></i>
+                            Selecionar fotos
+                        </button>
+
+                        <input id="NovasMidias" class="media-input-hidden" type="file" accept=".jpg,.jpeg,.png,.webp,image/*" multiple name="NovasMidias">
+                    </div>
+
+                    <div class="media-toolbar">
+                        <div class="media-sort-help">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Dica: arraste os cards para mudar a ordem. O primeiro pode ser sua foto principal, mas voce tambem pode marcar qualquer item como capa.
+                        </div>
+
+                        <button type="button" class="btn btn-soft-dark" id="btnLimparNovasMidias">
+                            <i class="bi bi-trash me-2"></i>
+                            Limpar novas fotos
+                        </button>
+                    </div>
+
+                    <div id="mediaList" class="media-list">
+                        @foreach (var midia in Model.MidiasExistentes)
+                        {
+                            var key = $"existing-{midia.Id}";
+                            <div class="media-item" draggable="true" data-kind="existing" data-id="@midia.Id" data-key="@key">
+                                <div class="media-badge">@(midia.Capa ? "CAPA" : "MIDIA")</div>
+                                <div class="media-thumb">
+                                    <img src="@ImageUrlBuilder.Build(midia.Url, 420)" alt="@midia.NomeArquivo" loading="lazy" decoding="async">
+                                </div>
+                                <div class="media-body">
+                                    <p class="media-name">@midia.NomeArquivo</p>
+                                    <div class="media-meta">@(midia.TamanhoBytes.HasValue ? $"{(midia.TamanhoBytes.Value / 1024m):N0} KB" : "Arquivo existente")</div>
+                                    <div class="media-actions">
+                                        <label class="form-check">
+                                            <input class="form-check-input js-capa-radio" type="radio" name="capaSelector" value="@key" @(midia.Capa ? "checked" : "")>
+                                            <span class="form-check-label">Definir como capa</span>
+                                        </label>
+
+                                        <button type="button" class="btn btn-outline-danger btn-sm media-remove-btn js-remove-existing-file">
+                                            <i class="bi bi-trash me-1"></i>
+                                            Remover
+                                        </button>
+
+                                        <div class="media-order-label">Arraste para ordenar</div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div id="removedMediaInputs"></div>
+
+                <div class="form-actions">
+                    <a class="btn btn-soft-dark" href="/Veiculo">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Cancelar
+                    </a>
+
+                    <button type="submit" class="btn btn-brand">
+                        <i class="bi bi-check-circle me-2"></i>
+                        @Model.SubmitLabel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        if (window.jQuery && $.validator) {
+            $.validator.methods.number = function (value, element) {
+                return this.optional(element) || /^-?(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d{1,2})?$/.test(value);
+            };
+        }
+    </script>
+
+    <script>
+        (function () {
+            if (window.jQuery && $.fn.select2) {
+                $('select').select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    placeholder: 'Selecione',
+                    allowClear: true
+                });
+            }
+
+            const form = document.getElementById('formVeiculo');
+            const mediaInput = document.getElementById('NovasMidias');
+            const mediaDropzone = document.getElementById('mediaDropzone');
+            const mediaList = document.getElementById('mediaList');
+            const btnSelecionarMidias = document.getElementById('btnSelecionarMidias');
+            const btnLimparNovasMidias = document.getElementById('btnLimparNovasMidias');
+            const midiasOrdenadasJson = document.getElementById('MidiasOrdenadasJson');
+            const capaItemKey = document.getElementById('CapaItemKey');
+            const removedMediaInputs = document.getElementById('removedMediaInputs');
+
+            let newFiles = [];
+            let dragItem = null;
+
+            function bindSwitchStatus(inputId, statusId, onText, offText, activeWhenChecked = true) {
+                const input = document.getElementById(inputId);
+                const status = document.getElementById(statusId);
+                if (!input || !status) return;
+
+                function update() {
+                    const active = activeWhenChecked ? input.checked : !input.checked;
+                    status.textContent = input.checked ? onText : offText;
+                    status.classList.toggle('active', active);
+                }
+
+                input.addEventListener('change', update);
+                update();
+            }
+
+            bindSwitchStatus('Veiculo_Ativo', 'statusVeiculoAtivo', 'Ativo', 'Inativo');
+            bindSwitchStatus('Veiculo_Vendido', 'statusVeiculoVendido', 'Sim', 'Não');
+            bindSwitchStatus('Veiculo_Destaque', 'statusVeiculoDestaque', 'Sim', 'Não');
+            bindSwitchStatus('Veiculo_Seminovo', 'statusVeiculoSeminovo', 'Sim', 'Não');
+            bindSwitchStatus('Veiculo_MotoEletrica', 'statusVeiculoMotoEletrica', 'Sim', 'Não');
+            bindSwitchStatus('Veiculo_AceitaTroca', 'statusVeiculoAceitaTroca', 'Sim', 'Não');
+            bindSwitchStatus('Veiculo_Financiavel', 'statusVeiculoFinanciavel', 'Sim', 'Não');
+
+            function formatBytes(bytes) {
+                if (!bytes || bytes <= 0) return '0 KB';
+                const kb = bytes / 1024;
+                if (kb < 1024) return kb.toFixed(0) + ' KB';
+                const mb = kb / 1024;
+                return mb.toFixed(2) + ' MB';
+            }
+
+            function digitsOnly(value) {
+                return (value || '').replace(/\D/g, '');
+            }
+
+            function lettersAndNumbersOnly(value) {
+                return (value || '').replace(/[^a-zA-Z0-9]/g, '');
+            }
+
+            function formatMoney(value) {
+                const digits = digitsOnly(value);
+                if (!digits) return '';
+                const cents = parseInt(digits, 10);
+                if (isNaN(cents)) return '';
+                const number = (cents / 100).toFixed(2);
+                const parts = number.split('.');
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                return parts[0] + ',' + parts[1];
+            }
+
+            function formatIntegerWithThousands(value) {
+                const digits = digitsOnly(value);
+                if (!digits) return '';
+                return parseInt(digits, 10).toLocaleString('pt-BR');
+            }
+
+            function formatPlaca(value) {
+                return lettersAndNumbersOnly(value).toUpperCase().substring(0, 7);
+            }
+
+            function applyInputMasks() {
+                document.querySelectorAll('.js-mask-money').forEach(input => {
+                    input.addEventListener('input', function () { this.value = formatMoney(this.value); });
+                    input.addEventListener('blur', function () { this.value = formatMoney(this.value); });
+                    if (input.value) input.value = formatMoney(input.value);
+                });
+
+                document.querySelectorAll('.js-mask-km').forEach(input => {
+                    input.addEventListener('input', function () { this.value = formatIntegerWithThousands(this.value); });
+                    input.addEventListener('blur', function () { this.value = formatIntegerWithThousands(this.value); });
+                    if (input.value) input.value = formatIntegerWithThousands(input.value);
+                });
+
+                document.querySelectorAll('.js-mask-placa').forEach(input => {
+                    input.addEventListener('input', function () { this.value = formatPlaca(this.value); });
+                    input.addEventListener('blur', function () { this.value = formatPlaca(this.value); });
+                    if (input.value) input.value = formatPlaca(input.value);
+                });
+            }
+
+            function normalizeMaskedInputsBeforeSubmit() {
+                document.querySelectorAll('.js-mask-km').forEach(input => { input.value = digitsOnly(input.value); });
+                document.querySelectorAll('.js-mask-money').forEach(input => { input.value = (input.value || '').trim().replace(/\./g, ''); });
+                document.querySelectorAll('.js-mask-placa').forEach(input => { input.value = formatPlaca(input.value); });
+            }
+
+            function bindSelectAllButtons() {
+                document.querySelectorAll('.btn-selecionar-todos').forEach(button => {
+                    button.addEventListener('click', function () {
+                        const group = document.querySelector(this.getAttribute('data-target'));
+                        if (!group) return;
+
+                        const checkboxes = Array.from(group.querySelectorAll('input[type="checkbox"]'));
+                        if (checkboxes.length === 0) return;
+
+                        const shouldUncheckAll = checkboxes.every(cb => cb.checked);
+                        checkboxes.forEach(cb => {
+                            cb.checked = !shouldUncheckAll;
+                            cb.dispatchEvent(new Event('change', { bubbles: true }));
+                        });
+                    });
+                });
+            }
+
+            function bindBaseCarroButton() {
+                const button = document.getElementById('btnBaseCarro');
+                if (!button) return;
+
+                const baseCarroIds = [
+                    'Caracteristica_ArCondicionado',
+                    'Caracteristica_VidroEletrico',
+                    'Caracteristica_TravaEletrica',
+                    'Caracteristica_ComputadorBordo',
+                    'Caracteristica_AirbagMotorista',
+                    'Caracteristica_AirbagPassageiro',
+                    'Caracteristica_FreiosAbs',
+                    'Caracteristica_Alarme',
+                    'Caracteristica_Som',
+                    'Caracteristica_Bluetooth',
+                    'Caracteristica_Usb',
+                    'Caracteristica_Radio',
+                    'Caracteristica_RodaLigaLeve',
+                    'Caracteristica_CambioManual',
+                    'Caracteristica_TracaoDianteira'
+                ];
+
+                button.addEventListener('click', function () {
+                    baseCarroIds.forEach(id => {
+                        const checkbox = document.getElementById(id);
+                        if (!checkbox) return;
+
+                        checkbox.checked = true;
+                        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                });
+            }
+
+            function createNewMediaCard(file, index) {
+                const key = `new-${index}`;
+                const objectUrl = URL.createObjectURL(file);
+                const wrapper = document.createElement('div');
+
+                wrapper.className = 'media-item';
+                wrapper.setAttribute('draggable', 'true');
+                wrapper.dataset.kind = 'new';
+                wrapper.dataset.newIndex = String(index);
+                wrapper.dataset.key = key;
+
+                wrapper.innerHTML = `
+                    <div class="media-badge">NOVA</div>
+                    <div class="media-thumb">
+                        <img src="${objectUrl}" alt="${file.name}" />
+                    </div>
+                    <div class="media-body">
+                        <p class="media-name">${file.name}</p>
+                        <div class="media-meta">${formatBytes(file.size)}</div>
+                        <div class="media-actions">
+                            <label class="form-check">
+                                <input class="form-check-input js-capa-radio" type="radio" name="capaSelector" value="${key}" />
+                                <span class="form-check-label">Definir como capa</span>
+                            </label>
+                            <button type="button" class="btn btn-outline-danger btn-sm media-remove-btn js-remove-new-file">
+                                <i class="bi bi-trash me-1"></i>
+                                Remover
+                            </button>
+                            <div class="media-order-label">Arraste para ordenar</div>
+                        </div>
+                    </div>
+                `;
+
+                wrapper.querySelector('.js-remove-new-file').addEventListener('click', function () {
+                    const currentIndex = parseInt(wrapper.dataset.newIndex, 10);
+                    if (!isNaN(currentIndex)) {
+                        newFiles.splice(currentIndex, 1);
+                        renderNewFiles();
+                    }
+                });
+
+                return wrapper;
+            }
+
+            function renderNewFiles() {
+                const existingCards = Array.from(mediaList.querySelectorAll('.media-item[data-kind="existing"]'));
+                mediaList.innerHTML = '';
+                existingCards.forEach(card => mediaList.appendChild(card));
+                newFiles.forEach((file, index) => mediaList.appendChild(createNewMediaCard(file, index)));
+                refreshDragAndDrop();
+                ensureDefaultCoverSelection();
+                syncFileInputFromArray();
+                collectOrder();
+            }
+
+            function ensureDefaultCoverSelection() {
+                const radios = Array.from(mediaList.querySelectorAll('.js-capa-radio'));
+                if (radios.length === 0) {
+                    capaItemKey.value = '';
+                    return;
+                }
+
+                const selected = radios.find(radio => radio.checked);
+
+                if (selected) {
+                    selected.checked = true;
+                    capaItemKey.value = selected.value;
+                    return;
+                }
+
+                radios[0].checked = true;
+                capaItemKey.value = radios[0].value;
+            }
+
+            function syncFileInputFromArray() {
+                const dt = new DataTransfer();
+                newFiles.forEach(file => dt.items.add(file));
+                mediaInput.files = dt.files;
+            }
+
+            function appendFiles(files) {
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                Array.from(files).forEach(file => {
+                    const type = (file.type || '').toLowerCase();
+                    if (!validTypes.includes(type)) return;
+                    newFiles.push(file);
+                });
+                renderNewFiles();
+            }
+
+            function collectOrder() {
+                const items = [];
+                Array.from(mediaList.querySelectorAll('.media-item')).forEach((card, index) => {
+                    items.push({
+                        key: card.dataset.key,
+                        kind: card.dataset.kind,
+                        id: card.dataset.id ? parseInt(card.dataset.id, 10) : null,
+                        newIndex: card.dataset.newIndex ? parseInt(card.dataset.newIndex, 10) : null,
+                        ordem: index
+                    });
+                });
+                midiasOrdenadasJson.value = JSON.stringify(items);
+            }
+
+            function updateCapaHidden() {
+                const selected = document.querySelector('.js-capa-radio:checked');
+                capaItemKey.value = selected ? selected.value : '';
+            }
+
+            function refreshNewIndexesFromDom() {
+                const newCards = Array.from(mediaList.querySelectorAll('.media-item[data-kind="new"]'));
+                const reorderedFiles = [];
+
+                newCards.forEach((card, idx) => {
+                    const oldIndex = parseInt(card.dataset.newIndex, 10);
+                    if (!isNaN(oldIndex) && newFiles[oldIndex]) reorderedFiles.push(newFiles[oldIndex]);
+
+                    card.dataset.newIndex = String(idx);
+                    card.dataset.key = `new-${idx}`;
+
+                    const radio = card.querySelector('.js-capa-radio');
+                    if (radio) radio.value = `new-${idx}`;
+                });
+
+                newFiles = reorderedFiles;
+                syncFileInputFromArray();
+                updateCapaHidden();
+                collectOrder();
+            }
+
+            function refreshExistingBadges() {
+                mediaList.querySelectorAll('.media-item').forEach(card => {
+                    const badge = card.querySelector('.media-badge');
+                    const radio = card.querySelector('.js-capa-radio');
+                    if (!badge || !radio) return;
+
+                    if (radio.checked) badge.textContent = 'CAPA';
+                    else if (card.dataset.kind === 'new') badge.textContent = 'NOVA';
+                    else badge.textContent = 'MIDIA';
+                });
+            }
+
+            function onDragStart() {
+                dragItem = this;
+                this.classList.add('dragging');
+            }
+
+            function onDragEnd() {
+                this.classList.remove('dragging');
+                dragItem = null;
+                refreshNewIndexesFromDom();
+                refreshExistingBadges();
+            }
+
+            function onDragOver(e) {
+                e.preventDefault();
+            }
+
+            function onDrop(e) {
+                e.preventDefault();
+                if (!dragItem || dragItem === this) return;
+
+                const cards = Array.from(mediaList.children);
+                const draggedIndex = cards.indexOf(dragItem);
+                const targetIndex = cards.indexOf(this);
+
+                if (draggedIndex < targetIndex) mediaList.insertBefore(dragItem, this.nextSibling);
+                else mediaList.insertBefore(dragItem, this);
+
+                refreshNewIndexesFromDom();
+                refreshExistingBadges();
+            }
+
+            function onCapaChange() {
+                ensureDefaultCoverSelection();
+                updateCapaHidden();
+                refreshExistingBadges();
+            }
+
+            function bindCapaRadios() {
+                document.querySelectorAll('.js-capa-radio').forEach(radio => {
+                    radio.removeEventListener('change', onCapaChange);
+                    radio.addEventListener('change', onCapaChange);
+                    radio.removeEventListener('click', onCapaClickToggle);
+                    radio.addEventListener('click', onCapaClickToggle);
+                });
+            }
+
+            function onCapaClickToggle(event) {
+                if (capaItemKey.value !== this.value) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+                document.querySelectorAll('.js-capa-radio').forEach(item => { item.checked = false; });
+                ensureDefaultCoverSelection();
+                updateCapaHidden();
+                refreshExistingBadges();
+            }
+
+            function bindExistingRemoveButtons() {
+                document.querySelectorAll('.js-remove-existing-file').forEach(button => {
+                    button.addEventListener('click', function () {
+                        const card = button.closest('.media-item');
+                        if (!card) return;
+
+                        const id = card.dataset.id;
+                        if (id) {
+                            const input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'RemoverMidiaIds';
+                            input.value = id;
+                            removedMediaInputs.appendChild(input);
+                        }
+
+                        card.remove();
+                        ensureDefaultCoverSelection();
+                        updateCapaHidden();
+                        collectOrder();
+                        refreshExistingBadges();
+                    });
+                });
+            }
+
+            function refreshDragAndDrop() {
+                mediaList.querySelectorAll('.media-item').forEach(card => {
+                    card.removeEventListener('dragstart', onDragStart);
+                    card.removeEventListener('dragend', onDragEnd);
+                    card.removeEventListener('dragover', onDragOver);
+                    card.removeEventListener('drop', onDrop);
+                    card.addEventListener('dragstart', onDragStart);
+                    card.addEventListener('dragend', onDragEnd);
+                    card.addEventListener('dragover', onDragOver);
+                    card.addEventListener('drop', onDrop);
+                });
+
+                bindCapaRadios();
+                bindExistingRemoveButtons();
+            }
+
+            btnSelecionarMidias?.addEventListener('click', function () {
+                mediaInput?.click();
+            });
+
+            mediaInput?.addEventListener('change', function () {
+                if (mediaInput.files && mediaInput.files.length > 0) appendFiles(mediaInput.files);
+                mediaInput.value = '';
+            });
+
+            btnLimparNovasMidias?.addEventListener('click', function () {
+                newFiles = [];
+                renderNewFiles();
+            });
+
+            if (mediaDropzone) {
+                ['dragenter', 'dragover'].forEach(evt => {
+                    mediaDropzone.addEventListener(evt, function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        mediaDropzone.classList.add('dragover');
+                    });
+                });
+
+                ['dragleave', 'drop'].forEach(evt => {
+                    mediaDropzone.addEventListener(evt, function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        mediaDropzone.classList.remove('dragover');
+                    });
+                });
+
+                mediaDropzone.addEventListener('drop', function (e) {
+                    const files = e.dataTransfer.files;
+                    if (files && files.length > 0) appendFiles(files);
+                });
+            }
+
+            form?.addEventListener('submit', function () {
+                refreshNewIndexesFromDom();
+                ensureDefaultCoverSelection();
+                updateCapaHidden();
+                collectOrder();
+                normalizeMaskedInputsBeforeSubmit();
+            });
+
+            applyInputMasks();
+            bindSelectAllButtons();
+            bindBaseCarroButton();
+            refreshDragAndDrop();
+            ensureDefaultCoverSelection();
+            updateCapaHidden();
+            collectOrder();
+            refreshExistingBadges();
+        })();
+    </script>
+}

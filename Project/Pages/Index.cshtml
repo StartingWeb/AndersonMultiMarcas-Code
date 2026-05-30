@@ -1,38 +1,25 @@
-@page
-@model IndexModel
+﻿@page
+@model Project.Pages.IndexModel
 @{
-    ViewData["Title"] = "Anderson Multi Marcas";
+    ViewData["Title"] = "Início";
 }
 
-<article class="home-page">
-    <nav aria-label="Breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item active" aria-current="page">Inicio</li>
-        </ol>
-    </nav>
+<partial name="Partials/_HomeHero" model="Model" />
 
-    <section class="text-center">
-        <h1 class="display-5 fw-bold">Anderson Multi Marcas: carros seminovos com procedencia</h1>
-        <p class="lead">
-            Encontre carros seminovos revisados, com atendimento transparente e suporte completo para compra segura.
-        </p>
-    </section>
+<partial name="Partials/_HomeVehicleSection" model='("Premium 0 km", "Veículos premium para quem quer sair de zero", "Selecionamos modelos 0 km com visual e acabamento de destaque para uma vitrine mais aspiracional.", "/veiculos/zero-km", Model.PremiumZeroKm)' />
 
-    <section class="mt-4">
-        <h2>Por que escolher a Anderson Multi Marcas</h2>
-        <p>
-            Trabalhamos com avaliacao criteriosa, historico de procedencia e orientacao para escolher o veiculo ideal para uso urbano, familiar ou trabalho.
-        </p>
-        <h3>Atendimento especializado</h3>
-        <p>
-            Nosso time ajuda a comparar modelos, custos de manutencao e consumo para uma decisao mais inteligente.
-        </p>
-    </section>
+<partial name="Partials/_HomeVehicleSection" model='("Híbridos e elétricos", "Carros híbridos e elétricos para um novo estilo de condução", "Modelos eletrificados com tecnologia e eficiência para o dia a dia.", "/veiculos/eletricos", Model.Eletrificados)' />
 
-    <section class="mt-4">
-        <h2>Regioes atendidas</h2>
-        <p>
-            Atendemos clientes de Sao Paulo e regiao com foco em qualidade, confianca e negociacao clara.
-        </p>
-    </section>
-</article>
+<partial name="Partials/_HomeVehicleSection" model='("Motos elétricas", "Uma sessão dedicada para quem está procurando duas rodas elétricas", "Opções elétricas para mobilidade urbana com excelente custo-benefício.", "/veiculos/motos-eletricas", Model.MotosEletricas)' />
+
+<partial name="Partials/_HomeTradeCta" model="Model" />
+<partial name="Partials/_HomeStores" model="Model" />
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Home.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/home.js" asp-append-version="true"></script>
+}
+

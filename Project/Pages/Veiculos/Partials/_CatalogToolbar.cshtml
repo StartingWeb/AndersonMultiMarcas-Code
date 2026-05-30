@@ -1,0 +1,25 @@
+@model Project.Pages.Veiculos.ViewModels.CatalogoPageViewModel
+<div class="catalog-results-topbar">
+    <form method="get" class="catalog-order-form">
+        <input type="hidden" name="Busca" value="@Model.Filtro.Busca" />
+        <input type="hidden" name="Condicao" value="@Model.CondicaoSelecionada" />
+        <input type="hidden" name="Marca" value="@Model.Filtro.Marca" />
+        <input type="hidden" name="Modelo" value="@Model.Filtro.Modelo" />
+        <input type="hidden" name="AnoMinimo" value="@Model.Filtro.AnoMinimo" />
+        <input type="hidden" name="AnoMaximo" value="@Model.Filtro.AnoMaximo" />
+        <input type="hidden" name="PrecoMinimo" value="@Model.Filtro.PrecoMinimo" />
+        <input type="hidden" name="PrecoMaximo" value="@Model.Filtro.PrecoMaximo" />
+        <input type="hidden" name="Combustivel" value="@Model.Filtro.Combustivel" />
+        <input type="hidden" name="Cambio" value="@Model.Filtro.Cambio" />
+        <input type="hidden" name="Destaque" value="@Model.Filtro.Destaque" />
+        <input type="hidden" name="Disponivel" value="@Model.Filtro.Disponivel" />
+        <label class="me-2" for="OrdenarPor">Ordenar:</label>
+        <select id="OrdenarPor" name="OrdenarPor" class="form-select" onchange="this.form.submit()">
+            <option selected="@(Model.Filtro.OrdenarPor == "recentes")" value="recentes">Mais recentes</option>
+            <option selected="@(Model.Filtro.OrdenarPor == "preco-asc")" value="preco-asc">Menor preco</option>
+            <option selected="@(Model.Filtro.OrdenarPor == "preco-desc")" value="preco-desc">Maior preco</option>
+            <option selected="@(Model.Filtro.OrdenarPor == "ano-desc")" value="ano-desc">Ano mais novo</option>
+            <option selected="@(Model.Filtro.OrdenarPor == "destaque")" value="destaque">Destaque</option>
+        </select>
+    </form>
+</div>

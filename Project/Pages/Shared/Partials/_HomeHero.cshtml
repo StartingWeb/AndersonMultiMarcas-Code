@@ -1,0 +1,65 @@
+﻿@model Project.Pages.IndexModel
+<section id="heroSection" class="home-hero">
+    <div class="home-hero-media" aria-hidden="true">
+        <video class="home-hero-video" data-autoplay-video autoplay muted loop playsinline preload="metadata" poster="@ImageUrlBuilder.Build("/img/Vendedores1.JPG", 1280, 62)" src="/video/videoHome.mp4" data-src="/video/videoHome.mp4"></video>
+    </div>
+    <div class="home-hero-overlay"></div>
+    <div class="container hero-content home-hero-content">
+        <div class="search-box home-search-card">
+            <div class="mb-4">
+                <h1 class="search-title mt-3 mb-0">Encontre seu veículo</h1>
+                <p class="search-subtitle mb-0">Pesquise de forma ampla por marca, modelo ou ano.</p>
+            </div>
+            <div class="home-search-component">
+                <partial name="Partials/_SearchAutocomplete" model='new Project.Pages.ViewModels.SearchAutocompleteViewModel { Action = "/veiculos", Endpoint = "/Index?handler=SearchSuggestions", Placeholder = "Busque por marca, modelo, versão ou ano", InputName = "busca", AriaLabel = "Pesquisar veículos" }' />
+            </div>
+            <div class="home-hero-preview">
+                <div class="home-hero-preview-header">
+                    <div>
+                        <h2>Últimos veículos e destaques</h2>
+                    </div>
+                    <a class="btn btn-outline-brand" href="/veiculos">Ver estoque</a>
+                </div>
+                @{
+                    var heroItems = Model.HeroDestaques.Take(8).ToList();
+                    var heroSlides = heroItems
+                        .Select((item, index) => new { item, index })
+                        .GroupBy(x => x.index / 3)
+                        .Select(g => g.Select(x => x.item).ToList())
+                        .ToList();
+                }
+                @if (heroSlides.Count > 0)
+                {
+                    <div class="home-hero-preview-slider" data-home-preview-slider>
+                        <div class="home-hero-preview-track" data-home-preview-track>
+                            @foreach (var slideEntry in heroSlides.Select((items, index) => new { items, index }))
+                            {
+                                <div class="home-hero-preview-slide">
+                                    <div class="home-hero-preview-grid">
+                                        @foreach (var item in slideEntry.items)
+                                        {
+                                            @await Html.PartialAsync("Partials/_VehicleCard", item, new ViewDataDictionary(ViewData)
+                                            {
+                                                ["VehicleCardLoading"] = slideEntry.index == 0 ? "eager" : "lazy",
+                                                ["VehicleCardFetchPriority"] = slideEntry.index == 0 ? "high" : "auto"
+                                            })
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    @if (heroSlides.Count > 1)
+                    {
+                        <div class="home-hero-preview-dots" data-home-preview-dots>
+                            @for (var i = 0; i < heroSlides.Count; i++)
+                            {
+                                <button type="button" class="home-hero-preview-dot @(i == 0 ? "is-active" : string.Empty)" data-home-preview-dot="@i" aria-label="Ir para slide @(i + 1)"></button>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,101 @@
+@model Project.Pages.Veiculos.ViewModels.CatalogoPageViewModel
+<aside class="filter-panel">
+    <div class="filter-panel-actions">
+        <button type="button" class="btn btn-outline-brand catalog-filter-toggle" id="catalog-filter-toggle">
+            <span class="catalog-filter-toggle-icon" aria-hidden="true"></span>
+            <span class="catalog-filter-toggle-text">Ocultar filtros</span>
+        </button>
+    </div>
+    <details class="filter-disclosure" open="open">
+        <summary class="filter-summary">
+            <div class="filter-summary-copy">
+                <span class="filter-summary-label">Filtros de pesquisa</span>
+                <span class="filter-summary-hint">Expandir ou ocultar filtros</span>
+            </div>
+            <span class="filter-summary-icon" aria-hidden="true"></span>
+        </summary>
+
+        <div class="filter-content">
+            <div class="filter-header">
+                <h2>Filtros de pesquisa</h2>
+                <p>Combine os filtros para encontrar o veiculo certo mais rapido.</p>
+            </div>
+
+            <form method="get" class="filter-form" id="catalog-filter-form">
+                <input type="hidden" name="busca" value="@Model.Filtro.Busca" />
+                <input type="hidden" name="OrdenarPor" value="@Model.Filtro.OrdenarPor" />
+
+                <div>
+                    <label class="form-label" for="Marca">Marca</label>
+                    <select class="form-select" data-brand-select2="true" id="Marca" name="Marca">
+                        <option value="">Todas as marcas</option>
+                        @foreach (var marca in Model.Marcas)
+                        {
+                            <option selected="@(Model.Filtro.Marca == marca)" value="@marca">@marca</option>
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label class="form-label" for="Condicao">Condição</label>
+                    <select class="form-select" id="Condicao" name="Condicao">
+                        <option value="">Todos</option>
+                        <option selected="@(Model.CondicaoSelecionada == "zerokm")" value="zerokm">0Km</option>
+                        <option selected="@(Model.CondicaoSelecionada == "seminovo")" value="seminovo">Seminovo</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="form-label" for="Cambio">Cambio</label>
+                    <select class="form-select" id="Cambio" name="Cambio">
+                        <option value="">Todos</option>
+                        @foreach (var item in Enum.GetValues<Domain.Enums.Cambio>())
+                        {
+                            <option selected="@(Model.Filtro.Cambio == item)" value="@item">@item</option>
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label class="form-label" for="Combustivel">Combustivel</label>
+                    <select class="form-select" id="Combustivel" name="Combustivel">
+                        <option value="">Todos</option>
+                        @foreach (var item in Enum.GetValues<Domain.Enums.Combustivel>())
+                        {
+                            <option selected="@(Model.Filtro.Combustivel == item)" value="@item">@item</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-price-grid">
+                    <div>
+                        <label class="form-label" for="PrecoMinimo">Preco minimo</label>
+                        <select class="form-select" id="PrecoMinimo" name="PrecoMinimo">
+                            <option value="">Sem minimo</option>
+                            <option selected="@(Model.Filtro.PrecoMinimo == 30000)" value="30000">A partir de R$ 30 mil</option>
+                            <option selected="@(Model.Filtro.PrecoMinimo == 50000)" value="50000">A partir de R$ 50 mil</option>
+                            <option selected="@(Model.Filtro.PrecoMinimo == 80000)" value="80000">A partir de R$ 80 mil</option>
+                            <option selected="@(Model.Filtro.PrecoMinimo == 120000)" value="120000">A partir de R$ 120 mil</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" for="PrecoMaximo">Preco maximo</label>
+                        <select class="form-select" id="PrecoMaximo" name="PrecoMaximo">
+                            <option value="">Sem limite</option>
+                            <option selected="@(Model.Filtro.PrecoMaximo == 60000)" value="60000">Ate R$ 60 mil</option>
+                            <option selected="@(Model.Filtro.PrecoMaximo == 90000)" value="90000">Ate R$ 90 mil</option>
+                            <option selected="@(Model.Filtro.PrecoMaximo == 130000)" value="130000">Ate R$ 130 mil</option>
+                            <option selected="@(Model.Filtro.PrecoMaximo == 180000)" value="180000">Ate R$ 180 mil</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn catalog-search-submit w-100">Pesquisar</button>
+                    <a class="btn btn-outline-brand w-100" href="/veiculos">Limpar busca</a>
+                </div>
+            </form>
+        </div>
+    </details>
+</aside>

@@ -1,0 +1,17 @@
+@model Project.Pages.Veiculos.ViewModels.CatalogoPageViewModel
+<section class="catalog-search-section">
+    <div class="container">
+        <div class="catalog-search-panel">
+            <div>
+                <span class="catalog-kicker">@Model.HeaderKicker</span>
+                <h1 class="catalog-title">@Model.HeaderTitle</h1>
+                <p class="catalog-subtitle">@Model.HeaderSubtitle</p>
+            </div>
+
+            <div class="catalog-search-form">
+                <partial name="/Pages/Shared/Partials/_SearchAutocomplete.cshtml"
+                         model='new Project.Pages.ViewModels.SearchAutocompleteViewModel { Action = "/veiculos", Endpoint = "/Index?handler=SearchSuggestions", Placeholder = "Ex.: Onix, Toyota, automatico, flex, Taquaritinga", InputName = "busca", AriaLabel = "Pesquisar veiculos", Value = Model.Filtro.Busca }' />
+            </div>
+        </div>
+    </div>
+</section>

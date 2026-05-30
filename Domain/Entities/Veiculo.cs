@@ -32,6 +32,8 @@ public sealed class Veiculo : AuditableEntity
     public int? IdLegado { get; private set; }
     public bool ImportadoMidia { get; private set; }
     public bool MotoEletrica { get; private set; }
+    public int QuantidadeCliques { get; private set; }
+    public int QuantidadeVisualizacoes { get; private set; }
 
     public string NomeCompleto => string.IsNullOrWhiteSpace(Versao) ? $"{Titulo} {Modelo}" : $"{Titulo} {Modelo} {Versao}";
     public bool EstaDisponivel => Ativo && !Vendido;
@@ -70,6 +72,25 @@ public sealed class Veiculo : AuditableEntity
         MarcarAtualizacao();
     }
 
+    public void AtualizarComercial(
+        bool aceitaTroca,
+        bool financiavel,
+        bool destaque,
+        bool seminovo,
+        string? urlVideo,
+        string? observacoesInternas,
+        int? vendedorId)
+    {
+        AceitaTroca = aceitaTroca;
+        Financiavel = financiavel;
+        Destaque = destaque;
+        Seminovo = seminovo;
+        UrlVideo = string.IsNullOrWhiteSpace(urlVideo) ? null : urlVideo.Trim();
+        ObservacoesInternas = string.IsNullOrWhiteSpace(observacoesInternas) ? null : observacoesInternas.Trim();
+        VendedorId = vendedorId;
+        MarcarAtualizacao();
+    }
+
     public void MarcarComoVendido(DateTime dataVenda)
     {
         Vendido = true;
@@ -77,9 +98,27 @@ public sealed class Veiculo : AuditableEntity
         Desativar();
     }
 
+    public void MarcarComoVendido(DateTime dataVenda, int vendedorId)
+    {
+        VendedorId = vendedorId;
+        MarcarComoVendido(dataVenda);
+    }
+
     public void AtualizarPreco(Dinheiro novoPreco)
     {
         PrecoVenda = novoPreco;
+        MarcarAtualizacao();
+    }
+
+    public void RegistrarVisualizacao()
+    {
+        QuantidadeVisualizacoes++;
+        MarcarAtualizacao();
+    }
+
+    public void RegistrarClique()
+    {
+        QuantidadeCliques++;
         MarcarAtualizacao();
     }
 

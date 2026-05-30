@@ -11,37 +11,117 @@ public static class IdentitySeed
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
         var userManager = services.GetRequiredService<UserManager<AspNetCoreUser>>();
 
-        const string roleName = "Desenvolvedor";
-        const string devEmail = "dev@stw.com";
-        const string devUser = "desenvolvedor";
-        const string devPassword = "123456@Senha";
+        await EnsureRoleAsync(roleManager, "Desenvolvedor");
+        await EnsureRoleAsync(roleManager, "Administrador");
+        await EnsureRoleAsync(roleManager, "AdminConcessionaria");
 
-        if (!await roleManager.RoleExistsAsync(roleName))
-        {
-            var role = new IdentityRole<Guid> { Name = roleName, NormalizedName = roleName.ToUpperInvariant() };
-            await roleManager.CreateAsync(role);
-        }
+        await EnsureUserAsync(
+            userManager,
+            roleName: "Desenvolvedor",
+            userName: "desenvolvedor",
+            email: "dev@stw.com",
+            password: "123456@Senha",
+            nomeCompleto: "Desenvolvedor");
 
-        var usersInRole = await userManager.GetUsersInRoleAsync(roleName);
-        if (usersInRole.Any())
+        await EnsureUserAsync(
+            userManager,
+            roleName: "Administrador",
+            userName: "admin.master",
+            email: "admin@andersonmultimarcas.com.br",
+            password: "123456@Admin",
+            nomeCompleto: "Admin Master");
+    }
+
+    private static async Task EnsureRoleAsync(RoleManager<IdentityRole<Guid>> roleManager, string roleName)
+    {
+        if (await roleManager.RoleExistsAsync(roleName))
             return;
 
-        var user = new AspNetCoreUser
+        var role = new IdentityRole<Guid>
         {
-            UserName = devUser,
-            Email = devEmail,
-            EmailConfirmed = true
+            Id = Guid.NewGuid(),
+            Name = roleName,
+            NormalizedName = roleName.ToUpperInvariant()
         };
 
-        var result = await userManager.CreateAsync(user, devPassword);
+        var result = await roleManager.CreateAsync(role);
         if (!result.Succeeded)
         {
             throw new Exception(
-                "Erro ao criar usuario Desenvolvedor: " +
+                $"Erro ao criar perfil {roleName}: " +
                 string.Join(", ", result.Errors.Select(e => e.Description))
             );
         }
+    }
 
-        await userManager.AddToRoleAsync(user, roleName);
+    private static async Task EnsureUserAsync(
+        UserManager<AspNetCoreUser> userManager,
+        string roleName,
+        string userName,
+        string email,
+        string password,
+        string nomeCompleto)
+    {
+        var user = await userManager.FindByEmailAsync(email) ?? await userManager.FindByNameAsync(userName);
+        if (user is null)
+        {
+            user = new AspNetCoreUser
+            {
+                Id = Guid.NewGuid(),
+                UserName = userName,
+                Email = email,
+                EmailConfirmed = true,
+                NomeCompleto = nomeCompleto
+            };
+
+            var result = await userManager.CreateAsync(user, password);
+            if (!result.Succeeded)
+            {
+                throw new Exception(
+                    $"Erro ao criar usuario {nomeCompleto}: " +
+                    string.Join(", ", result.Errors.Select(e => e.Description))
+                );
+            }
+        }
+        else
+        {
+            var changed = false;
+
+            if (!user.EmailConfirmed)
+            {
+                user.EmailConfirmed = true;
+                changed = true;
+            }
+
+            if (string.IsNullOrWhiteSpace(user.NomeCompleto))
+            {
+                user.NomeCompleto = nomeCompleto;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                var updateResult = await userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
+                {
+                    throw new Exception(
+                        $"Erro ao atualizar usuario {nomeCompleto}: " +
+                        string.Join(", ", updateResult.Errors.Select(e => e.Description))
+                    );
+                }
+            }
+        }
+
+        if (await userManager.IsInRoleAsync(user, roleName))
+            return;
+
+        var roleResult = await userManager.AddToRoleAsync(user, roleName);
+        if (!roleResult.Succeeded)
+        {
+            throw new Exception(
+                $"Erro ao vincular usuario {nomeCompleto} ao perfil {roleName}: " +
+                string.Join(", ", roleResult.Errors.Select(e => e.Description))
+            );
+        }
     }
 }

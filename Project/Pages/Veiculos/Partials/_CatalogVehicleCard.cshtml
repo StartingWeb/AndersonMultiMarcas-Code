@@ -1,0 +1,18 @@
+﻿@model Project.Features.Veiculos.DTOs.VeiculoListItemDto
+@{
+    var vm = new Project.Pages.ViewModels.HomeVehicleCardViewModel
+    {
+        Id = Model.Id,
+        Titulo = Model.Titulo,
+        Cor = Model.Cor,
+        AnoFabricacao = Model.AnoFabricacao,
+        AnoModelo = Model.AnoModelo,
+        Cambio = Model.Cambio.ToString(),
+        Combustivel = Model.Combustivel.ToString(),
+        Destaque = Model.Destaque,
+        Disponivel = Model.EstaDisponivel,
+        Preco = Model.PrecoVenda,
+        MidiaUrl = Model.MidiaCapaUrl
+    };
+}
+<partial name="/Pages/Shared/Partials/_VehicleCard.cshtml" model="vm" />

@@ -1,0 +1,11 @@
+@model (string Property, string Label, bool Checked)
+@{
+    var id = $"Caracteristica_{Model.Property}";
+    var name = $"Caracteristica.{Model.Property}";
+}
+
+<div class="feature-check">
+    <input type="checkbox" name="@name" id="@id" value="true" checked="@Model.Checked">
+    <input type="hidden" name="@name" value="false">
+    <label for="@id">@Model.Label</label>
+</div>

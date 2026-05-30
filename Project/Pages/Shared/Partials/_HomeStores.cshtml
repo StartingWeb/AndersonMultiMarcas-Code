@@ -1,0 +1,26 @@
+@model Project.Pages.IndexModel
+<section class="section pt-4">
+    <div class="container">
+        <div class="home-featured-intro home-store-intro">
+            <div>
+                <span class="home-featured-kicker">Nossas lojas</span>
+                <h2 class="section-title mb-2">Continue a jornada com rota e atendimento presencial</h2>
+            </div>
+        </div>
+        <div class="row g-4">
+            @foreach (var loja in Model.Lojas)
+            {
+                <div class="col-lg-4">
+                    <div class="feature-card">
+                        <div class="store-map ratio ratio-4x3 mb-3">
+                            <iframe data-map-frame="true" data-src="https://www.google.com/maps?q=@loja.MapsQuery&amp;output=embed" title="Mapa @loja.Nome" style="border:0;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                        </div>
+                        <h5 class="fw-bold">@loja.Nome</h5>
+                        <p class="text-muted mb-3">@loja.EnderecoCompleto</p>
+                        <a href="https://www.google.com/maps/search/?api=1&amp;query=@loja.MapsQuery" target="_blank" rel="noopener noreferrer" class="btn btn-outline-brand">Abrir rota</a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>

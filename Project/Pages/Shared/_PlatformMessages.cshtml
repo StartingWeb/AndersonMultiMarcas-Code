@@ -1,0 +1,182 @@
+<div id="message-container" class="message-container"></div>
+
+<style>
+    .message-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        pointer-events: none;
+    }
+
+    .message-toast {
+        width: 360px;
+        min-height: 72px;
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
+        overflow: hidden;
+        display: flex;
+        align-items: stretch;
+        pointer-events: auto;
+        transform: translateX(420px);
+        opacity: 0;
+        transition: transform .35s ease, opacity .35s ease;
+        border: 1px solid #ececec;
+        position: relative;
+    }
+
+    .message-toast.show {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    .message-toast.hide {
+        transform: translateX(420px);
+        opacity: 0;
+    }
+
+    .message-toast-icon {
+        width: 68px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .message-toast.success .message-toast-icon { background: #eafaf0; color: #1f9d55; }
+    .message-toast.error .message-toast-icon { background: #fdecec; color: #d93025; }
+    .message-toast.warning .message-toast-icon { background: #fff7e6; color: #f59e0b; }
+
+    .message-toast-body {
+        flex: 1;
+        padding: 14px 12px 14px 14px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .message-toast-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 4px;
+    }
+
+    .message-toast-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .message-toast-text {
+        font-size: 14px;
+        color: #4b5563;
+        line-height: 1.4;
+        margin: 0;
+        word-break: break-word;
+    }
+
+    .message-toast-close {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: #6b7280;
+        font-size: 18px;
+        line-height: 1;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+    }
+
+    .message-toast-close:hover {
+        background: #f3f4f6;
+    }
+
+    .message-toast-progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        width: 100%;
+        transform-origin: left;
+        animation: toast-progress linear forwards;
+    }
+
+    .message-toast.success .message-toast-progress { background: #1f9d55; }
+    .message-toast.error .message-toast-progress { background: #d93025; }
+    .message-toast.warning .message-toast-progress { background: #f59e0b; }
+
+    @@keyframes toast-progress {
+        from { transform: scaleX(1); }
+        to { transform: scaleX(0); }
+    }
+
+    @@media (max-width: 480px) {
+        .message-container {
+            left: 12px;
+            right: 12px;
+            top: 12px;
+        }
+
+        .message-toast {
+            width: 100%;
+        }
+    }
+</style>
+
+<script>
+    (function () {
+        const container = document.getElementById('message-container');
+        if (!container || window.ShowMessage) return;
+
+        const titles = { success: 'Sucesso', error: 'Erro', warning: 'Aviso' };
+        const icons = {
+            success: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M20 7L10 17L4 11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+            error: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 8V12M12 16H12.01M10.29 3.86L1.82 18A2 2 0 0 0 3.53 21H20.47A2 2 0 0 0 22.18 18L13.71 3.86A2 2 0 0 0 10.29 3.86Z" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+            warning: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 9V13M12 17H12.01M10.29 3.86L1.82 18A2 2 0 0 0 3.53 21H20.47A2 2 0 0 0 22.18 18L13.71 3.86A2 2 0 0 0 10.29 3.86Z" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        };
+
+        function normalizeType(type) {
+            type = (type || 'success').toString().toLowerCase();
+            return ['success', 'error', 'warning'].includes(type) ? type : 'success';
+        }
+
+        function closeToast(toast) {
+            if (!toast) return;
+            toast.classList.remove('show');
+            toast.classList.add('hide');
+            setTimeout(function () { toast.remove(); }, 350);
+        }
+
+        window.ShowMessage = function (type, message, duration) {
+            type = normalizeType(type);
+            duration = duration || 4000;
+            if (!message) return;
+
+            const toast = document.createElement('div');
+            toast.className = 'message-toast ' + type;
+            toast.innerHTML = '<div class="message-toast-icon">' + icons[type] + '</div><div class="message-toast-body"><div class="message-toast-header"><h4 class="message-toast-title">' + titles[type] + '</h4><button type="button" class="message-toast-close" aria-label="Fechar">&times;</button></div><p class="message-toast-text"></p></div><div class="message-toast-progress" style="animation-duration:' + duration + 'ms;"></div>';
+            toast.querySelector('.message-toast-text').textContent = message;
+            toast.querySelector('.message-toast-close').addEventListener('click', function () { closeToast(toast); });
+
+            container.appendChild(toast);
+            requestAnimationFrame(function () { toast.classList.add('show'); });
+            setTimeout(function () { closeToast(toast); }, duration);
+        };
+
+        const successMessage = @Json.Serialize(TempData["SuccessMessage"]);
+        const errorMessage = @Json.Serialize(TempData["ErrorMessage"]);
+        const warningMessage = @Json.Serialize(TempData["WarningMessage"]);
+
+        if (successMessage) window.ShowMessage('success', successMessage);
+        if (errorMessage) window.ShowMessage('error', errorMessage);
+        if (warningMessage) window.ShowMessage('warning', warningMessage);
+    })();
+</script>

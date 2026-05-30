@@ -1,0 +1,553 @@
+@page "/veiculo/{id:int}"
+@model Project.Pages.VeiculoModel
+
+@{
+    ViewData["Title"] = Model.Vehicle.NomeCompleto;
+    var primaryPhoto = Model.Vehicle.Fotos[0];
+    var primarySrc = VehicleImageHelper.Normalize(primaryPhoto.Url);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Veiculo.css" asp-append-version="true" />
+}
+
+<section class="vehicle-detail-hero">
+    <div class="container">
+        <div class="breadcrumb-line">
+            <a href="/">Inicio</a>
+            <span>/</span>
+            <a href="/veiculos">Estoque</a>
+            <span>/</span>
+            <strong>@Model.Vehicle.NomeCompleto</strong>
+        </div>
+
+        <div class="detail-topbar">
+            <div>
+                <span class="detail-kicker">@Model.Vehicle.Marca</span>
+                <h1 class="detail-title">@Model.Vehicle.NomeCompleto</h1>
+                <p class="detail-subtitle">@Model.Vehicle.Cor - @(Model.Vehicle.AnoFabricacao.HasValue ? $"{Model.Vehicle.AnoFabricacao} / {Model.Vehicle.AnoModelo}" : Model.Vehicle.AnoModelo.ToString())</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="vehicle-detail-grid">
+            <div class="detail-gallery-shell">
+                <div class="gallery-stage">
+                    @if (Model.Vehicle.Fotos.Count > 1)
+                    {
+                        <button type="button" class="gallery-nav gallery-nav-prev" data-gallery-direction="-1" aria-label="Foto anterior">
+                            <span aria-hidden="true">&#8249;</span>
+                        </button>
+                    }
+
+                    <button type="button" class="gallery-open-button" id="mainGalleryOpenButton" aria-label="Abrir foto principal">
+                        <img id="mainVehicleImage"
+                             class="gallery-main-image"
+                             src="@primarySrc"
+
+                             alt="@primaryPhoto.Alt"
+                             width="@primaryPhoto.Width"
+                             height="@primaryPhoto.Height"
+                             loading="eager"
+                             decoding="async"
+                             fetchpriority="high"
+                             onerror="this.onerror=null;this.src='@VehicleImageHelper.DefaultVehicleImage';" />
+                    </button>
+
+                    @if (Model.Vehicle.Fotos.Count > 1)
+                    {
+                        <button type="button" class="gallery-nav gallery-nav-next" data-gallery-direction="1" aria-label="Proxima foto">
+                            <span aria-hidden="true">&#8250;</span>
+                        </button>
+                    }
+                </div>
+
+                @if (Model.Vehicle.Fotos.Count > 1)
+                {
+                    <div class="gallery-thumbs-shell">
+                        <button type="button" class="gallery-thumbs-nav gallery-thumbs-nav-prev" data-thumbs-direction="-1" aria-label="Miniatura anterior">
+                            <span aria-hidden="true">&#8249;</span>
+                        </button>
+
+                        <div class="gallery-thumbs" role="tablist" aria-label="Galeria do veiculo" id="vehicleThumbsTrack">
+                            @for (var i = 0; i < Model.Vehicle.Fotos.Count; i++)
+                            {
+                                var foto = Model.Vehicle.Fotos[i];
+                                var photoLarge = VehicleImageHelper.Normalize(foto.Url);
+                                var photoMain = VehicleImageHelper.Normalize(foto.Url);
+                                <button type="button"
+                                        class="gallery-thumb @(i == 0 ? "active" : string.Empty)"
+                                        data-photo-url="@photoLarge"
+                                        data-photo-main-url="@photoMain"
+                                        data-photo-alt="@foto.Alt"
+                                        data-lightbox-index="@i"
+                                        aria-label="Selecionar foto @(i + 1)">
+                                    <img src="@photoMain"
+
+                                         alt="@foto.Alt"
+                                         width="320"
+                                         height="240"
+                                         loading="lazy"
+                                         decoding="async"
+                                         onerror="this.onerror=null;this.src='@VehicleImageHelper.DefaultVehicleImage';" />
+                                </button>
+                            }
+                        </div>
+
+                        <button type="button" class="gallery-thumbs-nav gallery-thumbs-nav-next" data-thumbs-direction="1" aria-label="Proxima miniatura">
+                            <span aria-hidden="true">&#8250;</span>
+                        </button>
+                    </div>
+                }
+
+                <div class="detail-summary-card detail-description-card">
+                    <h2>Descrição</h2>
+                    <p class="detail-description-text">@Model.Vehicle.Descricao</p>
+                </div>
+
+                <div class="detail-bottom-stack">
+                    <details class="detail-summary-card detail-summary-accordion" open>
+                        <summary class="detail-summary-toggle">
+                            <h2>Resumo do veículo</h2>
+                            <span class="detail-summary-icon" aria-hidden="true"></span>
+                        </summary>
+
+                        <div class="detail-summary-list">
+                            <div><span>Marca</span><strong>@Model.Vehicle.Marca</strong></div>
+                            <div><span>Modelo</span><strong>@Model.Vehicle.Modelo</strong></div>
+                            <div><span>Versão</span><strong>@(string.IsNullOrWhiteSpace(Model.Vehicle.Versao) ? "Não informado" : Model.Vehicle.Versao)</strong></div>
+                            <div><span>Ano</span><strong>@(Model.Vehicle.AnoFabricacao.HasValue ? $"{Model.Vehicle.AnoFabricacao} / {Model.Vehicle.AnoModelo}" : Model.Vehicle.AnoModelo.ToString())</strong></div>
+                            <div><span>Câmbio</span><strong>@Model.Vehicle.Cambio</strong></div>
+                            <div><span>Combustível</span><strong>@Model.Vehicle.Combustivel</strong></div>
+                            <div><span>Cor</span><strong>@Model.Vehicle.Cor</strong></div>
+                            <div><span>KM</span><strong>@(Model.Vehicle.Quilometragem.HasValue ? $"{Model.Vehicle.Quilometragem:N0} km" : "Não informado")</strong></div>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <div class="detail-info-stack">
+                <div class="detail-summary-card detail-commerce-card">
+                    <div class="detail-price detail-sidebar-price">
+                        @(Model.Vehicle.PrecoVenda > 0 ? $"R$ {Model.Vehicle.PrecoVenda:N2}" : "Consulte")
+                    </div>
+                    <p>Fale com nossa equipe em poucos toques e tire suas dúvidas sobre este veículo com rapidez.</p>
+                    <div class="commerce-actions">
+                        <button type="button" class="btn btn-danger-brand" data-whatsapp-modal="true" data-vehicle-title="@Model.Vehicle.NomeCompleto" data-track-vehicle-click="true" data-vehicle-id="@Model.Vehicle.Id">
+                            Falar com vendedor
+                        </button>
+                    </div>
+                </div>
+
+                <div class="detail-summary-card">
+                    <h2>Características</h2>
+                    @if (Model.Vehicle.Opcionais.Count > 0)
+                    {
+                        <div class="feature-pills-wrap" data-feature-list>
+                            <div class="feature-pills" data-feature-container>
+                                @for (var i = 0; i < Model.Vehicle.Opcionais.Count; i++)
+                                {
+                                    var cssClass = i >= 8 ? "feature-pill-hidden" : string.Empty;
+                                    <span class="@cssClass" data-feature-item="@i">@Model.Vehicle.Opcionais[i]</span>
+                                }
+                            </div>
+
+                            @if (Model.Vehicle.Opcionais.Count > 8)
+                            {
+                                <button type="button" class="feature-toggle-btn" data-feature-toggle aria-expanded="false">
+                                    Ver mais
+                                </button>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="detail-description-text mb-0">Consulte nossa equipe para mais detalhes sobre os itens deste veículo.</p>
+                    }
+                </div>
+
+                @if (Model.Vehicle.AceitaTroca || Model.Vehicle.Financiavel || !string.IsNullOrWhiteSpace(Model.Vehicle.UrlVideo))
+                {
+                    <div class="detail-summary-card">
+                        <h2>Facilidades</h2>
+                        <div class="feature-pills">
+                            @if (Model.Vehicle.AceitaTroca)
+                            {
+                                <span>Aceita troca</span>
+                            }
+                            @if (Model.Vehicle.Financiavel)
+                            {
+                                <span>Financiamento disponivel</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Vehicle.UrlVideo))
+                            {
+                                <a class="btn btn-outline-brand" href="@Model.Vehicle.UrlVideo" target="_blank" rel="noopener noreferrer">Ver video</a>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<div id="vehicleLightbox" class="vehicle-lightbox" aria-hidden="true">
+    <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Fechar galeria">&times;</button>
+    <button type="button" class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Foto anterior">&#8249;</button>
+    <div class="lightbox-content">
+        <div class="lightbox-zoom-controls" aria-label="Controles de zoom da galeria">
+            <button type="button" class="lightbox-zoom-btn" id="lightboxZoomIn" aria-label="Aproximar imagem">
+                <span aria-hidden="true">+</span>
+            </button>
+            <button type="button" class="lightbox-zoom-btn" id="lightboxZoomOut" aria-label="Diminuir zoom da imagem" disabled>
+                <span aria-hidden="true">-</span>
+            </button>
+        </div>
+        <img id="lightboxImage" src="" alt="" style="transform: scale(1);" />
+        <div id="lightboxCaption" class="lightbox-caption"></div>
+    </div>
+    <button type="button" class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="Proxima foto">&#8250;</button>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const navbar = document.getElementById('mainNavbar');
+            const btnTop = document.getElementById('btnTop');
+            const btnWhatsapp = document.getElementById('btnWhatsapp');
+            const mobileToggle = document.getElementById('mobileMenuToggle');
+            const mobileMenu = document.getElementById('mobileMenu');
+
+            navbar?.classList.add('show');
+
+            function handleScroll() {
+                const scrollY = window.scrollY;
+                btnTop?.classList.toggle('show', scrollY > 250);
+                btnWhatsapp?.classList.toggle('show', scrollY > 250);
+            }
+
+            window.addEventListener('scroll', handleScroll);
+            window.addEventListener('load', handleScroll);
+
+            btnTop?.addEventListener('click', function () {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            mobileToggle?.addEventListener('click', function () {
+                mobileMenu?.classList.toggle('show');
+            });
+        })();
+    </script>
+
+    <script>
+        (function () {
+            document.querySelectorAll('[data-feature-list]').forEach(function (root) {
+                const button = root.querySelector('[data-feature-toggle]');
+                const hiddenItems = root.querySelectorAll('.feature-pill-hidden');
+
+                if (!button || !hiddenItems.length) {
+                    return;
+                }
+
+                button.addEventListener('click', function () {
+                    const expanded = button.getAttribute('aria-expanded') === 'true';
+                    hiddenItems.forEach(function (item) {
+                        item.classList.toggle('feature-pill-visible', !expanded);
+                    });
+
+                    button.textContent = expanded ? 'Ver mais' : 'Ver menos';
+                    button.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                });
+            });
+
+            const thumbnails = Array.from(document.querySelectorAll('.gallery-thumb'));
+            const mainOpenButton = document.getElementById('mainGalleryOpenButton');
+            const mainImage = document.getElementById('mainVehicleImage');
+            const lightbox = document.getElementById('vehicleLightbox');
+            const lightboxImage = document.getElementById('lightboxImage');
+            const lightboxCaption = document.getElementById('lightboxCaption');
+            const lightboxClose = document.getElementById('lightboxClose');
+            const lightboxPrev = document.getElementById('lightboxPrev');
+            const lightboxNext = document.getElementById('lightboxNext');
+            const lightboxZoomIn = document.getElementById('lightboxZoomIn');
+            const lightboxZoomOut = document.getElementById('lightboxZoomOut');
+            const galleryNavButtons = Array.from(document.querySelectorAll('[data-gallery-direction]'));
+            const thumbsTrack = document.getElementById('vehicleThumbsTrack');
+            const thumbsNavButtons = Array.from(document.querySelectorAll('[data-thumbs-direction]'));
+            const galleryStage = document.querySelector('.gallery-stage');
+            const lightboxContent = lightbox?.querySelector('.lightbox-content');
+
+            const photos = thumbnails.length
+                ? thumbnails.map(function (button) {
+                    return {
+                        url: button.dataset.photoUrl || '',
+                        mainUrl: button.dataset.photoMainUrl || button.dataset.photoUrl || '',
+                        srcset: button.dataset.photoSrcset || '',
+                        alt: button.dataset.photoAlt || ''
+                    };
+                })
+                : [{
+                    url: mainImage?.getAttribute('src') || '',
+                    mainUrl: mainImage?.getAttribute('src') || '',
+                    srcset: mainImage?.getAttribute('srcset') || '',
+                    alt: mainImage?.getAttribute('alt') || ''
+                }];
+
+            let currentIndex = 0;
+            let autoplayTimer = null;
+            let currentZoom = 1;
+            const minZoom = 1;
+            const maxZoom = 3;
+            const zoomStep = 0.25;
+
+            function updateLightboxZoom() {
+                if (!lightboxImage) {
+                    return;
+                }
+
+                lightboxImage.style.transform = 'scale(' + currentZoom + ')';
+
+                if (lightboxZoomOut) {
+                    lightboxZoomOut.disabled = currentZoom <= minZoom;
+                }
+
+                if (lightboxZoomIn) {
+                    lightboxZoomIn.disabled = currentZoom >= maxZoom;
+                }
+            }
+
+            function setLightboxZoom(zoom) {
+                currentZoom = Math.min(maxZoom, Math.max(minZoom, zoom));
+                updateLightboxZoom();
+            }
+
+            function resetLightboxZoom() {
+                setLightboxZoom(minZoom);
+            }
+
+            function stopAutoplay() {
+                if (!autoplayTimer) {
+                    return;
+                }
+
+                window.clearInterval(autoplayTimer);
+                autoplayTimer = null;
+            }
+
+            function startAutoplay() {
+                if (photos.length <= 1 || autoplayTimer || lightbox?.classList.contains('show')) {
+                    return;
+                }
+
+                autoplayTimer = window.setInterval(function () {
+                    navigateGallery(1);
+                }, 3000);
+            }
+
+            function restartAutoplay() {
+                stopAutoplay();
+                startAutoplay();
+            }
+
+            function updateMainImage(index) {
+                const photo = photos[index];
+                if (!photo || !mainImage) {
+                    return;
+                }
+
+                currentIndex = index;
+                if (photo.srcset) {
+                    mainImage.srcset = photo.srcset;
+                } else {
+                    mainImage.removeAttribute('srcset');
+                }
+
+                mainImage.src = photo.mainUrl || photo.url;
+                mainImage.alt = photo.alt;
+
+                thumbnails.forEach(function (thumb, thumbIndex) {
+                    thumb.classList.toggle('active', thumbIndex === index);
+                });
+
+                const activeThumb = thumbnails[index];
+                if (activeThumb && thumbsTrack) {
+                    const trackRect = thumbsTrack.getBoundingClientRect();
+                    const thumbRect = activeThumb.getBoundingClientRect();
+                    const thumbOffsetWithinTrack = thumbRect.left - trackRect.left;
+                    const targetLeft = thumbsTrack.scrollLeft + thumbOffsetWithinTrack - ((trackRect.width - thumbRect.width) / 2);
+                    const maxScrollLeft = Math.max(thumbsTrack.scrollWidth - thumbsTrack.clientWidth, 0);
+                    const clampedLeft = Math.min(Math.max(targetLeft, 0), maxScrollLeft);
+
+                    thumbsTrack.scrollTo({
+                        left: clampedLeft,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+
+            function navigateGallery(direction) {
+                const nextIndex = (currentIndex + direction + photos.length) % photos.length;
+                updateMainImage(nextIndex);
+            }
+
+            function openLightbox(index) {
+                const photo = photos[index];
+                if (!photo || !lightbox || !lightboxImage || !lightboxCaption) {
+                    return;
+                }
+
+                updateMainImage(index);
+                currentIndex = index;
+                lightboxImage.src = photo.url;
+                lightboxImage.alt = photo.alt;
+                lightboxCaption.textContent = photo.alt;
+                lightbox.classList.add('show');
+                lightbox.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('lightbox-open');
+                resetLightboxZoom();
+            }
+
+            function closeLightbox() {
+                if (!lightbox) {
+                    return;
+                }
+
+                lightbox.classList.remove('show');
+                lightbox.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('lightbox-open');
+                resetLightboxZoom();
+                startAutoplay();
+            }
+
+            function navigateLightbox(direction) {
+                const nextIndex = (currentIndex + direction + photos.length) % photos.length;
+                openLightbox(nextIndex);
+            }
+
+            function bindSwipe(root, onLeft, onRight) {
+                if (!root) {
+                    return;
+                }
+
+                let startX = 0;
+                let startY = 0;
+
+                root.addEventListener('touchstart', function (event) {
+                    const touch = event.changedTouches[0];
+                    startX = touch.clientX;
+                    startY = touch.clientY;
+                }, { passive: true });
+
+                root.addEventListener('touchend', function (event) {
+                    const touch = event.changedTouches[0];
+                    const deltaX = touch.clientX - startX;
+                    const deltaY = touch.clientY - startY;
+
+                    if (Math.abs(deltaX) < 45 || Math.abs(deltaX) <= Math.abs(deltaY)) {
+                        return;
+                    }
+
+                    if (deltaX < 0) {
+                        onLeft();
+                        return;
+                    }
+
+                    onRight();
+                }, { passive: true });
+            }
+
+            thumbnails.forEach(function (button, index) {
+                button.addEventListener('click', function () {
+                    updateMainImage(index);
+                    restartAutoplay();
+                });
+            });
+
+            galleryNavButtons.forEach(function (button) {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    navigateGallery(Number(button.dataset.galleryDirection || 0));
+                    restartAutoplay();
+                });
+            });
+
+            thumbsNavButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    if (!thumbsTrack) {
+                        return;
+                    }
+
+                    const direction = Number(button.dataset.thumbsDirection || 0);
+                    const firstThumb = thumbnails[0];
+                    const thumbWidth = firstThumb ? firstThumb.getBoundingClientRect().width : 140;
+                    const gap = 14;
+
+                    thumbsTrack.scrollBy({
+                        left: direction * ((thumbWidth * 2) + gap),
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            mainOpenButton?.addEventListener('click', function () {
+                stopAutoplay();
+                openLightbox(currentIndex);
+            });
+
+            lightboxClose?.addEventListener('click', closeLightbox);
+            lightboxPrev?.addEventListener('click', function () { navigateLightbox(-1); });
+            lightboxNext?.addEventListener('click', function () { navigateLightbox(1); });
+
+            lightboxZoomIn?.addEventListener('click', function () {
+                setLightboxZoom(currentZoom + zoomStep);
+            });
+
+            lightboxZoomOut?.addEventListener('click', function () {
+                setLightboxZoom(currentZoom - zoomStep);
+            });
+
+            bindSwipe(galleryStage, function () { navigateGallery(1); }, function () { navigateGallery(-1); });
+            bindSwipe(lightboxContent, function () { navigateLightbox(1); }, function () { navigateLightbox(-1); });
+
+            lightbox?.addEventListener('click', function (event) {
+                if (event.target === lightbox) {
+                    closeLightbox();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (!lightbox || !lightbox.classList.contains('show')) {
+                    return;
+                }
+
+                if (event.key === 'Escape') {
+                    closeLightbox();
+                }
+
+                if (event.key === 'ArrowRight') {
+                    navigateLightbox(1);
+                }
+
+                if (event.key === 'ArrowLeft') {
+                    navigateLightbox(-1);
+                }
+            });
+
+            galleryStage?.addEventListener('mouseenter', stopAutoplay);
+            galleryStage?.addEventListener('mouseleave', startAutoplay);
+            thumbsTrack?.addEventListener('mouseenter', stopAutoplay);
+            thumbsTrack?.addEventListener('mouseleave', startAutoplay);
+
+            updateMainImage(0);
+            startAutoplay();
+            updateLightboxZoom();
+        })();
+    </script>
+}
+
+
+

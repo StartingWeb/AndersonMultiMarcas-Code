@@ -1,0 +1,562 @@
+@page "/Admin/VeiculosVenda"
+@model Project.Pages.Admin.VeiculosVenda.IndexModel
+
+<style>
+    :root {
+        --sale-brand: #9f0a10;
+        --sale-brand-dark: #76070c;
+        --sale-text: #1f2937;
+        --sale-muted: #6b7280;
+        --sale-border: #ececec;
+        --sale-bg: #fff7f7;
+    }
+
+    .vehicle-card {
+        background: #fff;
+        border: 1px solid var(--sale-border);
+        border-radius: 1.1rem;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, .05);
+        overflow: hidden;
+    }
+
+    .vehicle-card-header {
+        padding: 1.2rem 1.2rem 1rem;
+        border-bottom: 1px solid var(--sale-border);
+        background: linear-gradient(180deg, #fff 0%, #fff8f8 100%);
+    }
+
+    .vehicle-card-title {
+        margin: 0;
+        font-size: 1.08rem;
+        font-weight: 800;
+        color: var(--sale-text);
+    }
+
+    .vehicle-card-subtitle {
+        margin: .2rem 0 0;
+        color: var(--sale-muted);
+        font-size: .9rem;
+    }
+
+    .vehicle-card-body {
+        padding: 1.2rem;
+    }
+
+    .vehicle-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+
+    .vehicle-search-form {
+        display: flex;
+        gap: .75rem;
+        width: 100%;
+        flex: 1;
+    }
+
+    .vehicle-search-form input,
+    .vehicle-input select,
+    .vehicle-input input {
+        width: 100%;
+        min-height: 50px;
+        border-radius: .95rem;
+        border: 1px solid #dfdfdf;
+        padding: .75rem 1rem;
+        background: #fff;
+    }
+
+    .vehicle-search-form input:focus,
+    .vehicle-input select:focus,
+    .vehicle-input input:focus {
+        outline: none;
+        border-color: rgba(159, 10, 16, .45);
+        box-shadow: 0 0 0 4px rgba(159, 10, 16, .10);
+    }
+
+    .vehicle-stat {
+        font-size: .92rem;
+        color: var(--sale-muted);
+    }
+
+    .vehicle-grid {
+        margin-top: 1rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+    }
+
+    .vehicle-list-card {
+        border: 1px solid var(--sale-border);
+        border-radius: 1rem;
+        background: #fff;
+        padding: 1rem;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, .04);
+        display: grid;
+        gap: .85rem;
+    }
+
+    .vehicle-list-head {
+        display: flex;
+        justify-content: space-between;
+        gap: .75rem;
+        align-items: start;
+    }
+
+    .vehicle-name {
+        display: block;
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--sale-text);
+        margin: 0 0 .15rem;
+    }
+
+    .vehicle-description {
+        display: block;
+        margin: 0;
+        font-size: .88rem;
+        color: var(--sale-muted);
+    }
+
+    .vehicle-status {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .38rem .7rem;
+        border-radius: 999px;
+        font-size: .78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        white-space: nowrap;
+    }
+
+    .vehicle-status.available {
+        background: #ebfaf1;
+        color: #1f9d55;
+    }
+
+    .vehicle-status.sold {
+        background: #fff1f2;
+        color: #b42318;
+    }
+
+    .vehicle-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .75rem;
+    }
+
+    .vehicle-detail {
+        border-radius: .9rem;
+        border: 1px solid #f0e6e7;
+        background: var(--sale-bg);
+        padding: .8rem;
+    }
+
+    .vehicle-detail-label {
+        display: block;
+        font-size: .74rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--sale-muted);
+        letter-spacing: .05em;
+        margin-bottom: .3rem;
+    }
+
+    .vehicle-detail-value {
+        color: var(--sale-text);
+        font-size: .9rem;
+        word-break: break-word;
+    }
+
+    .vehicle-row-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: .6rem;
+    }
+
+    .vehicle-cell-muted {
+        color: var(--sale-muted);
+        font-weight: 700;
+    }
+
+    .vehicle-empty {
+        border: 1px dashed #d8d8d8;
+        border-radius: 1rem;
+        padding: 2rem 1.25rem;
+        text-align: center;
+        color: var(--sale-muted);
+        background: #fcfcfc;
+        margin-top: 1rem;
+    }
+
+    .vehicle-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(17, 24, 39, .52);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1.25rem;
+        z-index: 1200;
+    }
+
+    .vehicle-modal-overlay.show {
+        display: flex;
+    }
+
+    .vehicle-modal {
+        width: min(100%, 560px);
+        max-height: calc(100vh - 2.5rem);
+        overflow: auto;
+        background: #fff;
+        border: 1px solid rgba(159, 10, 16, .12);
+        border-radius: 1.25rem;
+        box-shadow: 0 28px 70px rgba(17, 24, 39, .26);
+    }
+
+    .vehicle-modal-header {
+        padding: 1.15rem 1.2rem 1rem;
+        border-bottom: 1px solid var(--sale-border);
+        background: linear-gradient(180deg, #fff 0%, #fff8f8 100%);
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .vehicle-modal-header h2 {
+        margin: 0;
+        font-size: 1.12rem;
+        font-weight: 800;
+        color: var(--sale-text);
+    }
+
+    .vehicle-modal-header p {
+        margin: .2rem 0 0;
+        color: var(--sale-muted);
+        font-size: .9rem;
+    }
+
+    .vehicle-modal-close {
+        width: 42px;
+        height: 42px;
+        border-radius: 999px;
+        border: 1px solid var(--sale-border);
+        background: #fff;
+        color: var(--sale-text);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+    }
+
+    .vehicle-modal-body {
+        padding: 1.2rem;
+    }
+
+    .vehicle-form-grid {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .vehicle-label {
+        display: block;
+        margin-bottom: .45rem;
+        color: var(--sale-text);
+        font-weight: 800;
+        font-size: .88rem;
+    }
+
+    .vehicle-summary {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .75rem;
+    }
+
+    .vehicle-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: .75rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-vehicle-primary,
+    .btn-vehicle-secondary {
+        min-height: 48px;
+        border-radius: .95rem;
+        padding: .75rem 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .55rem;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .btn-vehicle-primary {
+        border: none;
+        background: linear-gradient(135deg, var(--sale-brand-dark) 0%, var(--sale-brand) 100%);
+        color: #fff;
+        box-shadow: 0 12px 30px rgba(159, 10, 16, .22);
+    }
+
+    .btn-vehicle-primary:hover {
+        color: #fff;
+    }
+
+    .btn-vehicle-secondary {
+        background: #fff;
+        color: var(--sale-text);
+        border: 1px solid var(--sale-border);
+    }
+
+    .field-validation-error,
+    .validation-summary-errors {
+        color: #b42318;
+        font-size: .85rem;
+    }
+
+    @@media (max-width: 768px) {
+        .vehicle-toolbar,
+        .vehicle-list-head,
+        .vehicle-row-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .vehicle-summary,
+        .vehicle-meta-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .vehicle-search-form {
+            flex-direction: column;
+        }
+
+        .btn-vehicle-primary,
+        .btn-vehicle-secondary {
+            width: 100%;
+        }
+    }
+</style>
+
+<section class="vehicle-card">
+    <div class="vehicle-card-header">
+        <h1 class="vehicle-card-title">Venda de Veiculos</h1>
+        <p class="vehicle-card-subtitle">Pesquise o carro e registre a venda escolhendo o vendedor responsavel.</p>
+    </div>
+
+    <div class="vehicle-card-body">
+        <div class="vehicle-toolbar">
+            <form method="get" class="vehicle-search-form">
+                <input asp-for="Search" placeholder="Pesquisar por titulo, placa, loja, marca ou modelo" type="text">
+                <button type="submit" class="btn-vehicle-primary">
+                    <i class="bi bi-search"></i>
+                    Pesquisar
+                </button>
+            </form>
+        </div>
+
+        <div class="vehicle-stat">@Model.Veiculos.Count veiculo(s) encontrado(s)</div>
+
+        @if (Model.Veiculos.Count == 0)
+        {
+            <div class="vehicle-empty">Nenhum veiculo encontrado para os filtros informados.</div>
+        }
+        else
+        {
+            <div class="vehicle-grid">
+                @foreach (var veiculo in Model.Veiculos)
+                {
+                    <article class="vehicle-list-card">
+                        <div class="vehicle-list-head">
+                            <div>
+                                <span class="vehicle-name">@veiculo.Nome</span>
+                                <span class="vehicle-description">@veiculo.Descricao</span>
+                            </div>
+                            <span class="vehicle-status @(veiculo.Vendido ? "sold" : "available")">@(veiculo.Vendido ? "Vendido" : "Disponivel")</span>
+                        </div>
+
+                        <div class="vehicle-meta-grid">
+                            <div class="vehicle-detail">
+                                <span class="vehicle-detail-label">Placa</span>
+                                <div class="vehicle-detail-value">@veiculo.Placa</div>
+                            </div>
+                            <div class="vehicle-detail">
+                                <span class="vehicle-detail-label">Cadastro</span>
+                                <div class="vehicle-detail-value">@veiculo.DataCadastro</div>
+                            </div>
+                            <div class="vehicle-detail">
+                                <span class="vehicle-detail-label">Data venda</span>
+                                <div class="vehicle-detail-value">@veiculo.DataVenda</div>
+                            </div>
+                            <div class="vehicle-detail">
+                                <span class="vehicle-detail-label">Condicao</span>
+                                <div class="vehicle-detail-value">@veiculo.Condicao</div>
+                            </div>
+                        </div>
+
+                        <div class="vehicle-row-actions">
+                            @if (veiculo.Vendido)
+                            {
+                                <span class="vehicle-cell-muted">Baixado</span>
+                            }
+                            else
+                            {
+                                <button type="button"
+                                        class="btn-vehicle-primary"
+                                        data-sale-open
+                                        data-vehicle-id="@veiculo.Id"
+                                        data-vehicle-name="@veiculo.Nome"
+                                        data-vehicle-description="@veiculo.Descricao"
+                                        data-vehicle-plate="@veiculo.Placa"
+                                        data-vehicle-condition="@veiculo.Condicao">
+                                    <i class="bi bi-cash-coin"></i>
+                                    Vender
+                                </button>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+<div id="vehicleSaleModal" class="vehicle-modal-overlay" aria-hidden="true">
+    <div class="vehicle-modal" role="dialog" aria-modal="true" aria-labelledby="vehicleSaleTitle">
+        <div class="vehicle-modal-header">
+            <div>
+                <h2 id="vehicleSaleTitle">Registrar venda</h2>
+                <p id="vehicleSaleDescription">Confirme os dados da baixa do veiculo.</p>
+            </div>
+            <button type="button" class="vehicle-modal-close" data-sale-close aria-label="Fechar">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="vehicle-modal-body">
+            <form method="post" asp-page-handler="Sell" class="vehicle-form-grid">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Search">
+                <input type="hidden" asp-for="Venda.VeiculoId" id="saleVehicleId">
+
+                <div asp-validation-summary="ModelOnly"></div>
+
+                <div class="vehicle-summary">
+                    <div class="vehicle-detail">
+                        <span class="vehicle-detail-label">Veiculo</span>
+                        <div class="vehicle-detail-value" id="saleVehicleName">-</div>
+                    </div>
+                    <div class="vehicle-detail">
+                        <span class="vehicle-detail-label">Placa</span>
+                        <div class="vehicle-detail-value" id="saleVehiclePlate">-</div>
+                    </div>
+                    <div class="vehicle-detail">
+                        <span class="vehicle-detail-label">Loja / marca</span>
+                        <div class="vehicle-detail-value" id="saleVehicleStore">-</div>
+                    </div>
+                    <div class="vehicle-detail">
+                        <span class="vehicle-detail-label">Condicao</span>
+                        <div class="vehicle-detail-value" id="saleVehicleCondition">-</div>
+                    </div>
+                </div>
+
+                <div class="vehicle-input">
+                    <label class="vehicle-label" asp-for="Venda.VendedorId">Vendedor responsavel</label>
+                    <select asp-for="Venda.VendedorId" asp-items="Model.Vendedores">
+                        <option value="">Selecione o vendedor</option>
+                    </select>
+                    <span asp-validation-for="Venda.VendedorId"></span>
+                </div>
+
+                <div class="vehicle-input">
+                    <label class="vehicle-label" asp-for="Venda.DataVenda">Data da venda</label>
+                    <input asp-for="Venda.DataVenda" type="date">
+                    <span asp-validation-for="Venda.DataVenda"></span>
+                </div>
+
+                <div class="vehicle-actions">
+                    <button type="button" class="btn-vehicle-secondary" data-sale-close>Cancelar</button>
+                    <button type="submit" class="btn-vehicle-primary">
+                        <i class="bi bi-check2-circle"></i>
+                        Confirmar venda
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const modal = document.getElementById('vehicleSaleModal');
+            const vehicleId = document.getElementById('saleVehicleId');
+            const vehicleName = document.getElementById('saleVehicleName');
+            const vehiclePlate = document.getElementById('saleVehiclePlate');
+            const vehicleStore = document.getElementById('saleVehicleStore');
+            const vehicleCondition = document.getElementById('saleVehicleCondition');
+
+            if (!modal || !vehicleId) return;
+
+            function closeModal() {
+                modal.classList.remove('show');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            }
+
+            function openModal(trigger) {
+                vehicleId.value = trigger.getAttribute('data-vehicle-id') || '';
+                vehicleName.textContent = trigger.getAttribute('data-vehicle-name') || '-';
+                vehiclePlate.textContent = trigger.getAttribute('data-vehicle-plate') || '-';
+                vehicleStore.textContent = trigger.getAttribute('data-vehicle-description') || '-';
+                vehicleCondition.textContent = trigger.getAttribute('data-vehicle-condition') || '-';
+                modal.classList.add('show');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+            }
+
+            document.addEventListener('click', function (event) {
+                const trigger = event.target.closest('[data-sale-open]');
+                if (trigger) {
+                    openModal(trigger);
+                    return;
+                }
+
+                if (event.target.closest('[data-sale-close]') || event.target === modal) {
+                    closeModal();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && modal.classList.contains('show')) {
+                    closeModal();
+                }
+            });
+
+            if (document.querySelector('.field-validation-error, .validation-summary-errors')) {
+                const selectedTrigger = Array.from(document.querySelectorAll('[data-sale-open]'))
+                    .find(function (trigger) {
+                        return trigger.getAttribute('data-vehicle-id') === vehicleId.value;
+                    });
+
+                if (selectedTrigger) {
+                    openModal(selectedTrigger);
+                } else {
+                    modal.classList.add('show');
+                    modal.setAttribute('aria-hidden', 'false');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+        })();
+    </script>
+}

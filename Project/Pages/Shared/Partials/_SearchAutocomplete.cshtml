@@ -1,0 +1,35 @@
+@model Project.Pages.ViewModels.SearchAutocompleteViewModel
+<form method="get" class="site-search-form" autocomplete="off" action="@Model.Action">
+    <div class="site-search-autocomplete" data-search-autocomplete data-endpoint="@Model.Endpoint">
+        <div class="hero-search-inline">
+            <span class="site-search-field-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 21l2-6"></path>
+                    <path d="M19 3l-6 2"></path>
+                    <path d="M11.5 6.5l6 6"></path>
+                    <path d="M12 3l.6 2.1A2 2 0 0 0 14 6.5l2 .5-2 .5a2 2 0 0 0-1.4 1.4L12 11l-.6-2.1A2 2 0 0 0 10 7.5L8 7l2-.5a2 2 0 0 0 1.4-1.4L12 3z"></path>
+                </svg>
+            </span>
+
+            <input
+                type="text"
+                class="form-control"
+                name="@Model.InputName"
+                value="@Model.Value"
+                placeholder="@Model.Placeholder"
+                data-search-input
+                aria-label="@Model.AriaLabel"
+                aria-autocomplete="list"
+                aria-expanded="false"
+                aria-controls="siteSearchResults" />
+
+            <span class="site-search-loading" data-search-loading hidden aria-hidden="true">
+                <span class="site-search-loading-spinner"></span>
+            </span>
+        </div>
+
+        <div class="site-search-results" id="siteSearchResults" data-search-results hidden>
+            <div class="site-search-results-scroll" data-search-results-body></div>
+        </div>
+    </div>
+</form>

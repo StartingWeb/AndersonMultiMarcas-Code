@@ -1,107 +1,161 @@
-@{
-    var pageTitle = (ViewData["SeoTitle"] as string) ?? (ViewData["Title"] as string) ?? "Anderson Multi Marcas";
-    var metaDescription = (ViewData["MetaDescription"] as string) ?? "Anderson Multi Marcas: veiculos revisados, procedencia e atendimento especializado.";
-    var canonicalUrl = (ViewData["CanonicalUrl"] as string) ?? $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}";
-    var ogImage = (ViewData["OgImage"] as string) ?? $"{Context.Request.Scheme}://{Context.Request.Host}/favicon.ico";
-    var keywords = (ViewData["MetaKeywords"] as string) ?? "carros seminovos, veiculos, revenda";
-    var robots = (ViewData["Robots"] as string) ?? "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1";
-}
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+    @inject IConfiguration Configuration
+    @{
+        var configuredBaseUrl = Configuration["Seo:BaseUrl"]?.TrimEnd('/');
+        var baseUrl = configuredBaseUrl ?? $"{Context.Request.Scheme}://{Context.Request.Host}";
+        var pageTitle = (ViewData["SeoTitle"] as string) ?? (ViewData["Title"] as string) ?? SeoJsonLd.BrandName;
+        var metaDescription = (ViewData["MetaDescription"] as string) ?? SeoJsonLd.SiteDescription;
+        var canonicalUrl = (ViewData["CanonicalUrl"] as string) ?? $"{baseUrl}{Context.Request.Path}";
+        var ogImage = (ViewData["OgImage"] as string) ?? $"{baseUrl}/img/carroDefault.png";
+        var robots = (ViewData["Robots"] as string) ?? "index,follow";
+        var logoUrl = $"{baseUrl}{ImageUrlBuilder.Build("/img/logo.png", 512, 72)}";
+    }
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#a61d24" />
+    <meta name="format-detection" content="telephone=yes" />
     <title>@pageTitle</title>
     <meta name="description" content="@metaDescription" />
-    <meta name="keywords" content="@keywords" />
     <meta name="robots" content="@robots" />
     <link rel="canonical" href="@canonicalUrl" />
     <meta property="og:locale" content="pt_BR" />
+    <meta property="og:site_name" content="@SeoJsonLd.BrandName" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="@pageTitle" />
     <meta property="og:description" content="@metaDescription" />
     <meta property="og:url" content="@canonicalUrl" />
-    <meta property="og:site_name" content="Anderson Multi Marcas" />
     <meta property="og:image" content="@ogImage" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="@pageTitle" />
     <meta name="twitter:description" content="@metaDescription" />
     <meta name="twitter:image" content="@ogImage" />
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Project.styles.css" asp-append-version="true" />
-    <script type="application/ld+json">
-        {
-          "@@context":"https://schema.org",
-          "@@type":"Organization",
-          "name":"Anderson Multi Marcas",
-          "url":"@($"{Context.Request.Scheme}://{Context.Request.Host}")",
-          "logo":"@($"{Context.Request.Scheme}://{Context.Request.Host}/favicon.ico")"
-        }
-    </script>
-    <script type="application/ld+json">
-        {
-          "@@context":"https://schema.org",
-          "@@type":"LocalBusiness",
-          "name":"Anderson Multi Marcas",
-          "url":"@($"{Context.Request.Scheme}://{Context.Request.Host}")",
-          "telephone":"+55-00-0000-0000",
-          "address":{
-            "@@type":"PostalAddress",
-            "addressLocality":"Sao Paulo",
-            "addressRegion":"SP",
-            "addressCountry":"BR"
-          }
-        }
-    </script>
-    @if (ViewData["BreadcrumbSchema"] is string breadcrumbSchema)
-    {
-        <script type="application/ld+json">@Html.Raw(breadcrumbSchema)</script>
-    }
+    <link rel="icon" type="image/x-icon" href="~/favicon/favicon.ico" asp-append-version="true" />
+    <link rel="icon" type="image/png" sizes="32x32" href="~/favicon/favicon-32x32.png" asp-append-version="true" />
+    <link rel="icon" type="image/png" sizes="16x16" href="~/favicon/favicon-16x16.png" asp-append-version="true" />
+    <link rel="apple-touch-icon" sizes="180x180" href="~/favicon/apple-touch-icon.png" asp-append-version="true" />
+    <link rel="manifest" href="~/favicon/site.webmanifest" asp-append-version="true" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+    <link rel="preload" as="image" href="@ImageUrlBuilder.Build("/img/logo.png", 240, 72)" fetchpriority="high" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700&display=swap" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tailwind.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/base.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/utilities.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
     @if (ViewData["FaqSchema"] is string faqSchema)
     {
         <script type="application/ld+json">@Html.Raw(faqSchema)</script>
     }
+    @if (ViewData["BreadcrumbSchema"] is string breadcrumbSchema)
+    {
+        <script type="application/ld+json">@Html.Raw(breadcrumbSchema)</script>
+    }
+    @if (ViewData["ItemListSchema"] is string itemListSchema)
+    {
+        <script type="application/ld+json">@Html.Raw(itemListSchema)</script>
+    }
+    @if (ViewData["VehicleSchema"] is string vehicleSchema)
+    {
+        <script type="application/ld+json">@Html.Raw(vehicleSchema)</script>
+    }
+    <script type="application/ld+json">@Html.Raw(SeoJsonLd.Organization(baseUrl, logoUrl))</script>
+    <script type="application/ld+json">@Html.Raw(SeoJsonLd.LocalBusiness(baseUrl, ogImage))</script>
+    <script type="application/ld+json">@Html.Raw(SeoJsonLd.WebSite(baseUrl))</script>
+    @if (!string.IsNullOrWhiteSpace(Configuration["Google:AnalyticsId"]))
+    {
+        var analyticsId = Configuration["Google:AnalyticsId"];
+        <script async src="https://www.googletagmanager.com/gtag/js?id=@analyticsId"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '@analyticsId', { anonymize_ip: true });
+        </script>
+    }
 </head>
-<body>
-    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3" aria-label="Navegacao principal">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index" aria-label="Pagina inicial">Anderson Multi Marcas</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Abrir menu">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Inicio</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacidade</a>
-                        </li>
-                    </ul>
+<body id="topo">
+    <a class="skip-link" href="#main-content">Pular para conteudo principal</a>
+    <partial name="_PlatformMessages" />
+    @await Component.InvokeAsync("SellerContactModal")
+
+    <nav id="mainNavbar" class="main-navbar" aria-label="Navegacao principal">
+        <div class="container d-flex align-items-center justify-content-between flex-wrap">
+            <a class="navbar-brand-custom" href="/">
+                <img src="@ImageUrlBuilder.Build("/img/logo.png", 240, 72)" alt="Anderson Multimarcas" width="240" height="78" fetchpriority="high" decoding="async" />
+            </a>
+            <button class="navbar-mobile-toggle" type="button" id="mobileMenuToggle" aria-label="Abrir menu">☰</button>
+            <div class="nav-menu-wrap" id="mobileMenu">
+                <ul class="nav-menu ms-lg-auto">
+                    <li><a href="/"><span class="menu-link-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 3 10.5V21h6v-6h6v6h6V10.5L12 3z"/></svg></span><span>Inicio</span></a></li>
+                    <li><a href="/veiculos"><span class="menu-link-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 11h14l-1.2-3.2A2 2 0 0 0 15.9 6H8.1a2 2 0 0 0-1.9 1.8L5 11zm-.5 1.5A2.5 2.5 0 0 0 2 15v2h2v1a2 2 0 0 0 4 0v-1h8v1a2 2 0 0 0 4 0v-1h2v-2a2.5 2.5 0 0 0-2.5-2.5h-15zM6.5 16A1.5 1.5 0 1 1 8 14.5 1.5 1.5 0 0 1 6.5 16zm11 0a1.5 1.5 0 1 1 1.5-1.5 1.5 1.5 0 0 1-1.5 1.5z"/></svg></span><span>Estoque</span></a></li>
+                    <li><a href="/veiculos/zero-km"><span class="menu-link-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 12h14v7H5zm2-7h10l2 5H5z"/></svg></span><span>0 km</span></a></li>
+                    <li><a href="/#troque-seu-carro"><span class="menu-link-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a5 5 0 0 0-5 5c0 3.4 5 10 5 10s5-6.6 5-10a5 5 0 0 0-5-5zm0 7a2 2 0 1 1 2-2 2 2 0 0 1-2 2zM4 20h16v2H4z"/></svg></span><span>Troque seu carro</span></a></li>
+                    <li><a href="/Empresa"><span class="menu-link-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.4 0-8 2-8 4.5V21h16v-2.5C20 16 16.4 14 12 14z"/></svg></span><span>Quem somos</span></a></li>
+                    <li><a href="/Contato"><span class="menu-link-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 3 8 5 8-5"/></svg></span><span>Contato</span></a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main id="main-content">
+        @RenderBody()
+    </main>
+
+    <footer class="footer mt-5 pt-5 pb-4">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-3">
+                    <div class="footer-brand mb-3">Anderson Multimarcas</div>
+                    <p class="footer-tagline">Casa de amigos, lugar de bons negocios</p>
+                </div>
+                <div class="col-lg-3">
+                    <h6 class="text-white fw-bold mb-3">Navegacao</h6>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="/" class="footer-link-icon"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 3 10.5V21h6v-6h6v6h6V10.5L12 3z"/></svg></span><span>Inicio</span></a>
+                        <a href="/veiculos" class="footer-link-icon"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 11h14l-1.2-3.2A2 2 0 0 0 15.9 6H8.1a2 2 0 0 0-1.9 1.8L5 11zm-.5 1.5A2.5 2.5 0 0 0 2 15v2h2v1a2 2 0 0 0 4 0v-1h8v1a2 2 0 0 0 4 0v-1h2v-2a2.5 2.5 0 0 0-2.5-2.5h-15z"/></svg></span><span>Estoque</span></a>
+                        <a href="/Empresa" class="footer-link-icon"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.4 0-8 2-8 4.5V21h16v-2.5C20 16 16.4 14 12 14z"/></svg></span><span>Quem somos</span></a>
+                        <a href="/Contato" class="footer-link-icon"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 3 8 5 8-5"/></svg></span><span>Contato</span></a>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <h6 class="text-white fw-bold mb-3">Redes sociais</h6>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="https://www.instagram.com/andersonmultimarcastq/" target="_blank" rel="noopener noreferrer" class="footer-link-icon"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 5.5A4.5 4.5 0 1 0 16.5 12 4.5 4.5 0 0 0 12 7.5zm6-1.8a1.2 1.2 0 1 0 1.2 1.2A1.2 1.2 0 0 0 18 5.7z"/></svg></span><span>Instagram</span></a>
+                        <a href="https://www.facebook.com/AndersonMultimarcasTaqua" target="_blank" rel="noopener noreferrer" class="footer-link-icon"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.5 22v-8h2.7l.4-3h-3.1V9.1c0-.9.3-1.5 1.6-1.5h1.7V5A22 22 0 0 0 14.3 5c-2.5 0-4.2 1.5-4.2 4.3V11H7.4v3h2.7v8z"/></svg></span><span>Facebook</span></a>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <h6 class="text-white fw-bold mb-3">Contato</h6>
+                    <div class="d-flex flex-column gap-2">
+                        <span class="footer-link-icon"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 4.8 7 13 7 13s7-8.2 7-13a7 7 0 0 0-7-7zm0 10a3 3 0 1 1 3-3 3 3 0 0 1-3 3z"/></svg></span><span>Taquaritinga/SP</span></span>
+                        <a href="mailto:leads@andersonmultimarcas.com.br" class="footer-link-icon"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 3 8 5 8-5"/></svg></span><span>leads@andersonmultimarcas.com.br</span></a>
+                    </div>
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main id="main-content" role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted" role="contentinfo">
-        <div class="container">
-            &copy; 2026 - Anderson Multi Marcas - <a asp-area="" asp-page="/Privacy">Privacidade</a>
+            <hr class="my-4" />
+            <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+                <small>© 2026 Anderson Multimarcas. Todos os direitos reservados.</small>
+                <a class="text-white-50 fw-semibold small" href="/Admin">Area restrita</a>
+            </div>
         </div>
     </footer>
 
-    <script src="~/lib/jquery/dist/jquery.min.js" defer></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="~/js/site.js" asp-append-version="true" defer></script>
+    <button id="btnTop" class="floating-btn floating-top" type="button" aria-label="Voltar ao topo">
+        <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 5l7 7-1.41 1.41L13 8.83V20h-2V8.83l-4.59 4.58L5 12z" /></svg>
+    </button>
+    <a id="btnWhatsapp" class="floating-btn floating-whatsapp" href="#" data-whatsapp-modal="true" data-vehicle-title="Atendimento Anderson Multimarcas" aria-label="WhatsApp">
+        <svg viewBox="0 0 32 32" role="img" aria-hidden="true"><path fill="currentColor" d="M16 3C8.83 3 3 8.74 3 15.8c0 2.5.73 4.94 2.1 7.05L3 29l6.36-2.05A13.1 13.1 0 0 0 16 28.6c7.17 0 13-5.74 13-12.8S23.17 3 16 3zm0 23.44c-2.05 0-4.06-.55-5.8-1.58l-.41-.24-3.77 1.21 1.23-3.67-.27-.43a11.26 11.26 0 0 1-1.74-5.93C5.24 9.68 9.98 5 16 5s10.76 4.68 10.76 10.8S22.02 26.44 16 26.44zm5.9-7.85c-.33-.16-1.93-.95-2.23-1.06-.3-.11-.52-.16-.74.16-.22.31-.85 1.06-1.04 1.28-.19.22-.38.25-.71.08-.33-.16-1.38-.5-2.63-1.59-.97-.84-1.62-1.88-1.82-2.19-.19-.31-.02-.48.15-.64.15-.15.33-.39.49-.58.16-.19.22-.33.33-.55.11-.22.05-.41-.03-.58-.08-.16-.74-1.78-1.01-2.44-.27-.65-.54-.56-.74-.57h-.63c-.22 0-.58.08-.88.41-.3.33-1.15 1.12-1.15 2.73s1.18 3.16 1.34 3.38c.16.22 2.31 3.68 5.6 5.15.78.34 1.39.54 1.86.69.78.25 1.49.22 2.05.13.63-.1 1.93-.79 2.2-1.55.27-.76.27-1.4.19-1.55-.08-.14-.3-.22-.63-.38z"/></svg>
+    </a>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="~/js/site.js" asp-append-version="true" defer></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

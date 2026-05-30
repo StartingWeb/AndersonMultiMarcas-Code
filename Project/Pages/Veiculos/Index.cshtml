@@ -1,0 +1,125 @@
+@page "/veiculos/{Segmento?}"
+@model Project.Pages.Veiculos.IndexModel
+@{
+    ViewData["Title"] = "Catalogo";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Catalogo.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+}
+
+<partial name="Partials/_CatalogHeader" model="Model.Vm" />
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="catalog-shell" id="catalog-shell">
+            <partial name="Partials/_VehicleFilters" model="Model.Vm" />
+
+            <div class="catalog-results">
+                <partial name="Partials/_CatalogToolbar" model="Model.Vm" />
+
+                @if (Model.Vm.TotalItems == 0)
+                {
+                    <partial name="Partials/_EmptyState" />
+                }
+                else
+                {
+                    @if (Model.Vm.DestaquesRecentes.Count > 0)
+                    {
+                        <section class="vehicle-group">
+                            <div class="vehicle-group-header vehicle-group-header-featured">
+                                <div>
+                                    <h3>Mais recentes</h3>
+                                    <p>Os modelos mais novos do estoque com destaque na abertura da pagina.</p>
+                                </div>
+                            </div>
+                            <div class="row g-4">
+                                @foreach (var item in Model.Vm.DestaquesRecentes)
+                                {
+                                    <div class="col-xl-4 col-md-6">
+                                        <partial name="Partials/_CatalogVehicleCard" model="item" />
+                                    </div>
+                                }
+                            </div>
+                        </section>
+                    }
+
+                    @if (Model.Vm.OutrosVeiculos.Count > 0)
+                    {
+                        <section class="vehicle-group">
+                            <div class="vehicle-group-header">
+                                <div>
+                                    <h3>Outros carros</h3>
+                                    <p>O restante do estoque para continuar a busca sem repetir os mais recentes.</p>
+                                </div>
+                            </div>
+                            <div class="row g-4">
+                                @foreach (var item in Model.Vm.OutrosVeiculos)
+                                {
+                                    <div class="col-xl-4 col-md-6">
+                                        <partial name="Partials/_CatalogVehicleCard" model="item" />
+                                    </div>
+                                }
+                            </div>
+                        </section>
+                    }
+
+                    <partial name="Partials/_Pagination" model="(Model.PaginaAtual, Model.Vm.TotalPages)" />
+                }
+            </div>
+        </div>
+
+        @if (Model.Vm.SeoLanding is not null)
+        {
+            <section class="catalog-landing-content" aria-labelledby="landingContentTitle">
+                <div class="catalog-landing-copy">
+                    <span class="catalog-kicker">Guia rapido</span>
+                    <h2 id="landingContentTitle">@Model.Vm.SeoLanding.IntroTitle</h2>
+                    @foreach (var paragraph in Model.Vm.SeoLanding.Paragraphs.Take(2))
+                    {
+                        <p>@paragraph</p>
+                    }
+                </div>
+
+                <nav class="catalog-landing-links" aria-label="Links relacionados">
+                    @foreach (var link in Model.Vm.SeoLanding.Links)
+                    {
+                        if (link.Url == "#")
+                        {
+                            <a href="#" data-whatsapp-modal="true" data-vehicle-title="@Model.Vm.SeoLanding.Title">@link.Label</a>
+                        }
+                        else
+                        {
+                            <a href="@link.Url">@link.Label</a>
+                        }
+                    }
+                </nav>
+            </section>
+
+            <section class="catalog-landing-faq" aria-labelledby="landingFaqTitle">
+                <div class="catalog-landing-section-header">
+                    <span class="catalog-kicker">Duvidas comuns</span>
+                    <h2 id="landingFaqTitle">Perguntas frequentes</h2>
+                </div>
+
+                <div class="catalog-faq-list">
+                    @foreach (var faq in Model.Vm.SeoLanding.Faqs)
+                    {
+                        <details class="catalog-faq-item">
+                            <summary>@faq.Question</summary>
+                            <p>@faq.Answer</p>
+                        </details>
+                    }
+                </div>
+            </section>
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="~/js/catalog.js" asp-append-version="true"></script>
+}

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore.Migrations;
+ï»¿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -157,7 +157,7 @@ namespace Data.Migrations
 
                 IF OBJECT_ID(N'[Loja]', N'U') IS NOT NULL AND COL_LENGTH('Loja','Cnpj') IS NOT NULL
                     AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Loja_Cnpj' AND object_id = OBJECT_ID(N'[Loja]'))
-                    CREATE UNIQUE INDEX [IX_Loja_Cnpj] ON [Loja] ([Cnpj]);
+                    CREATE UNIQUE INDEX [IX_Loja_Cnpj] ON [Loja] ([Cnpj]) WHERE [Cnpj] IS NOT NULL;
 
                 IF OBJECT_ID(N'[Loja]', N'U') IS NOT NULL AND COL_LENGTH('Loja','Nome') IS NOT NULL
                     AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Loja_Nome' AND object_id = OBJECT_ID(N'[Loja]'))
@@ -217,7 +217,8 @@ namespace Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Intencionalmente vazio: migration de validação/compatibilização para ambiente existente.
+            // Intencionalmente vazio: migration de validaÃ§Ã£o/compatibilizaÃ§Ã£o para ambiente existente.
         }
     }
 }
+

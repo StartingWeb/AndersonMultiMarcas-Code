@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Text.Json;
+using Project.Shared;
 
 namespace Project.Pages
 {
@@ -19,16 +19,7 @@ namespace Project.Pages
             ViewData["MetaDescription"] = "Saiba como a Anderson Multi Marcas trata dados pessoais, privacidade e seguranca das informacoes no site.";
             ViewData["MetaKeywords"] = "politica de privacidade, protecao de dados, lgpd";
             ViewData["CanonicalUrl"] = $"{baseUrl}/Privacy";
-            ViewData["BreadcrumbSchema"] = JsonSerializer.Serialize(new
-            {
-                @context = "https://schema.org",
-                @type = "BreadcrumbList",
-                itemListElement = new object[]
-                {
-                    new { @type = "ListItem", position = 1, name = "Inicio", item = $"{baseUrl}/" },
-                    new { @type = "ListItem", position = 2, name = "Privacidade", item = $"{baseUrl}/Privacy" }
-                }
-            });
+            ViewData["BreadcrumbSchema"] = SeoJsonLd.Breadcrumb(baseUrl, ("Inicio", "/"), ("Privacidade", "/Privacy"));
         }
     }
 }

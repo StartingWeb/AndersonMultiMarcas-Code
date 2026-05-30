@@ -1,0 +1,139 @@
+@page
+@model Project.Pages.EmpresaModel
+@{
+    ViewData["Title"] = "Quem somos";
+}
+
+<section class="about-hero">
+    <div class="container">
+        <div class="about-hero-panel">
+            <div class="row align-items-center g-4 g-lg-5">
+                <div class="col-lg-7">
+                    <span class="about-kicker">Anderson Multimarcas</span>
+                    <h1 class="about-title">Uma história construída com confiança, transparência e paixão por carros.</h1>
+                    <p class="about-subtitle">
+                        Desde 2012, ajudamos clientes de Taquaritinga/SP e região a encontrar o veículo certo com atendimento próximo,
+                        negociação justa e uma experiência pensada para gerar segurança do primeiro contato à entrega.
+                    </p>
+
+                    <div class="about-hero-actions">
+                        <a class="btn about-stock-btn" href="/veiculos">
+                            <span>Ver estoque</span>
+                            <span class="about-stock-btn-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M5 12h14"></path>
+                                    <path d="m12 5 7 7-7 7"></path>
+                                </svg>
+                            </span>
+                        </a>
+                        <button type="button" class="btn btn-outline-brand" data-whatsapp-modal="true" data-vehicle-title="Atendimento Anderson Multimarcas">
+                            Falar no WhatsApp
+                        </button>
+                    </div>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="about-video-card">
+                        <video class="about-video" autoplay muted loop playsinline webkit-playsinline="true" preload="auto" data-autoplay-video>
+                            <source src="~/video/videoHome.mp4" type="video/mp4" />
+                            Seu navegador não suporta video em HTML5.
+                        </video>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <article class="feature-card about-stat-card">
+                    <div class="about-stat-number">2012</div>
+                    <h2>Inicio da trajetoria</h2>
+                    <p>
+                        A Anderson Multimarcas nasceu da realizacao do sonho do empresario Anderson Silva, somando experiencia,
+                        visao de mercado e compromisso com atendimento de excelencia.
+                    </p>
+                </article>
+            </div>
+
+            <div class="col-lg-4">
+                <article class="feature-card about-stat-card">
+                    <div class="about-stat-number">@Model.TotalVeiculos</div>
+                    <h2>Opcoes em estoque</h2>
+                    <p>
+                        Mais de <strong>@Model.TotalVeiculos</strong> oportunidades selecionadas para quem quer comprar com
+                        seguranca, procedencia e atendimento de verdade. Mantemos nossa vitrine sempre atualizada para apresentar
+                        as melhores opcoes disponiveis na loja.
+                    </p>
+                </article>
+            </div>
+
+            <div class="col-lg-4">
+                <article class="feature-card about-stat-card">
+                    <div class="about-stat-number">@Model.Lojas.Count</div>
+                    <h2>Unidades em Taquaritinga</h2>
+                    <p>
+                        Nossa presenca local fortalece o atendimento proximo, agiliza negociacoes e amplia as oportunidades para quem
+                        quer comprar, trocar ou financiar.
+                    </p>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section about-locations-section">
+    <div class="container">
+        <div class="about-locations-panel">
+            <div class="about-reasons-header">
+                <span class="about-kicker">Onde estamos</span>
+                <h2 class="section-title mb-2">Unidades ativas para atender melhor Taquaritinga e regiao</h2>
+                <p class="section-subtitle mb-0">
+                    Estrutura pensada para oferecer variedade de estoque, facilidade de acesso e atendimento proximo em cada visita.
+                </p>
+            </div>
+
+            <div class="row g-4">
+                @for (var i = 0; i < Model.Lojas.Count; i++)
+                {
+                    var loja = Model.Lojas[i];
+                    <div class="col-lg-4">
+                        <div class="about-location-card">
+                            <div class="about-location-tag">Loja @(i + 1)</div>
+                            <p>@loja.EnderecoCompleto</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="cta-sell about-cta">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+                    <p class="text-uppercase fw-bold mb-2 about-cta-kicker">Vamos encontrar seu proximo veiculo</p>
+                    <h2 class="mb-3">Casa de amigos, lugar de bons negocios</h2>
+                    <p class="mb-0 text-white-50">
+                        Se voce quer comprar, trocar ou entender as melhores condicoes de financiamento, estamos prontos para ajudar.
+                    </p>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <button type="button" class="btn btn-light btn-lg fw-semibold" data-whatsapp-modal="true" data-vehicle-title="Atendimento Anderson Multimarcas">
+                        Chamar no WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Home.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Empresa.css" asp-append-version="true" />
+}

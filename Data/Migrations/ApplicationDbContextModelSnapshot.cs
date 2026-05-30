@@ -139,7 +139,8 @@ namespace Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Cnpj")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[Cnpj] IS NOT NULL");
 
                     b.HasIndex("Nome");
 
@@ -260,6 +261,16 @@ namespace Data.Migrations
 
                     b.Property<decimal>("PrecoVenda")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("QuantidadeCliques")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("QuantidadeVisualizacoes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.Property<int?>("Quilometragem")
                         .HasColumnType("int");

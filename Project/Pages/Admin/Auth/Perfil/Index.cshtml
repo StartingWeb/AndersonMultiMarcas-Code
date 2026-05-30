@@ -1,0 +1,301 @@
+@page
+@model Project.Pages.Admin.Auth.Perfil.IndexModel
+
+@section Styles {
+    <style>
+        .auth-page {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .auth-panel {
+            background: #fff;
+            border: 1px solid #e7e2dc;
+            border-radius: 18px;
+            box-shadow: 0 12px 26px rgba(15, 23, 42, .05);
+            overflow: hidden;
+        }
+
+        .auth-panel-header {
+            padding: 1rem 1.1rem;
+            border-bottom: 1px solid #eee7df;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .auth-panel-title {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 800;
+        }
+
+        .auth-filter-grid {
+            display: grid;
+            grid-template-columns: minmax(220px, 1fr) auto;
+            gap: .75rem;
+            padding: 1rem 1.1rem;
+        }
+
+        .auth-table-wrap {
+            overflow-x: auto;
+        }
+
+        .auth-table {
+            width: 100%;
+            min-width: 640px;
+            margin: 0;
+        }
+
+        .auth-table th {
+            color: #6b7280;
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .auth-table td,
+        .auth-table th {
+            padding: .9rem 1.1rem;
+            vertical-align: middle;
+        }
+
+        .auth-badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: .35rem .62rem;
+            font-size: .78rem;
+            font-weight: 800;
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .auth-menu-summary {
+            max-width: 360px;
+            color: #6b7280;
+            font-size: .84rem;
+            line-height: 1.35;
+        }
+
+        .auth-menu-grid {
+            display: grid;
+            gap: .85rem;
+        }
+
+        .auth-menu-group {
+            border: 1px solid #eee7df;
+            border-radius: 14px;
+            padding: .85rem;
+        }
+
+        .auth-menu-group-title {
+            margin-bottom: .55rem;
+            font-size: .82rem;
+            font-weight: 800;
+            color: #6b7280;
+            text-transform: uppercase;
+        }
+
+        .auth-menu-options {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .55rem .9rem;
+        }
+
+        .auth-mobile-list {
+            display: none;
+            padding: 1rem;
+            gap: .8rem;
+        }
+
+        .auth-mobile-card {
+            border: 1px solid #e7e2dc;
+            border-radius: 16px;
+            padding: 1rem;
+            display: grid;
+            gap: .7rem;
+        }
+
+        @@media (max-width: 720px) {
+            .auth-filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-table-wrap {
+                display: none;
+            }
+
+            .auth-mobile-list {
+                display: grid;
+            }
+        }
+    </style>
+}
+
+<div class="auth-page">
+    <section class="auth-panel">
+        <div class="auth-panel-header">
+            <div>
+                <h1 class="auth-panel-title">Perfis de acesso</h1>
+                <div class="text-muted small">Gerencie os perfis usados para permissao na plataforma.</div>
+            </div>
+            <button type="button" class="btn btn-danger fw-semibold" data-bs-toggle="modal" data-bs-target="#perfilModal" data-perfil-new>
+                <i class="bi bi-plus-lg"></i>
+                Novo perfil
+            </button>
+        </div>
+
+        <form method="get" class="auth-filter-grid">
+            <input class="form-control" asp-for="Busca" placeholder="Buscar por perfil">
+            <button class="btn btn-dark fw-semibold" type="submit">
+                <i class="bi bi-search"></i>
+                Filtrar
+            </button>
+        </form>
+    </section>
+
+    <section class="auth-panel">
+        <div class="auth-table-wrap">
+            <table class="table auth-table">
+                <thead>
+                    <tr>
+                        <th>Perfil</th>
+                        <th>Usuarios vinculados</th>
+                        <th>Menus</th>
+                        <th class="text-end">Acoes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var perfil in Model.Perfis)
+                    {
+                        <tr>
+                            <td><strong>@perfil.Nome</strong></td>
+                            <td><span class="auth-badge">@perfil.UsuariosVinculados usuario(s)</span></td>
+                            <td><div class="auth-menu-summary">@perfil.MenusResumo</div></td>
+                            <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#perfilModal"
+                                        data-perfil-id="@perfil.Id"
+                                        data-perfil-name="@perfil.Nome"
+                                        data-perfil-menus="@string.Join(",", perfil.MenuIds)">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <form method="post" asp-page-handler="Delete" asp-route-id="@perfil.Id" class="d-inline" data-delete-form>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" @(perfil.UsuariosVinculados > 0 || perfil.Nome == "Desenvolvedor" ? "disabled" : "")>
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="auth-mobile-list">
+            @foreach (var perfil in Model.Perfis)
+            {
+                <article class="auth-mobile-card">
+                    <div>
+                        <strong>@perfil.Nome</strong>
+                        <div class="text-muted small">@perfil.UsuariosVinculados usuario(s) vinculados</div>
+                        <div class="text-muted small">@perfil.MenusResumo</div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-dark flex-fill" data-bs-toggle="modal" data-bs-target="#perfilModal"
+                                data-perfil-id="@perfil.Id"
+                                data-perfil-name="@perfil.Nome"
+                                data-perfil-menus="@string.Join(",", perfil.MenuIds)">
+                            Editar
+                        </button>
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@perfil.Id" class="flex-fill" data-delete-form>
+                            <button type="submit" class="btn btn-sm btn-outline-danger w-100" @(perfil.UsuariosVinculados > 0 || perfil.Nome == "Desenvolvedor" ? "disabled" : "")>
+                                Excluir
+                            </button>
+                        </form>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="perfilModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Save">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" data-perfil-modal-title>Novo perfil</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <input asp-for="Input.Id" type="hidden" data-perfil-field="id">
+                    <label class="form-label" asp-for="Input.Nome">Nome do perfil</label>
+                    <input class="form-control" asp-for="Input.Nome" data-perfil-field="name">
+
+                    <div class="mt-4">
+                        <label class="form-label">Menus do administrador</label>
+                        <div class="auth-menu-grid">
+                            @foreach (var section in AdminMenuCatalog.Sections)
+                            {
+                                <div class="auth-menu-group">
+                                    <div class="auth-menu-group-title">@(section.Title)</div>
+                                    <div class="auth-menu-options">
+                                        @foreach (var menu in section.Items)
+                                        {
+                                            <label class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="Input.Menus" value="@menu.Id" data-perfil-menu-option>
+                                                <span class="form-check-label">@menu.Label</span>
+                                            </label>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger fw-semibold">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const modal = document.getElementById('perfilModal');
+            if (!modal) return;
+
+            modal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const isNew = button?.hasAttribute('data-perfil-new');
+
+                modal.querySelector('[data-perfil-modal-title]').textContent = isNew ? 'Novo perfil' : 'Editar perfil';
+                modal.querySelector('[data-perfil-field="id"]').value = isNew ? '' : button.getAttribute('data-perfil-id');
+                modal.querySelector('[data-perfil-field="name"]').value = isNew ? '' : button.getAttribute('data-perfil-name');
+
+                const selectedMenus = new Set((isNew ? '' : button.getAttribute('data-perfil-menus') || '')
+                    .split(',')
+                    .map(function (item) { return item.trim(); })
+                    .filter(Boolean));
+
+                modal.querySelectorAll('[data-perfil-menu-option]').forEach(function (checkbox) {
+                    checkbox.checked = selectedMenus.has(checkbox.value);
+                });
+            });
+
+            document.querySelectorAll('[data-delete-form]').forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!confirm('Deseja excluir este perfil?')) {
+                        event.preventDefault();
+                    }
+                });
+            });
+        })();
+    </script>
+}

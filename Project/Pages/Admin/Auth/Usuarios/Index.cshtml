@@ -1,0 +1,315 @@
+@page
+@model Project.Pages.Admin.Auth.Usuarios.IndexModel
+
+@section Styles {
+    <style>
+        .auth-page {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .auth-panel {
+            background: #fff;
+            border: 1px solid #e7e2dc;
+            border-radius: 18px;
+            box-shadow: 0 12px 26px rgba(15, 23, 42, .05);
+            overflow: hidden;
+        }
+
+        .auth-panel-header {
+            padding: 1rem 1.1rem;
+            border-bottom: 1px solid #eee7df;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .auth-panel-title {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 800;
+        }
+
+        .auth-filter-grid {
+            display: grid;
+            grid-template-columns: minmax(220px, 1fr) minmax(180px, .35fr) minmax(160px, .28fr) auto;
+            gap: .75rem;
+            padding: 1rem 1.1rem;
+        }
+
+        .auth-table-wrap {
+            overflow-x: auto;
+        }
+
+        .auth-table {
+            width: 100%;
+            min-width: 820px;
+            margin: 0;
+        }
+
+        .auth-table th {
+            color: #6b7280;
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .auth-table td,
+        .auth-table th {
+            padding: .9rem 1.1rem;
+            vertical-align: middle;
+        }
+
+        .auth-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            border-radius: 999px;
+            padding: .35rem .62rem;
+            font-size: .78rem;
+            font-weight: 800;
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .auth-badge.success {
+            background: #eafaf0;
+            color: #157347;
+        }
+
+        .auth-badge.danger {
+            background: #fdecec;
+            color: #b42318;
+        }
+
+        .auth-mobile-list {
+            display: none;
+            padding: 1rem;
+            gap: .8rem;
+        }
+
+        .auth-mobile-card {
+            border: 1px solid #e7e2dc;
+            border-radius: 16px;
+            padding: 1rem;
+            display: grid;
+            gap: .7rem;
+        }
+
+        @@media (max-width: 820px) {
+            .auth-filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-table-wrap {
+                display: none;
+            }
+
+            .auth-mobile-list {
+                display: grid;
+            }
+        }
+    </style>
+}
+
+<div class="auth-page">
+    <section class="auth-panel">
+        <div class="auth-panel-header">
+            <div>
+                <h1 class="auth-panel-title">Usuarios da plataforma</h1>
+                <div class="text-muted small">Filtre, consulte e mantenha acessos administrativos.</div>
+            </div>
+            <button type="button" class="btn btn-danger fw-semibold" data-bs-toggle="modal" data-bs-target="#usuarioModal" data-user-new>
+                <i class="bi bi-plus-lg"></i>
+                Novo usuario
+            </button>
+        </div>
+
+        <form method="get" class="auth-filter-grid">
+            <input class="form-control" asp-for="Busca" placeholder="Buscar por nome, usuario ou e-mail">
+            <select class="form-select" asp-for="Perfil">
+                <option value="">Todos os perfis</option>
+                @foreach (var perfil in Model.Perfis)
+                {
+                    <option value="@perfil">@perfil</option>
+                }
+            </select>
+            <select class="form-select" asp-for="Status">
+                <option value="todos">Todos</option>
+                <option value="ativos">Ativos</option>
+                <option value="bloqueados">Bloqueados</option>
+            </select>
+            <button class="btn btn-dark fw-semibold" type="submit">
+                <i class="bi bi-search"></i>
+                Filtrar
+            </button>
+        </form>
+    </section>
+
+    <section class="auth-panel">
+        <div class="auth-table-wrap">
+            <table class="table auth-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Usuario</th>
+                        <th>E-mail</th>
+                        <th>Perfil</th>
+                        <th>Status</th>
+                        <th class="text-end">Acoes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.Usuarios)
+                    {
+                        <tr>
+                            <td><strong>@user.NomeCompleto</strong></td>
+                            <td>@user.UserName</td>
+                            <td>@user.Email</td>
+                            <td><span class="auth-badge">@user.Perfil</span></td>
+                            <td>
+                                <span class="auth-badge @(user.Ativo ? "success" : "danger")">
+                                    @(user.Ativo ? "Ativo" : "Bloqueado")
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#usuarioModal"
+                                        data-user-id="@user.Id"
+                                        data-user-name="@user.NomeCompleto"
+                                        data-user-username="@user.UserName"
+                                        data-user-email="@user.Email"
+                                        data-user-role="@user.Perfil"
+                                        data-user-email-confirmed="@user.EmailConfirmado.ToString().ToLowerInvariant()"
+                                        data-user-active="@user.Ativo.ToString().ToLowerInvariant()">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@user.Id" class="d-inline">
+                                    <button type="submit" class="btn btn-sm @(user.Ativo ? "btn-outline-danger" : "btn-outline-success")">
+                                        <i class="bi @(user.Ativo ? "bi-lock" : "bi-unlock")"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="auth-mobile-list">
+            @foreach (var user in Model.Usuarios)
+            {
+                <article class="auth-mobile-card">
+                    <div>
+                        <strong>@user.NomeCompleto</strong>
+                        <div class="text-muted small">@user.Email</div>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="auth-badge">@user.Perfil</span>
+                        <span class="auth-badge @(user.Ativo ? "success" : "danger")">@(user.Ativo ? "Ativo" : "Bloqueado")</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-dark flex-fill" data-bs-toggle="modal" data-bs-target="#usuarioModal"
+                                data-user-id="@user.Id"
+                                data-user-name="@user.NomeCompleto"
+                                data-user-username="@user.UserName"
+                                data-user-email="@user.Email"
+                                data-user-role="@user.Perfil"
+                                data-user-email-confirmed="@user.EmailConfirmado.ToString().ToLowerInvariant()"
+                                data-user-active="@user.Ativo.ToString().ToLowerInvariant()">
+                            Editar
+                        </button>
+                        <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@user.Id" class="flex-fill">
+                            <button type="submit" class="btn btn-sm @(user.Ativo ? "btn-outline-danger" : "btn-outline-success") w-100">
+                                @(user.Ativo ? "Bloquear" : "Ativar")
+                            </button>
+                        </form>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="usuarioModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Save">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" data-user-modal-title>Novo usuario</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <input asp-for="Input.Id" type="hidden" data-user-field="id">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" asp-for="Input.NomeCompleto">Nome completo</label>
+                            <input class="form-control" asp-for="Input.NomeCompleto" data-user-field="name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" asp-for="Input.UserName">Usuario</label>
+                            <input class="form-control" asp-for="Input.UserName" data-user-field="username">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" asp-for="Input.Email">E-mail</label>
+                            <input class="form-control" asp-for="Input.Email" data-user-field="email">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" asp-for="Input.Perfil">Perfil</label>
+                            <select class="form-select" asp-for="Input.Perfil" data-user-field="role">
+                                @foreach (var perfil in Model.Perfis)
+                                {
+                                    <option value="@perfil">@perfil</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" asp-for="Input.Senha">Senha</label>
+                            <input class="form-control" asp-for="Input.Senha" type="password" data-user-field="password" autocomplete="new-password">
+                            <div class="form-text">Obrigatoria para novo usuario. Em edicao, preencha apenas para trocar.</div>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end gap-4">
+                            <label class="form-check">
+                                <input class="form-check-input" asp-for="Input.EmailConfirmado" data-user-field="emailConfirmed">
+                                <span class="form-check-label">E-mail confirmado</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" asp-for="Input.Ativo" data-user-field="active">
+                                <span class="form-check-label">Ativo</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger fw-semibold">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const modal = document.getElementById('usuarioModal');
+            if (!modal) return;
+
+            modal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const isNew = button?.hasAttribute('data-user-new');
+
+                modal.querySelector('[data-user-modal-title]').textContent = isNew ? 'Novo usuario' : 'Editar usuario';
+                modal.querySelector('[data-user-field="id"]').value = isNew ? '' : button.getAttribute('data-user-id');
+                modal.querySelector('[data-user-field="name"]').value = isNew ? '' : button.getAttribute('data-user-name');
+                modal.querySelector('[data-user-field="username"]').value = isNew ? '' : button.getAttribute('data-user-username');
+                modal.querySelector('[data-user-field="email"]').value = isNew ? '' : button.getAttribute('data-user-email');
+                modal.querySelector('[data-user-field="role"]').value = isNew ? '@(Model.Perfis.FirstOrDefault() ?? string.Empty)' : button.getAttribute('data-user-role');
+                modal.querySelector('[data-user-field="password"]').value = '';
+                modal.querySelector('[data-user-field="emailConfirmed"]').checked = isNew ? true : button.getAttribute('data-user-email-confirmed') === 'true';
+                modal.querySelector('[data-user-field="active"]').checked = isNew ? true : button.getAttribute('data-user-active') === 'true';
+            });
+        })();
+    </script>
+}

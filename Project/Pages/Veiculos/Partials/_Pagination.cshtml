@@ -1,0 +1,23 @@
+﻿@model (int CurrentPage, int TotalPages)
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Paginacao" class="catalog-pagination-wrap">
+        <ul class="pagination">
+            @for (var i = 1; i <= Model.TotalPages; i++)
+            {
+                var query = new Dictionary<string, string?>();
+                foreach (var item in ViewContext.HttpContext.Request.Query)
+                {
+                    if (!string.Equals(item.Key, "Page", StringComparison.OrdinalIgnoreCase))
+                    {
+                        query[item.Key] = item.Value;
+                    }
+                }
+                query["Page"] = i.ToString();
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="@($"/veiculos{QueryString.Create(query)}")">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

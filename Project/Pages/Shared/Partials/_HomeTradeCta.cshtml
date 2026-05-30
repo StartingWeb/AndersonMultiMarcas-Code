@@ -1,0 +1,45 @@
+﻿@model Project.Pages.IndexModel
+<section id="troque-seu-carro" class="section-sm">
+    <div class="container">
+        <div class="cta-sell">
+            <div class="cta-sell-glow" aria-hidden="true"></div>
+            <div class="row align-items-center g-4">
+                <div class="col-lg-7">
+                    <p class="text-uppercase fw-bold mb-2 home-cta-kicker">Troque seu carro</p>
+                    <h2 class="mb-3">Depois de encontrar o modelo certo, fale com um vendedor e avance na troca.</h2>
+                    <p class="mb-4 cta-sell-copy">Atendimento consultivo, avaliacao justa e proposta rapida para voce fechar negocio com seguranca.</p>
+                    <div class="cta-sell-actions">
+                        <button type="button" data-whatsapp-modal="true" data-vehicle-title="Troca de veiculo" class="btn btn-light btn-lg fw-semibold">
+                            <span class="cta-sell-btn-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                                    <path fill="currentColor" d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.11.37 2.3.56 3.53.56a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.85 21 3 13.15 3 3.99a1 1 0 0 1 1-1H7.5a1 1 0 0 1 1 1c0 1.23.19 2.42.56 3.53a1 1 0 0 1-.24 1.01l-2.2 2.26z" />
+                                </svg>
+                            </span>
+                            <span>Falar com vendedor</span>
+                        </button>
+                        <div class="cta-sell-badges" aria-label="Diferenciais de atendimento">
+                            <span>Resposta rapida</span>
+                            <span>Avaliacao na hora</span>
+                            <span>Negociacao transparente</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="home-seller-slider" data-home-seller-slider>
+                        <div class="home-seller-slider-track" data-home-seller-track>
+                            <div class="home-seller-slide">
+                                <img src="@ImageUrlBuilder.Build("/img/Vendedores1.JPG", 720, 64)" srcset="@ImageUrlBuilder.BuildSrcSet("/img/Vendedores1.JPG", 360, 540, 720, 960)" sizes="(max-width: 991px) 100vw, 40vw" alt="Equipe de vendedores 1" loading="lazy" decoding="async" />
+                            </div>
+                            <div class="home-seller-slide">
+                                <img src="@ImageUrlBuilder.Build("/img/Vendedores2.JPG", 720, 64)" srcset="@ImageUrlBuilder.BuildSrcSet("/img/Vendedores2.JPG", 360, 540, 720, 960)" sizes="(max-width: 991px) 100vw, 40vw" alt="Equipe de vendedores 2" loading="lazy" decoding="async" />
+                            </div>
+                            <div class="home-seller-slide">
+                                <img src="@ImageUrlBuilder.Build("/img/Vendedores3.JPG", 720, 64)" srcset="@ImageUrlBuilder.BuildSrcSet("/img/Vendedores3.JPG", 360, 540, 720, 960)" sizes="(max-width: 991px) 100vw, 40vw" alt="Equipe de vendedores 3" loading="lazy" decoding="async" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,99 @@
+@page "/Admin/Cadastros/Vendedores"
+@model Project.Pages.Admin.Cadastros.Vendedores.IndexModel
+
+<style>
+    :root { --brand-primary:#9f0a10; --brand-dark:#222; --brand-border:#ececec; --brand-muted:#6c757d; --brand-soft:rgba(159,10,16,.08); }
+    .page-header,.results-topbar{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem}.page-title{font-size:1.25rem;font-weight:700;color:var(--brand-dark);margin:0}.page-subtitle,.results-counter,.muted-text{font-size:.88rem;color:var(--brand-muted);margin:.15rem 0 0}.search-card,.list-card{background:#fff;border:1px solid var(--brand-border);border-radius:1rem;box-shadow:0 8px 24px rgba(0,0,0,.05)}.search-card{margin-bottom:1rem}.search-card .card-body{padding:.9rem}.filter-label{font-size:.78rem;font-weight:700;color:var(--brand-dark);margin-bottom:.35rem}.form-control{border-radius:.75rem;border:1px solid #e6e6e6;min-height:42px;box-shadow:none!important}.form-control:focus{border-color:rgba(159,10,16,.35);box-shadow:0 0 0 .2rem rgba(159,10,16,.08)!important}.input-icon-wrap{position:relative}.input-icon-wrap i{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:var(--brand-muted)}.input-icon-wrap .form-control{padding-left:2.4rem}.btn-brand,.btn-soft-dark{border-radius:.75rem;font-weight:600;min-height:42px;display:inline-flex;justify-content:center;align-items:center}.btn-brand{background:var(--brand-primary);border-color:var(--brand-primary);color:#fff}.btn-brand:hover{background:#86080d;border-color:#86080d;color:#fff}.btn-soft-dark{background:#fff;border:1px solid var(--brand-border);color:var(--brand-dark)}.btn-soft-dark:hover{background:#f8f8f8;color:var(--brand-dark)}.btn-danger-soft{width:42px;height:42px;border-radius:.75rem;border:1px solid #f4c7cb;background:#fff4f4;color:#b42318;display:inline-flex;align-items:center;justify-content:center}.btn-danger-soft:hover{background:#b42318;border-color:#b42318;color:#fff}.admin-table{margin:0;vertical-align:middle}.admin-table thead th{background:#f8f8f8;color:var(--brand-dark);font-size:.76rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--brand-border);padding:.8rem;white-space:nowrap}.admin-table tbody td{padding:.72rem .8rem;border-color:#f1f1f1;color:var(--brand-dark)}.title-cell{display:flex;flex-direction:column;gap:.2rem;min-width:220px}.title-main{font-size:.95rem;font-weight:700;line-height:1.3}.table-action{width:38px;height:38px;min-width:38px;padding:0}.table-row-actions{display:flex;justify-content:flex-end;gap:.45rem;flex-wrap:nowrap;align-items:center}.empty-state{border:1px dashed #dadada;border-radius:1rem;padding:2.2rem 1.2rem;text-align:center;background:#fff}.empty-state-icon{width:64px;height:64px;border-radius:18px;margin:0 auto .9rem;display:flex;align-items:center;justify-content:center;background:var(--brand-soft);color:var(--brand-primary);font-size:1.6rem}@@media(max-width:768px){.page-header,.results-topbar{flex-direction:column;align-items:stretch}.table-row-actions{flex-direction:column;align-items:stretch}}
+</style>
+
+<div class="container-fluid">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title"><i class="bi bi-person-badge-fill me-2"></i>Vendedores</h1>
+            <p class="page-subtitle">Lista e gerenciamento dos vendedores cadastrados</p>
+        </div>
+        <a href="/Admin/Cadastros/Vendedores/Upsert" class="btn btn-brand px-3"><i class="bi bi-plus-circle me-2"></i>Novo vendedor</a>
+    </div>
+
+    <div class="search-card card">
+        <div class="card-body">
+            <form method="get">
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-8">
+                        <label class="filter-label" asp-for="Filtro">Pesquisar vendedor</label>
+                        <div class="input-icon-wrap">
+                            <i class="bi bi-search"></i>
+                            <input asp-for="Filtro" type="text" class="form-control" placeholder="Nome, cargo ou loja">
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-brand flex-fill"><i class="bi bi-search me-2"></i>Buscar</button>
+                        <a class="btn btn-soft-dark flex-fill" href="/Admin/Cadastros/Vendedores"><i class="bi bi-arrow-counterclockwise me-2"></i>Limpar</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="results-topbar">
+        <h5 class="page-title">Vendedores cadastrados</h5>
+        <div class="results-counter"><strong>@Model.Vendedores.Count</strong> registro(s)</div>
+    </div>
+
+    @if (Model.Vendedores.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-state-icon"><i class="bi bi-person-badge-fill"></i></div>
+            <h2 class="page-title mb-2">Nenhum vendedor encontrado</h2>
+            <p class="page-subtitle mb-0">Ajuste os filtros e tente novamente.</p>
+        </div>
+    }
+    else
+    {
+        <div class="list-card">
+            <div class="table-responsive">
+                <table class="table admin-table">
+                    <thead>
+                        <tr>
+                            <th>Vendedor</th>
+                            <th>Loja</th>
+                            <th>Contato</th>
+                            <th class="text-end">Acao</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var vendedor in Model.Vendedores)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="title-cell">
+                                        <span class="title-main">@vendedor.Nome</span>
+                                        <span class="muted-text">@vendedor.Cargo</span>
+                                    </div>
+                                </td>
+                                <td><span class="muted-text">@vendedor.Loja</span></td>
+                                <td>
+                                    <div class="title-cell">
+                                        <span class="muted-text">@vendedor.Email</span>
+                                        <span class="muted-text">@vendedor.Telefone | WhatsApp @vendedor.Whatsapp</span>
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="table-row-actions">
+                                        <a class="btn btn-brand table-action" href="/Admin/Cadastros/Vendedores/Upsert/@vendedor.Id" aria-label="Editar vendedor"><i class="bi bi-pencil-square"></i></a>
+                                        <form method="post" class="m-0" asp-page-handler="Delete" onsubmit="return confirm('Deseja excluir este vendedor?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@vendedor.Id">
+                                            <input type="hidden" asp-for="Filtro">
+                                            <button type="submit" class="btn-danger-soft table-action" aria-label="Excluir vendedor"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

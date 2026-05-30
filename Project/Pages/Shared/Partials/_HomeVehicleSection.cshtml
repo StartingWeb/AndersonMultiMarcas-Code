@@ -1,0 +1,39 @@
+﻿@model (string Kicker, string Titulo, string Descricao, string Link, IReadOnlyCollection<Project.Pages.ViewModels.HomeVehicleCardViewModel> Itens)
+@{
+    var link = (Model.Link ?? string.Empty).ToLowerInvariant();
+    var isPremium = link.Contains("zero-km") || link.Contains("zerokm=true");
+    var isHybrid = link.Contains("hibrido") || link.Contains("eletrico");
+    var isMoto = link.Contains("motos-eletricas") || link.Contains("motoeletrica=true");
+
+    var sectionId = isPremium ? "home-featured-stock" : null;
+    var sectionClass = isPremium ? "section home-featured-section home-vehicle-section" : "section pt-0 home-vehicle-section";
+    var shellClass = "home-featured-shell" + (isPremium ? " home-premium-shell" : string.Empty) + (isHybrid ? " home-electrified-shell" : string.Empty);
+    var ctaLabel = isPremium ? "Ver premium" : isHybrid ? "Ver eletrificados" : isMoto ? "Ver motos" : "Ver selecao";
+}
+<section id="@sectionId" class="@sectionClass">
+    <div class="container home-premium-container">
+        <div class="@shellClass">
+            <div class="home-featured-intro">
+                <div>
+                    <span class="home-featured-kicker">@Model.Kicker</span>
+                    <h2 class="section-title mb-0">@Model.Titulo</h2>
+                    <p class="section-subtitle mb-0">@Model.Descricao</p>
+                </div>
+                <a class="btn btn-outline-brand" href="@Model.Link">@ctaLabel</a>
+            </div>
+
+            <div class="row g-4">
+                @foreach (var entry in Model.Itens.Select((item, index) => new { item, index }))
+                {
+                    <div class="col-xl-3 col-md-6">
+                        @await Html.PartialAsync("Partials/_VehicleCard", entry.item, new ViewDataDictionary(ViewData)
+                        {
+                            ["VehicleCardLoading"] = isPremium && entry.index < 4 ? "eager" : "lazy",
+                            ["VehicleCardFetchPriority"] = isPremium && entry.index < 4 ? "high" : "auto"
+                        })
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>

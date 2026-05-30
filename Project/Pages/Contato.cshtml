@@ -1,0 +1,163 @@
+@page "/Contato"
+@model Project.Pages.ContatoModel
+@{
+    ViewData["Title"] = "Contato";
+}
+
+<section class="section contact-page-section">
+    <div class="container">
+        <div class="contact-section-header">
+            <h2 class="section-title">Nossas lojas</h2>
+            <p class="section-subtitle mb-0">
+                Endereço, telefone, e-mail, mapa e vendedores de cada unidade em um só lugar.
+            </p>
+        </div>
+
+        <div class="contact-store-accordion">
+            @for (var i = 0; i < Model.Lojas.Count; i++)
+            {
+                var loja = Model.Lojas[i];
+                <details class="contact-store-card">
+                    <summary class="contact-store-summary">
+                        <div class="contact-store-summary-main">
+                            <span class="contact-store-tag">Unidade</span>
+                            <h3>@loja.Nome</h3>
+                            <p>@loja.EnderecoCompleto</p>
+                        </div>
+
+                        <div class="contact-store-summary-side">
+                            <span class="contact-store-summary-icon" aria-hidden="true"></span>
+                        </div>
+                    </summary>
+
+                    <div class="contact-store-content">
+                        <div class="contact-store-grid">
+                            <div class="contact-info-card">
+                                <span class="contact-info-label">Endereço</span>
+                                <strong>@loja.EnderecoCompleto</strong>
+                            </div>
+
+                            <div class="contact-info-card">
+                                <span class="contact-info-label">Telefone</span>
+                                <a href="tel:+55@loja.Telefone">@loja.TelefoneExibicao</a>
+                            </div>
+
+                            <div class="contact-info-card">
+                                <span class="contact-info-label">E-mail</span>
+                                <a href="mailto:@loja.Email">@loja.Email</a>
+                            </div>
+
+                            <div class="contact-info-card contact-info-card-action">
+                                <span class="contact-info-label">Rota rápida</span>
+                                <a href="https://www.google.com/maps/search/?api=1&query=@loja.MapsQuery"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="btn btn-outline-brand contact-map-button">
+                                    Abrir rota
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="contact-store-expand-grid">
+                            <div class="contact-store-map">
+                                <iframe src="https://www.google.com/maps?q=@loja.MapsQuery&output=embed"
+                                        title="Mapa da loja @loja.Nome"
+                                        loading="lazy"
+                                        referrerpolicy="no-referrer-when-downgrade"></iframe>
+                            </div>
+
+                            <div class="contact-store-sellers-panel">
+                                <div class="contact-store-sellers-header">
+                                    <h4>Vendedores da loja</h4>
+                                </div>
+
+                                @if (loja.Vendedores.Count == 0)
+                                {
+                                    <div class="contact-empty-inline">
+                                        Nenhum vendedor vinculado a esta loja no momento.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="contact-seller-list">
+                                        @foreach (var vendedor in loja.Vendedores)
+                                        {
+                                            <article class="contact-seller-list-item">
+                                                <div class="contact-seller-list-media">
+                                                    @if (!string.IsNullOrWhiteSpace(vendedor.FotoUrl))
+                                                    {
+                                                        <img src="@ImageUrlBuilder.Build(vendedor.FotoUrl, 96, 65)"
+                                                             srcset="@ImageUrlBuilder.BuildSrcSet(vendedor.FotoUrl, 64, 96, 128)"
+                                                             sizes="68px"
+                                                             alt="@vendedor.Nome"
+                                                             class="contact-seller-list-photo"
+                                                             loading="lazy"
+                                                             decoding="async"
+                                                             width="68"
+                                                             height="68"
+                                                             onerror="this.hidden=true;this.nextElementSibling.hidden=false;" />
+                                                        <span class="contact-seller-list-photo contact-seller-photo-fallback" hidden aria-hidden="true">
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                                <circle cx="9" cy="8" r="3"></circle>
+                                                                <path d="M2.5 20a6.5 6.5 0 0 1 13 0"></path>
+                                                                <circle cx="17" cy="9" r="2.5"></circle>
+                                                                <path d="M16.5 15.5a5.5 5.5 0 0 1 5 4.5"></path>
+                                                            </svg>
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="contact-seller-list-photo contact-seller-photo-fallback" aria-hidden="true">
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                                <circle cx="9" cy="8" r="3"></circle>
+                                                                <path d="M2.5 20a6.5 6.5 0 0 1 13 0"></path>
+                                                                <circle cx="17" cy="9" r="2.5"></circle>
+                                                                <path d="M16.5 15.5a5.5 5.5 0 0 1 5 4.5"></path>
+                                                            </svg>
+                                                        </span>
+                                                    }
+                                                </div>
+
+                                                <div class="contact-seller-list-body">
+                                                    <span class="contact-seller-store">@loja.Nome</span>
+                                                    <h3>@vendedor.Nome</h3>
+                                                    <div class="contact-seller-role">@(string.IsNullOrWhiteSpace(vendedor.Cargo) ? "Consultor de vendas" : vendedor.Cargo)</div>
+                                                </div>
+
+                                                <div class="contact-seller-list-actions">
+                                                    <a href="tel:+@vendedor.Telefone" class="contact-action-link">
+                                                        <span class="contact-action-icon" aria-hidden="true">
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.89.34 1.76.66 2.6a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.48-1.23a2 2 0 0 1 2.11-.45c.84.32 1.71.54 2.6.66A2 2 0 0 1 22 16.92z"></path>
+                                                            </svg>
+                                                        </span>
+                                                        <span>@vendedor.TelefoneExibicao</span>
+                                                    </a>
+                                                    <a href="https://wa.me/@vendedor.Telefone?text=@Uri.EscapeDataString($"Olá {vendedor.Nome}, vim pela página de contato da Anderson Multimarcas.")"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer"
+                                                       class="contact-action-link is-whatsapp">
+                                                        <span class="contact-action-icon" aria-hidden="true">
+                                                            <svg viewBox="0 0 32 32" fill="currentColor">
+                                                                <path d="M16 3C8.83 3 3 8.74 3 15.8c0 2.5.73 4.94 2.1 7.05L3 29l6.36-2.05A13.1 13.1 0 0 0 16 28.6c7.17 0 13-5.74 13-12.8S23.17 3 16 3Zm0 23.44c-2.05 0-4.06-.55-5.8-1.58l-.41-.24-3.77 1.21 1.23-3.67-.27-.43a11.26 11.26 0 0 1-1.74-5.93C5.24 9.68 9.98 5 16 5s10.76 4.68 10.76 10.8S22.02 26.44 16 26.44Zm5.9-7.85c-.33-.16-1.93-.95-2.23-1.06-.3-.11-.52-.16-.74.16-.22.31-.85 1.06-1.04 1.28-.19.22-.38.25-.71.08-.33-.16-1.38-.5-2.63-1.59-.97-.84-1.62-1.88-1.82-2.19-.19-.31-.02-.48.15-.64.15-.15.33-.39.49-.58.16-.19.22-.33.33-.55.11-.22.05-.41-.03-.58-.08-.16-.74-1.78-1.01-2.44-.27-.65-.54-.56-.74-.57h-.63c-.22 0-.58.08-.88.41-.3.33-1.15 1.12-1.15 2.73s1.18 3.16 1.34 3.38c.16.22 2.31 3.68 5.6 5.15.78.34 1.39.54 1.86.69.78.25 1.49.22 2.05.13.63-.1 1.93-.79 2.2-1.55.27-.76.27-1.4.19-1.55-.08-.14-.3-.22-.63-.38Z"></path>
+                                                            </svg>
+                                                        </span>
+                                                        <span>WhatsApp</span>
+                                                    </a>
+                                                </div>
+                                            </article>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </details>
+            }
+        </div>
+    </div>
+</section>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Contato.css" asp-append-version="true" />
+}

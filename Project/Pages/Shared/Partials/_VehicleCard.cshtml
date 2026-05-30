@@ -1,0 +1,36 @@
+﻿@model Project.Pages.ViewModels.HomeVehicleCardViewModel
+@{
+    var imageSrc = VehicleImageHelper.Normalize(Model.MidiaUrl);
+    var optimizedFallback = ImageUrlBuilder.Build(VehicleImageHelper.DefaultVehicleImage, 640, 66);
+    var imageLoading = (ViewData["VehicleCardLoading"] as string) ?? "lazy";
+    var fetchPriority = (ViewData["VehicleCardFetchPriority"] as string) ?? (imageLoading == "eager" ? "high" : "auto");
+}
+<article class="vehicle-card catalog-card">
+    <a class="card-link-cover" aria-label="Abrir detalhes de @Model.Titulo" href="/veiculo/@Model.Id/" data-track-vehicle-click="true" data-vehicle-id="@Model.Id"></a>
+    <div class="vehicle-media is-loading">
+        <img src="@imageSrc"
+             alt="@Model.Titulo"
+             class="vehicle-thumb"
+             data-progressive-image="true"
+             width="640"
+             height="480"
+             loading="@imageLoading"
+             decoding="async"
+             fetchpriority="@fetchPriority"
+             onerror="this.onerror=null;this.src='@optimizedFallback';" />
+        <span class="vehicle-tag">@(Model.Destaque ? "Destaque" : Model.Disponivel ? "Disponivel" : "Indisponivel")</span>
+    </div>
+    <div class="vehicle-body">
+        <div class="vehicle-name">@Model.Titulo</div>
+        <div class="catalog-highlight-text">@Model.Cor - @Model.AnoExibicao</div>
+        <div class="catalog-specs"><span>@Model.Cambio</span><span>@Model.Combustivel</span></div>
+        @if (Model.ZeroKm)
+        {
+            <div class="vehicle-meta">0 km</div>
+        }
+        <div class="vehicle-price">@(Model.Preco <= 0 ? "Consulte" : $"R$ {Model.Preco:N2}")</div>
+        <div class="catalog-actions d-grid gap-2">
+            <button type="button" class="btn btn-outline-brand w-100" data-whatsapp-modal="true" data-vehicle-title="@Model.Titulo" data-track-vehicle-click="true" data-vehicle-id="@Model.Id">Tenho interesse</button>
+        </div>
+    </div>
+</article>

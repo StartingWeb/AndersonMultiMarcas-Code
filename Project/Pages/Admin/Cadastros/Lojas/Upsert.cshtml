@@ -1,0 +1,111 @@
+@page "/Admin/Cadastros/Lojas/Upsert/{id:int?}"
+@model Project.Pages.Admin.Cadastros.Lojas.UpsertModel
+
+@{
+    ViewData["Title"] = Model.PageTitle;
+}
+
+<style>
+    :root { --brand-primary:#9f0a10; --brand-primary-dark:#86080d; --brand-dark:#222; --brand-border:#ececec; --brand-muted:#6c757d; --brand-card-shadow:0 8px 24px rgba(0,0,0,.05); }
+    .page-header{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1.25rem}.page-title{font-size:1.4rem;font-weight:700;color:var(--brand-dark);margin:0}.page-subtitle{font-size:.92rem;color:var(--brand-muted);margin:.2rem 0 0}.form-card{background:#fff;border:1px solid var(--brand-border);border-radius:1rem;box-shadow:var(--brand-card-shadow);overflow:hidden}.form-card-body{padding:1.25rem}.section-title{font-size:1rem;font-weight:700;color:var(--brand-dark);margin-bottom:.2rem}.section-subtitle{font-size:.85rem;color:var(--brand-muted);margin-bottom:1rem}.form-label{font-size:.84rem;font-weight:700;color:var(--brand-dark);margin-bottom:.35rem}.form-control,.form-select{border-radius:.85rem;border:1px solid #e6e6e6;min-height:46px;box-shadow:none!important}.form-control:focus,.form-select:focus{border-color:rgba(159,10,16,.35);box-shadow:0 0 0 .2rem rgba(159,10,16,.08)!important}.text-danger{font-size:.8rem}.btn-brand,.btn-soft-dark{border-radius:.85rem;font-weight:600;min-height:46px;padding:0 1.25rem;display:inline-flex;justify-content:center;align-items:center}.btn-brand{background:var(--brand-primary);border-color:var(--brand-primary);color:#fff}.btn-brand:hover{background:var(--brand-primary-dark);border-color:var(--brand-primary-dark);color:#fff}.btn-soft-dark{background:#fff;border:1px solid var(--brand-border);color:var(--brand-dark);text-decoration:none}.btn-soft-dark:hover{background:#f8f8f8;color:var(--brand-dark)}@@media(max-width:768px){.page-header{flex-direction:column;align-items:stretch}}
+</style>
+
+<div class="container-fluid">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title"><i class="bi bi-shop me-2"></i>@Model.PageTitle</h1>
+            <p class="page-subtitle">@Model.PageSubtitle</p>
+        </div>
+        <a href="/Admin/Cadastros/Lojas" class="btn btn-soft-dark"><i class="bi bi-arrow-left me-2"></i>Voltar</a>
+    </div>
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Loja.Id">
+        <div class="form-card">
+            <div class="form-card-body">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="section-title">Dados da loja</div>
+                <div class="section-subtitle">Dados cadastrais e contato principal.</div>
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" asp-for="Loja.Nome"></label>
+                        <input asp-for="Loja.Nome" class="form-control">
+                        <span asp-validation-for="Loja.Nome" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" asp-for="Loja.RazaoSocial"></label>
+                        <input asp-for="Loja.RazaoSocial" class="form-control">
+                        <span asp-validation-for="Loja.RazaoSocial" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label" asp-for="Loja.Cnpj"></label>
+                        <input asp-for="Loja.Cnpj" class="form-control">
+                        <span asp-validation-for="Loja.Cnpj" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label" asp-for="Loja.Email"></label>
+                        <input asp-for="Loja.Email" class="form-control">
+                        <span asp-validation-for="Loja.Email" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label" asp-for="Loja.Telefone"></label>
+                        <input asp-for="Loja.Telefone" class="form-control">
+                        <span asp-validation-for="Loja.Telefone" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+                <div class="section-title">Endereco</div>
+                <div class="section-subtitle">Localizacao usada nos dados institucionais da loja.</div>
+                <div class="row g-3">
+                    <div class="col-12 col-md-7">
+                        <label class="form-label" asp-for="Loja.Logradouro"></label>
+                        <input asp-for="Loja.Logradouro" class="form-control">
+                        <span asp-validation-for="Loja.Logradouro" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <label class="form-label" asp-for="Loja.Numero"></label>
+                        <input asp-for="Loja.Numero" class="form-control">
+                        <span asp-validation-for="Loja.Numero" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label" asp-for="Loja.Complemento"></label>
+                        <input asp-for="Loja.Complemento" class="form-control">
+                        <span asp-validation-for="Loja.Complemento" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label" asp-for="Loja.Bairro"></label>
+                        <input asp-for="Loja.Bairro" class="form-control">
+                        <span asp-validation-for="Loja.Bairro" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label" asp-for="Loja.Cidade"></label>
+                        <input asp-for="Loja.Cidade" class="form-control">
+                        <span asp-validation-for="Loja.Cidade" class="text-danger"></span>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label" asp-for="Loja.Uf"></label>
+                        <select asp-for="Loja.Uf" asp-items="Model.Ufs" class="form-select"></select>
+                        <span asp-validation-for="Loja.Uf" class="text-danger"></span>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label" asp-for="Loja.Cep"></label>
+                        <input asp-for="Loja.Cep" class="form-control">
+                        <span asp-validation-for="Loja.Cep" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 flex-wrap mt-4">
+                    <a href="/Admin/Cadastros/Lojas" class="btn btn-soft-dark">Cancelar</a>
+                    <button type="submit" class="btn btn-brand"><i class="bi bi-check2-circle me-2"></i>@Model.SubmitLabel</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

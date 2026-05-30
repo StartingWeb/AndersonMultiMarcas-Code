@@ -48,6 +48,8 @@ public sealed class LojaConfiguration : IEntityTypeConfiguration<Loja>
         });
 
         builder.HasIndex(x => x.Nome);
-        builder.HasIndex("Cnpj").IsUnique();
+        builder.HasIndex("Cnpj")
+            .IsUnique()
+            .HasFilter("[Cnpj] IS NOT NULL");
     }
 }

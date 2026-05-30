@@ -1,9 +1,14 @@
 using Data;
 using Domain.Application;
+using FluentValidation;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Project.Features.Veiculos.Services;
+using Project.Shared;
+using System.Net;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,6 +50,14 @@ builder.Services
 // RAZOR PAGES
 // ==============================
 builder.Services.AddRazorPages();
+builder.Services.AddControllers();
+builder.Services.AddMemoryCache();
+builder.Services.AddResponseCaching();
+builder.Services.AddMediatR(typeof(Program).Assembly);
+builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+builder.Services.AddScoped<IVeiculoSlugService, VeiculoSlugService>();
+builder.Services.AddScoped<IVeiculoMediaService, VeiculoMediaService>();
 builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true;
@@ -88,24 +101,46 @@ else
 }
 
 // ==============================
-// MIGRATIONS AUTOMATICAS (APENAS DEV)
+// MIGRATIONS AUTOMATICAS
 // ==============================
-if (app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
-    await IdentitySeed.EnsureDeveloperUserAsync(scope.ServiceProvider);
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await db.Database.MigrateAsync();
+
+    if (app.Environment.IsDevelopment())
+    {
+        await IdentitySeed.EnsureDeveloperUserAsync(scope.ServiceProvider);
+    }
 }
 
 app.UseHttpsRedirection();
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.XContentTypeOptions = "nosniff";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(self)";
+    context.Response.Headers.XFrameOptions = "SAMEORIGIN";
+    await next();
+});
 app.UseResponseCompression();
+app.UseResponseCaching();
 app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = context =>
     {
-        const int durationInSeconds = 60 * 60 * 24 * 30;
-        context.Context.Response.Headers.CacheControl = $"public,max-age={durationInSeconds}";
+        const int immutableDurationInSeconds = 60 * 60 * 24 * 365;
+        const int defaultDurationInSeconds = 60 * 60 * 24 * 30;
+        var path = context.File.PhysicalPath ?? string.Empty;
+        var isVersionedAsset = path.Contains($"{Path.DirectorySeparatorChar}css{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase)
+            || path.Contains($"{Path.DirectorySeparatorChar}js{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase)
+            || path.Contains($"{Path.DirectorySeparatorChar}favicon{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase)
+            || path.Contains($"{Path.DirectorySeparatorChar}lib{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase);
+
+        context.Context.Response.Headers.CacheControl = isVersionedAsset
+            ? $"public,max-age={immutableDurationInSeconds},immutable"
+            : $"public,max-age={defaultDurationInSeconds}";
+        context.Context.Response.Headers.Vary = "Accept-Encoding";
     }
 });
 
@@ -114,43 +149,83 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGet("/Admin/Login", (HttpContext context) =>
+{
+    var queryString = context.Request.QueryString.HasValue ? context.Request.QueryString.Value : string.Empty;
+    return Results.Redirect($"/Login{queryString}");
+});
+
+app.MapGet("/veiculo/{id:int}/{slug}", (int id) =>
+{
+    return Results.Redirect($"/veiculo/{id}/", permanent: true);
+});
+
 app.MapGet("/robots.txt", (HttpContext context) =>
 {
     var baseUrl = siteBaseUrl ?? $"{context.Request.Scheme}://{context.Request.Host}";
     var sb = new StringBuilder();
     sb.AppendLine("User-agent: *");
     sb.AppendLine("Allow: /");
+    sb.AppendLine("Disallow: /Admin");
+    sb.AppendLine("Disallow: /Login");
     sb.AppendLine("Disallow: /Error");
+    sb.AppendLine("Disallow: /*?handler=");
     sb.AppendLine($"Sitemap: {baseUrl}/sitemap.xml");
     return Results.Text(sb.ToString(), "text/plain");
 });
 
-app.MapGet("/sitemap.xml", (HttpContext context) =>
+app.MapGet("/sitemap.xml", async (HttpContext context) =>
 {
     var baseUrl = siteBaseUrl ?? $"{context.Request.Scheme}://{context.Request.Host}";
     var now = DateTime.UtcNow.ToString("yyyy-MM-dd");
-    var urls = new[]
+    var urls = new List<(string Url, string Priority, string ChangeFreq)>
     {
-        $"{baseUrl}/",
-        $"{baseUrl}/Privacy"
+        ($"{baseUrl}/", "1.0", "daily"),
+        ($"{baseUrl}/veiculos", "0.95", "daily"),
+        ($"{baseUrl}/veiculos/zero-km", "0.90", "daily"),
+        ($"{baseUrl}/veiculos/seminovos", "0.90", "daily"),
+        ($"{baseUrl}/veiculos/hibridos", "0.85", "weekly"),
+        ($"{baseUrl}/veiculos/eletricos", "0.85", "weekly"),
+        ($"{baseUrl}/veiculos/motos-eletricas", "0.80", "weekly"),
+        ($"{baseUrl}/veiculos/taquaritinga", "0.85", "weekly"),
+        ($"{baseUrl}/veiculos/seminovos-taquaritinga", "0.88", "weekly"),
+        ($"{baseUrl}/veiculos/carros-automaticos-taquaritinga", "0.86", "weekly"),
+        ($"{baseUrl}/veiculos/suvs-seminovos-taquaritinga", "0.84", "weekly"),
+        ($"{baseUrl}/veiculos/carros-ate-50-mil", "0.84", "weekly"),
+        ($"{baseUrl}/veiculos/financiamento", "0.82", "weekly"),
+        ($"{baseUrl}/veiculos/troca-de-veiculos", "0.82", "weekly"),
+        ($"{baseUrl}/Empresa", "0.70", "monthly"),
+        ($"{baseUrl}/Contato", "0.75", "monthly"),
+        ($"{baseUrl}/Privacy", "0.30", "yearly")
     };
+
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var veiculos = await db.Veiculos
+        .AsNoTracking()
+        .Where(x => x.Ativo && !x.Vendido)
+        .OrderByDescending(x => x.Id)
+        .Select(x => new { x.Id })
+        .ToListAsync();
+    urls.AddRange(veiculos.Select(x => ($"{baseUrl}/veiculo/{x.Id}/", "0.80", "daily")));
 
     var sb = new StringBuilder();
     sb.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
     sb.AppendLine("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">");
-    foreach (var url in urls)
+    foreach (var (url, priority, changeFreq) in urls.DistinctBy(x => x.Url))
     {
         sb.AppendLine("  <url>");
-        sb.AppendLine($"    <loc>{url}</loc>");
+        sb.AppendLine($"    <loc>{WebUtility.HtmlEncode(url)}</loc>");
         sb.AppendLine($"    <lastmod>{now}</lastmod>");
-        sb.AppendLine("    <changefreq>weekly</changefreq>");
-        sb.AppendLine("    <priority>0.8</priority>");
+        sb.AppendLine($"    <changefreq>{changeFreq}</changefreq>");
+        sb.AppendLine($"    <priority>{priority}</priority>");
         sb.AppendLine("  </url>");
     }
     sb.AppendLine("</urlset>");
     return Results.Text(sb.ToString(), "application/xml");
 });
 
+app.MapControllers();
 app.MapRazorPages();
 
 await app.RunAsync();
