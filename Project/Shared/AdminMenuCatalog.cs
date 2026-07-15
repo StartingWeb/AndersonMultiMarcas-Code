@@ -9,7 +9,7 @@ public static class AdminMenuCatalog
         new("Principal",
         [
             new("dashboard", "Dashboard", "/Admin", "bi bi-speedometer2", true),
-            new("veiculos", "Veiculos", "/Veiculo", "bi bi-car-front-fill"),
+            new("veiculos", "Veiculos", "/Admin/Veiculo", "bi bi-car-front-fill"),
             new("vendas-veiculos", "Venda de Veiculos", "/Admin/VeiculosVenda", "bi bi-clipboard-check-fill")
         ]),
         new("Cadastros",
