@@ -386,6 +386,43 @@ body.search-focus-open::before {
   gap: .65rem;
 }
 
+.seller-contact-store-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.seller-contact-store-group {
+  display: grid;
+  gap: .65rem;
+}
+
+.seller-contact-store-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .65rem .75rem;
+  border: 1px solid rgba(148, 163, 184, .24);
+  border-radius: .5rem;
+  background: #f8fafc;
+  color: #1f2937;
+}
+
+.seller-contact-store-heading span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: .9rem;
+  font-weight: 850;
+}
+
+.seller-contact-store-heading small {
+  flex: 0 0 auto;
+  color: #64748b;
+  font-size: .75rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .seller-contact-empty {
   display: grid;
   gap: .25rem;
@@ -693,6 +730,12 @@ body.search-focus-open::before {
     grid-template-columns: 1fr;
     gap: .5rem;
     padding: .75rem;
+  }
+
+  .seller-contact-store-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: .25rem;
   }
 
   .seller-contact-card {
