@@ -132,7 +132,7 @@
             <div class="detail-info-stack">
                 <div class="detail-summary-card detail-commerce-card">
                     <div class="detail-price detail-sidebar-price">
-                        @(Model.Vehicle.PrecoVenda > 0 ? $"R$ {Model.Vehicle.PrecoVenda:N2}" : "Consulte")
+                        @(Model.Vehicle.PrecoVenda > 0 ? Model.Vehicle.PrecoVenda.ToString("C") : "Consulte")
                     </div>
                     <p>Fale com nossa equipe em poucos toques e tire suas dúvidas sobre este veículo com rapidez.</p>
                     <div class="commerce-actions">

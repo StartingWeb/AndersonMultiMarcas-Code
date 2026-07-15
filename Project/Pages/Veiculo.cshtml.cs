@@ -259,7 +259,7 @@ public sealed class VeiculoModel(
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
         var canonicalUrl = $"{baseUrl}/veiculo/{veiculo.Id}/";
         var seoTitle = $"{nomeCompleto} - Anderson Multimarcas";
-        var seoDescription = $"{veiculo.MarcaNome} {veiculo.Modelo} {veiculo.AnoModelo} {(veiculo.PrecoVenda.Valor > 0 ? $"por R$ {veiculo.PrecoVenda.Valor:N2}" : "disponivel para consulta")}.";
+        var seoDescription = $"{veiculo.MarcaNome} {veiculo.Modelo} {veiculo.AnoModelo} {(veiculo.PrecoVenda.Valor > 0 ? $"por {veiculo.PrecoVenda.Valor:C}" : "disponivel para consulta")}.";
 
         Vehicle = new VehicleDetailViewModel
         {

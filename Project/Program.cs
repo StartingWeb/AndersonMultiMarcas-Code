@@ -8,8 +8,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Project.Features.Veiculos.Services;
 using Project.Shared;
+using System.Globalization;
 using System.Net;
 using System.Text;
+
+var brCulture = new CultureInfo("pt-BR");
+CultureInfo.DefaultThreadCurrentCulture = brCulture;
+CultureInfo.DefaultThreadCurrentUICulture = brCulture;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +56,12 @@ builder.Services
 // ==============================
 builder.Services.AddRazorPages();
 builder.Services.AddControllers();
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture(brCulture);
+    options.SupportedCultures = [brCulture];
+    options.SupportedUICultures = [brCulture];
+});
 builder.Services.AddMemoryCache();
 builder.Services.AddResponseCaching();
 builder.Services.AddMediatR(typeof(Program).Assembly);
@@ -115,6 +126,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseHttpsRedirection();
+app.UseRequestLocalization();
 app.Use(async (context, next) =>
 {
     context.Response.Headers.XContentTypeOptions = "nosniff";

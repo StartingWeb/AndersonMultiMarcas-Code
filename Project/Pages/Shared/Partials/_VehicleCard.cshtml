@@ -1,4 +1,4 @@
-﻿@model Project.Pages.ViewModels.HomeVehicleCardViewModel
+@model Project.Pages.ViewModels.HomeVehicleCardViewModel
 @{
     var imageSrc = VehicleImageHelper.Normalize(Model.MidiaUrl);
     var optimizedFallback = ImageUrlBuilder.Build(VehicleImageHelper.DefaultVehicleImage, 640, 66);
@@ -28,7 +28,7 @@
         {
             <div class="vehicle-meta">0 km</div>
         }
-        <div class="vehicle-price">@(Model.Preco <= 0 ? "Consulte" : $"R$ {Model.Preco:N2}")</div>
+        <div class="vehicle-price">@(Model.Preco <= 0 ? "Consulte" : Model.Preco.ToString("C"))</div>
         <div class="catalog-actions d-grid gap-2">
             <button type="button" class="btn btn-outline-brand w-100" data-whatsapp-modal="true" data-vehicle-title="@Model.Titulo" data-track-vehicle-click="true" data-vehicle-id="@Model.Id">Tenho interesse</button>
         </div>
