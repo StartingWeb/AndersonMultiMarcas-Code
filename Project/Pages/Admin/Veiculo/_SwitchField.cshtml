@@ -4,13 +4,13 @@
     <div class="switch-field">
         <label class="switch-wrapper" for="@Model.Id">
             <input class="switch-input" id="@Model.Id" type="checkbox" name="@Model.Name" value="true" @(Model.Checked ? "checked" : "")>
-            <input type="hidden" name="@Model.Name" value="false">
             <span class="switch-slider"></span>
             <span class="switch-text">
                 <span class="switch-title">@Model.Title</span>
                 <span class="switch-subtitle">@Model.Subtitle</span>
             </span>
+            <input type="hidden" name="@Model.Name" value="false">
         </label>
-        <span id="@Model.StatusId" class="switch-status @(Model.Checked ? "active" : "")">@(Model.Checked ? "Sim" : "Nao")</span>
+        <span id="@Model.StatusId" class="switch-status @(Model.Checked ? "active" : "")">@(Model.Checked ? "Sim" : "Não")</span>
     </div>
 </div>

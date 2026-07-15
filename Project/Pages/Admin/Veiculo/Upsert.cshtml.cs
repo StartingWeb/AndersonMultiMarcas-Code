@@ -91,7 +91,7 @@ public sealed class UpsertModel(
             Combustivel = veiculo.Combustivel,
             Cambio = veiculo.Cambio,
             Placa = veiculo.Placa,
-            PrecoVenda = veiculo.PrecoVenda.Valor > 0 ? veiculo.PrecoVenda.Valor.ToString("N2", BrCulture) : string.Empty,
+            PrecoVenda = veiculo.PrecoVenda.Valor.ToString("N2", BrCulture),
             Descricao = veiculo.Descricao,
             Ativo = veiculo.Ativo,
             Vendido = veiculo.Vendido,
