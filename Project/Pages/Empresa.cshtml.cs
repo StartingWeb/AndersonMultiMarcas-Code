@@ -46,11 +46,11 @@ public class EmpresaModel(ApplicationDbContext db) : PageModel
             .ToListAsync();
 
         ViewData["SeoTitle"] = "Quem somos | Anderson Multimarcas em Taquaritinga/SP";
-        ViewData["MetaDescription"] = "Conheca a historia da Anderson Multimarcas, nossas lojas em Taquaritinga/SP e o atendimento pensado para gerar confianca em cada negocio.";
+        ViewData["MetaDescription"] = "Conheça a história da Anderson Multimarcas, nossas lojas em Taquaritinga/SP e o atendimento pensado para gerar confiança em cada negócio.";
         ViewData["CanonicalUrl"] = $"{baseUrl}/Empresa";
-        ViewData["BreadcrumbSchema"] = SeoJsonLd.Breadcrumb(baseUrl, ("Inicio", "/"), ("Quem somos", "/Empresa"));
+        ViewData["BreadcrumbSchema"] = SeoJsonLd.Breadcrumb(baseUrl, ("Início", "/"), ("Quem somos", "/Empresa"));
         ViewData["FaqSchema"] = SeoJsonLd.Faq(
-            ("Onde fica a Anderson Multimarcas?", "A Anderson Multimarcas atende em Taquaritinga/SP e regiao, com unidades presenciais e vendedores especializados."),
-            ("A loja trabalha com quais tipos de veiculo?", "O estoque inclui carros seminovos, opcoes 0 km, modelos eletrificados e motos eletricas conforme disponibilidade."));
+            ("Onde fica a Anderson Multimarcas?", "A Anderson Multimarcas atende em Taquaritinga/SP e região, com unidades presenciais e vendedores especializados."),
+            ("A loja trabalha com quais tipos de veículo?", "O estoque inclui carros seminovos, opções 0 km, modelos eletrificados e motos elétricas conforme disponibilidade."));
     }
 }

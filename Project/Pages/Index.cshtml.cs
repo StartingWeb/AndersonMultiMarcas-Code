@@ -128,13 +128,13 @@ public class IndexModel(ApplicationDbContext db, ILogger<IndexModel> logger, IWe
         }).Take(12).ToListAsync();
 
         ViewData["SeoTitle"] = "Carros seminovos e 0 km em Taquaritinga/SP | Anderson Multimarcas";
-        ViewData["MetaDescription"] = "Compre carros seminovos, 0 km, hibridos, eletricos e motos eletricas em Taquaritinga/SP com atendimento consultivo, troca e financiamento.";
+        ViewData["MetaDescription"] = "Compre carros seminovos, 0 km, híbridos, elétricos e motos elétricas em Taquaritinga/SP com atendimento consultivo, troca e financiamento.";
         ViewData["CanonicalUrl"] = $"{baseUrl}/";
-        ViewData["BreadcrumbSchema"] = SeoJsonLd.Breadcrumb(baseUrl, ("Inicio", "/"));
+        ViewData["BreadcrumbSchema"] = SeoJsonLd.Breadcrumb(baseUrl, ("Início", "/"));
         ViewData["FaqSchema"] = SeoJsonLd.Faq(
-            ("Quais veiculos encontro no estoque?", "Voce encontra veiculos seminovos, 0 km, hibridos, eletricos e motos eletricas."),
-            ("Posso trocar meu carro?", "Sim. Fale com um vendedor para avaliacao e proposta de troca."),
-            ("A loja atende em Taquaritinga/SP?", "Sim. A Anderson Multimarcas atende Taquaritinga e regiao com lojas e vendedores locais."));
+            ("Quais veículos encontro no estoque?", "Você encontra veículos seminovos, 0 km, híbridos, elétricos e motos elétricas."),
+            ("Posso trocar meu carro?", "Sim. Fale com um vendedor para avaliação e proposta de troca."),
+            ("A loja atende em Taquaritinga/SP?", "Sim. A Anderson Multimarcas atende Taquaritinga e região com lojas e vendedores locais."));
     }
 
     public async Task<IActionResult> OnGetSearchSuggestionsAsync([FromQuery] string? term, CancellationToken ct)

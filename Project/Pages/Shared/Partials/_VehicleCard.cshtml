@@ -18,7 +18,7 @@
              decoding="async"
              fetchpriority="@fetchPriority"
              onerror="this.onerror=null;this.src='@optimizedFallback';" />
-        <span class="vehicle-tag">@(Model.Destaque ? "Destaque" : Model.Disponivel ? "Disponivel" : "Indisponivel")</span>
+        <span class="vehicle-tag">@(Model.Destaque ? "Destaque" : Model.Disponivel ? "Disponível" : "Indisponível")</span>
     </div>
     <div class="vehicle-body">
         <div class="vehicle-name">@Model.Titulo</div>
