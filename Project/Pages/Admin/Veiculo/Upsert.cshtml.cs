@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Project.Features.Veiculos.Commands;
 using Project.Features.Veiculos.DTOs;
 using Project.Features.Veiculos.Services;
+using Project.Shared;
 
 namespace Project.Pages.Admin.Veiculo;
 
@@ -19,7 +20,8 @@ namespace Project.Pages.Admin.Veiculo;
 public sealed class UpsertModel(
     ApplicationDbContext db,
     ISender sender,
-    IVeiculoMediaService mediaService) : PageModel
+    IVeiculoMediaService mediaService,
+    IWebHostEnvironment environment) : PageModel
 {
     private static readonly CultureInfo BrCulture = new("pt-BR");
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
@@ -104,8 +106,11 @@ public sealed class UpsertModel(
 
         Caracteristica = CaracteristicaInputModel.FromEntity(veiculo.Caracteristicas);
         MidiasExistentes = veiculo.Midias
+            .Where(x => x.Ativo && x.Tipo == TipoMidia.Imagem)
             .OrderBy(x => x.Ordem)
-            .Select(x => new ExistingMediaItem(x.Id, x.Url, x.NomeArquivo, x.TamanhoBytes, x.Capa))
+            .Select(ToExistingMediaItem)
+            .Where(x => x is not null)
+            .Cast<ExistingMediaItem>()
             .ToList();
 
         ApplyEditTitle(BuildNomeCompleto(veiculo.Titulo, veiculo.Modelo, veiculo.Versao));
@@ -232,12 +237,31 @@ public sealed class UpsertModel(
     }
 
     private async Task<IReadOnlyList<ExistingMediaItem>> LoadExistingMediaAsync(int veiculoId, CancellationToken ct)
-        => await db.VeiculoMidias
+    {
+        var midias = await db.VeiculoMidias
             .AsNoTracking()
-            .Where(x => x.VeiculoId == veiculoId)
+            .Where(x => x.VeiculoId == veiculoId && x.Ativo && x.Tipo == TipoMidia.Imagem)
             .OrderBy(x => x.Ordem)
-            .Select(x => new ExistingMediaItem(x.Id, x.Url, x.NomeArquivo, x.TamanhoBytes, x.Capa))
             .ToListAsync(ct);
+
+        return midias
+            .Select(ToExistingMediaItem)
+            .Where(x => x is not null)
+            .Cast<ExistingMediaItem>()
+            .ToList();
+    }
+
+    private ExistingMediaItem? ToExistingMediaItem(VeiculoMidia midia)
+    {
+        var imagens = VehicleImageHelper.NormalizeGallery([midia.Url], includeDefault: false, environment.WebRootPath);
+        var url = imagens.FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return null;
+        }
+
+        return new ExistingMediaItem(midia.Id, url, midia.NomeArquivo, midia.TamanhoBytes, midia.Capa);
+    }
 
     private void ApplyEditTitle(string nome)
     {

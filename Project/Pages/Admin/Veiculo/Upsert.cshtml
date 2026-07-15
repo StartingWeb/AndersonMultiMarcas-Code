@@ -963,7 +963,7 @@
                             <div class="media-item" draggable="true" data-kind="existing" data-id="@midia.Id" data-key="@key">
                                 <div class="media-badge">@(midia.Capa ? "CAPA" : "MIDIA")</div>
                                 <div class="media-thumb">
-                                    <img src="@ImageUrlBuilder.Build(midia.Url, 420)" alt="@midia.NomeArquivo" loading="lazy" decoding="async">
+                                    <img src="@midia.Url" alt="@midia.NomeArquivo" loading="lazy" decoding="async">
                                 </div>
                                 <div class="media-body">
                                     <p class="media-name">@midia.NomeArquivo</p>
