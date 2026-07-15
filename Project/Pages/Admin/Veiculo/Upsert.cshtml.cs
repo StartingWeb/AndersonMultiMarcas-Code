@@ -438,11 +438,21 @@ public sealed class UpsertModel(
 
     private static string BuildNomeCompleto(string? titulo, string? modelo, string? versao)
     {
-        var parts = new[] { titulo, modelo, versao }
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x!.Trim());
+        var tituloLimpo = (titulo ?? string.Empty).Trim();
+        var modeloLimpo = (modelo ?? string.Empty).Trim();
+        var versaoLimpa = (versao ?? string.Empty).Trim();
 
-        return string.Join(" ", parts);
+        var incluirModelo = !string.IsNullOrWhiteSpace(modeloLimpo)
+            && !string.Equals(tituloLimpo, modeloLimpo, StringComparison.OrdinalIgnoreCase);
+
+        if (string.IsNullOrWhiteSpace(versaoLimpa))
+        {
+            return incluirModelo ? $"{tituloLimpo} {modeloLimpo}" : tituloLimpo;
+        }
+
+        return incluirModelo
+            ? $"{tituloLimpo} {modeloLimpo} {versaoLimpa}"
+            : $"{tituloLimpo} {versaoLimpa}";
     }
 
     public sealed record OptionItem(int Id, string Nome);

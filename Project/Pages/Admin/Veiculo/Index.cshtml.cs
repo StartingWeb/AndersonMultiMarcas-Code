@@ -85,7 +85,7 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
         Veiculos = veiculos
             .Select(x => new VehicleAdminListItem(
                 x.Id,
-                BuildTitle(x.Titulo, x.Modelo),
+                BuildNomeSemDuplicacao(x.Titulo, x.Modelo, x.Versao),
                 BuildSubtitle(x.MarcaNome, x.Modelo, x.Versao),
                 string.IsNullOrWhiteSpace(x.Placa) ? "-" : x.Placa,
                 x.DataCadastro.ToString("MM/yyyy", BrCulture),
@@ -117,8 +117,24 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
         return RedirectToPage(new { Filtro = filtro, Codigo = codigo, Ordem = ordem, SomenteSeminovo = somenteSeminovo });
     }
 
-    private static string BuildTitle(string titulo, string modelo)
-        => string.IsNullOrWhiteSpace(modelo) ? titulo.Trim() : $"{titulo} {modelo}".Trim();
+    private static string BuildNomeSemDuplicacao(string? titulo, string? modelo, string? versao)
+    {
+        var tituloLimpo = (titulo ?? string.Empty).Trim();
+        var modeloLimpo = (modelo ?? string.Empty).Trim();
+        var versaoLimpa = (versao ?? string.Empty).Trim();
+
+        var incluirModelo = !string.IsNullOrWhiteSpace(modeloLimpo)
+            && !string.Equals(tituloLimpo, modeloLimpo, StringComparison.OrdinalIgnoreCase);
+
+        if (string.IsNullOrWhiteSpace(versaoLimpa))
+        {
+            return incluirModelo ? $"{tituloLimpo} {modeloLimpo}" : tituloLimpo;
+        }
+
+        return incluirModelo
+            ? $"{tituloLimpo} {modeloLimpo} {versaoLimpa}"
+            : $"{tituloLimpo} {versaoLimpa}";
+    }
 
     private static string BuildSubtitle(string marca, string modelo, string? versao)
         => string.IsNullOrWhiteSpace(versao)
@@ -134,3 +150,4 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
         string Condicao,
         string Preco);
 }
+

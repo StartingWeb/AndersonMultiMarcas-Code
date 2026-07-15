@@ -155,6 +155,19 @@ app.MapGet("/Admin/Login", (HttpContext context) =>
     return Results.Redirect($"/Login{queryString}");
 });
 
+app.MapGet("/Veiculo", (HttpContext context) =>
+{
+    var queryString = context.Request.QueryString.HasValue ? context.Request.QueryString.Value : string.Empty;
+    return Results.Redirect($"/Admin/Veiculo{queryString}", permanent: true);
+});
+
+app.MapGet("/Veiculo/Upsert/{id:int?}", (int? id, HttpContext context) =>
+{
+    var target = id.HasValue ? $"/Admin/Veiculo/Upsert/{id.Value}" : "/Admin/Veiculo/Upsert";
+    var queryString = context.Request.QueryString.HasValue ? context.Request.QueryString.Value : string.Empty;
+    return Results.Redirect($"{target}{queryString}", permanent: true);
+});
+
 app.MapGet("/veiculo/{id:int}/{slug}", (int id) =>
 {
     return Results.Redirect($"/veiculo/{id}/", permanent: true);

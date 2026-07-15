@@ -6,7 +6,7 @@ using Project.Shared;
 
 namespace Project.Pages;
 
-public class ContatoModel(ApplicationDbContext db) : PageModel
+public class ContatoModel(ApplicationDbContext db, IWebHostEnvironment environment) : PageModel
 {
     public IReadOnlyList<ContactStoreViewModel> Lojas { get; private set; } = [];
     public IReadOnlyList<HomeSellerViewModel> Vendedores { get; private set; } = [];
@@ -41,7 +41,7 @@ public class ContatoModel(ApplicationDbContext db) : PageModel
                     x.Endereco.Uf.ToString(),
                     x.Endereco.Cep)),
                 Vendedores = x.Vendedores
-                    .Where(v => v.Nome != null && v.Nome != "")
+                    .Where(v => v.Ativo && v.Nome != null && v.Nome != "")
                     .OrderBy(v => v.Nome)
                     .Select(v => new ContactSellerViewModel
                     {
@@ -51,7 +51,7 @@ public class ContatoModel(ApplicationDbContext db) : PageModel
                             ? FormatPhone(v.Whatsapp.Value.Valor)
                             : (v.Telefone != null ? FormatPhone(v.Telefone.Value.Valor) : string.Empty),
                         Cargo = v.Cargo,
-                        FotoUrl = SellerImageHelper.Normalize(v.FotoUrl)
+                        FotoUrl = v.FotoUrl
                     })
                     .ToList()
             })
@@ -68,6 +68,14 @@ public class ContatoModel(ApplicationDbContext db) : PageModel
                 MapsQuery = loja.MapsQuery,
                 Vendedores = loja.Vendedores
                     .Where(v => !string.IsNullOrWhiteSpace(v.Telefone))
+                    .Select(v => new ContactSellerViewModel
+                    {
+                        Nome = v.Nome,
+                        Telefone = v.Telefone,
+                        TelefoneExibicao = v.TelefoneExibicao,
+                        Cargo = v.Cargo,
+                        FotoUrl = NormalizeSellerPhoto(v.FotoUrl)
+                    })
                     .ToList()
             })
             .ToList();
@@ -80,12 +88,18 @@ public class ContatoModel(ApplicationDbContext db) : PageModel
             {
                 Nome = x.Nome,
                 Telefone = x.Whatsapp.HasValue ? x.Whatsapp.Value.Valor : (x.Telefone.HasValue ? x.Telefone.Value.Valor : string.Empty),
-                FotoUrl = SellerImageHelper.Normalize(x.FotoUrl)
+                FotoUrl = x.FotoUrl
             })
             .ToListAsync();
 
         Vendedores = vendedores
             .Where(x => !string.IsNullOrWhiteSpace(x.Telefone))
+            .Select(x => new HomeSellerViewModel
+            {
+                Nome = x.Nome,
+                Telefone = x.Telefone,
+                FotoUrl = NormalizeSellerPhoto(x.FotoUrl)
+            })
             .ToList();
 
         ViewData["SeoTitle"] = "Contato e lojas em Taquaritinga/SP | Anderson Multimarcas";
@@ -131,5 +145,27 @@ public class ContatoModel(ApplicationDbContext db) : PageModel
             13 when digits.StartsWith("55") => $"({digits[2..4]}) {digits[4..9]}-{digits[9..]}",
             _ => digits
         };
+    }
+
+    private string? NormalizeSellerPhoto(string? photoUrl)
+    {
+        var normalized = SellerImageHelper.Normalize(photoUrl);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return null;
+        }
+
+        if (!normalized.StartsWith("/uploads/vendedores/", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var relativePath = normalized.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+        var fullPath = Path.GetFullPath(Path.Combine(environment.WebRootPath, relativePath));
+        var webRoot = Path.GetFullPath(environment.WebRootPath);
+
+        return fullPath.StartsWith(webRoot, StringComparison.OrdinalIgnoreCase) && System.IO.File.Exists(fullPath)
+            ? normalized
+            : null;
     }
 }

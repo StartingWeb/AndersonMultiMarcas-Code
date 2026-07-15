@@ -22,25 +22,6 @@ public class IndexModel(ApplicationDbContext db, ILogger<IndexModel> logger, IWe
         _ = logger;
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
-        await db.Database.ExecuteSqlRawAsync(
-            """
-            UPDATE [Veiculo]
-            SET
-                [Cambio] = COALESCE([Cambio], 'NaoInformado'),
-                [Combustivel] = COALESCE([Combustivel], 'NaoInformado'),
-                [PrecoVenda] = COALESCE([PrecoVenda], 0),
-                [Destaque] = COALESCE([Destaque], 0),
-                [Vendido] = COALESCE([Vendido], 0),
-                [AnoModelo] = COALESCE([AnoModelo], YEAR(GETDATE()))
-            WHERE
-                [Cambio] IS NULL
-                OR [Combustivel] IS NULL
-                OR [PrecoVenda] IS NULL
-                OR [Destaque] IS NULL
-                OR [Vendido] IS NULL
-                OR [AnoModelo] IS NULL;
-            """);
-
         var query = db.Veiculos
             .AsNoTracking()
             .Where(x => x.Ativo)

@@ -127,10 +127,23 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
             .ToListAsync(ct);
     }
 
-    private static string BuildTitle(string titulo, string modelo, string? versao)
+    private static string BuildTitle(string? titulo, string? modelo, string? versao)
     {
-        var nome = string.IsNullOrWhiteSpace(modelo) ? titulo : $"{titulo} {modelo}";
-        return string.IsNullOrWhiteSpace(versao) ? nome.Trim() : $"{nome} {versao}".Trim();
+        var tituloLimpo = (titulo ?? string.Empty).Trim();
+        var modeloLimpo = (modelo ?? string.Empty).Trim();
+        var versaoLimpa = (versao ?? string.Empty).Trim();
+
+        var incluirModelo = !string.IsNullOrWhiteSpace(modeloLimpo)
+            && !string.Equals(tituloLimpo, modeloLimpo, StringComparison.OrdinalIgnoreCase);
+
+        if (string.IsNullOrWhiteSpace(versaoLimpa))
+        {
+            return incluirModelo ? $"{tituloLimpo} {modeloLimpo}" : tituloLimpo;
+        }
+
+        return incluirModelo
+            ? $"{tituloLimpo} {modeloLimpo} {versaoLimpa}"
+            : $"{tituloLimpo} {versaoLimpa}";
     }
 
     public sealed class SellVehicleInput

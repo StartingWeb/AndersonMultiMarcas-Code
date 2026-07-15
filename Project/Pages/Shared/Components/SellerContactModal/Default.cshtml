@@ -72,9 +72,7 @@
                                 <div class="seller-contact-avatar">
                                     @if (HasSellerPhoto(vendedor.FotoUrl))
                                     {
-                                        <img src="@ImageUrlBuilder.Build(vendedor.FotoUrl, 96, 65)"
-                                             srcset="@ImageUrlBuilder.BuildSrcSet(vendedor.FotoUrl, 64, 96, 128)"
-                                             sizes="64px"
+                                        <img src="@vendedor.FotoUrl"
                                              alt="@vendedor.Nome"
                                              class="seller-contact-photo"
                                              loading="lazy"

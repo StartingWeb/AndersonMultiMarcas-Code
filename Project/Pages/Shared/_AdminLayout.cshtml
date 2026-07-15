@@ -107,6 +107,7 @@
             overflow-y: auto;
             display: flex;
             flex-direction: column;
+            will-change: transform;
         }
 
         .admin-brand {
@@ -527,26 +528,51 @@
             document.querySelectorAll('[data-admin-toggle]').forEach(function (toggle) {
                 toggle.addEventListener('click', function () {
                     if (mobileQuery.matches) {
-                        body.classList.add('admin-menu-open');
+                        body.classList.toggle('admin-menu-open');
+                        syncToggleState();
                         return;
                     }
 
                     const collapsed = !body.classList.contains('admin-sidebar-collapsed');
                     body.classList.toggle('admin-sidebar-collapsed', collapsed);
                     localStorage.setItem(storageKey, collapsed ? 'true' : 'false');
+                    syncToggleState();
                 });
             });
 
-            document.querySelector('[data-admin-close]')?.addEventListener('click', function () {
+            function closeMobileMenu() {
                 body.classList.remove('admin-menu-open');
+                syncToggleState();
+            }
+
+            function syncToggleState() {
+                const expanded = mobileQuery.matches
+                    ? body.classList.contains('admin-menu-open')
+                    : !body.classList.contains('admin-sidebar-collapsed');
+
+                document.querySelectorAll('[data-admin-toggle]').forEach(function (toggle) {
+                    toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                });
+            }
+
+            document.querySelector('[data-admin-close]')?.addEventListener('click', closeMobileMenu);
+
+            document.querySelectorAll('.admin-nav-link').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    if (mobileQuery.matches) {
+                        closeMobileMenu();
+                    }
+                });
             });
 
             mobileQuery.addEventListener('change', function () {
                 body.classList.remove('admin-menu-open');
                 applyDesktopState();
+                syncToggleState();
             });
 
             applyDesktopState();
+            syncToggleState();
         })();
     </script>
     @await RenderSectionAsync("Scripts", required: false)

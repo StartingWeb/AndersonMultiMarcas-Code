@@ -13,6 +13,8 @@ public class IndexModel(
     UserManager<AspNetCoreUser> userManager,
     RoleManager<IdentityRole<Guid>> roleManager) : PageModel
 {
+    private const string DefaultResetPassword = "123456@Senha";
+
     [BindProperty(SupportsGet = true)]
     public string? Busca { get; set; }
 
@@ -147,6 +149,25 @@ public class IndexModel(
         var result = await userManager.UpdateAsync(user);
         TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Succeeded
             ? (blocked ? "Usuario ativado com sucesso." : "Usuario bloqueado com sucesso.")
+            : string.Join(" ", result.Errors.Select(x => x.Description));
+
+        return RedirectToPage(new { Busca, Perfil, Status });
+    }
+
+    public async Task<IActionResult> OnPostResetPasswordAsync(Guid id)
+    {
+        var user = await userManager.FindByIdAsync(id.ToString());
+        if (user is null)
+        {
+            TempData["ErrorMessage"] = "Usuario nao encontrado.";
+            return RedirectToPage(new { Busca, Perfil, Status });
+        }
+
+        var token = await userManager.GeneratePasswordResetTokenAsync(user);
+        var result = await userManager.ResetPasswordAsync(user, token, DefaultResetPassword);
+
+        TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Succeeded
+            ? $"Senha do usuario {user.UserName ?? user.Email} redefinida com sucesso."
             : string.Join(" ", result.Errors.Select(x => x.Description));
 
         return RedirectToPage(new { Busca, Perfil, Status });

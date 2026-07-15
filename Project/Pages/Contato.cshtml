@@ -86,9 +86,7 @@
                                                 <div class="contact-seller-list-media">
                                                     @if (!string.IsNullOrWhiteSpace(vendedor.FotoUrl))
                                                     {
-                                                        <img src="@ImageUrlBuilder.Build(vendedor.FotoUrl, 96, 65)"
-                                                             srcset="@ImageUrlBuilder.BuildSrcSet(vendedor.FotoUrl, 64, 96, 128)"
-                                                             sizes="68px"
+                                                        <img src="@vendedor.FotoUrl"
                                                              alt="@vendedor.Nome"
                                                              class="contact-seller-list-photo"
                                                              loading="lazy"

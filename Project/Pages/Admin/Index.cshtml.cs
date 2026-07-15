@@ -91,9 +91,7 @@ public class IndexModel(ApplicationDbContext db) : PageModel
             .Select(x => new
             {
                 x.Id,
-                Nome = string.IsNullOrWhiteSpace(x.Versao)
-                    ? $"{x.Titulo} {x.Modelo}"
-                    : $"{x.Titulo} {x.Modelo} {x.Versao}",
+                Nome = BuildNomeSemDuplicacao(x.Titulo, x.Modelo, x.Versao),
                 Imagem = x.Midias
                     .Where(m => m.Ativo && m.Tipo == TipoMidia.Imagem)
                     .OrderByDescending(m => m.Capa)
@@ -168,7 +166,7 @@ public class IndexModel(ApplicationDbContext db) : PageModel
 
                 return new VehicleStockItem(
                     x.Id,
-                    string.IsNullOrWhiteSpace(x.Versao) ? $"{x.Titulo} {x.Modelo}" : $"{x.Titulo} {x.Modelo} {x.Versao}",
+                    BuildNomeSemDuplicacao(x.Titulo, x.Modelo, x.Versao),
                     x.Loja,
                     x.AnoFabricacao.HasValue ? $"{x.AnoFabricacao}/{x.AnoModelo}" : x.AnoModelo.ToString(CultureInfo.InvariantCulture),
                     x.Quilometragem,
@@ -205,4 +203,23 @@ public class IndexModel(ApplicationDbContext db) : PageModel
         string Nome,
         string? FotoUrl,
         int TotalVendas);
+
+    private static string BuildNomeSemDuplicacao(string? titulo, string? modelo, string? versao)
+    {
+        var tituloLimpo = (titulo ?? string.Empty).Trim();
+        var modeloLimpo = (modelo ?? string.Empty).Trim();
+        var versaoLimpa = (versao ?? string.Empty).Trim();
+
+        var incluirModelo = !string.IsNullOrWhiteSpace(modeloLimpo)
+            && !string.Equals(tituloLimpo, modeloLimpo, StringComparison.OrdinalIgnoreCase);
+
+        if (string.IsNullOrWhiteSpace(versaoLimpa))
+        {
+            return incluirModelo ? $"{tituloLimpo} {modeloLimpo}" : tituloLimpo;
+        }
+
+        return incluirModelo
+            ? $"{tituloLimpo} {modeloLimpo} {versaoLimpa}"
+            : $"{tituloLimpo} {versaoLimpa}";
+    }
 }

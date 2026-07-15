@@ -28,7 +28,6 @@ public static class SellerImageHelper
         }
 
         return normalized.StartsWith("/uploads/vendedores/", StringComparison.OrdinalIgnoreCase)
-            || normalized.StartsWith("/img/Vendedores", StringComparison.OrdinalIgnoreCase)
             || normalized.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
             || normalized.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
     }
