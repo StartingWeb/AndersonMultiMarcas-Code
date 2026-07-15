@@ -67,6 +67,9 @@ public sealed class VeiculoCommandHandlersTests
     {
         await using var db = CreateDbContext();
         var (lojaId, marcaId) = await SeedLojaMarcaAsync(db);
+        var novaMarca = new Marca("Nova Marca Teste", null);
+        db.Marcas.Add(novaMarca);
+        await db.SaveChangesAsync();
 
         var criarHandler = new CriarVeiculoCommandHandler(db);
         var criar = await criarHandler.Handle(new CriarVeiculoCommand(new VeiculoCreateDto
@@ -98,7 +101,7 @@ public sealed class VeiculoCommandHandlersTests
         {
             Id = veiculoId,
             LojaId = lojaId,
-            MarcaId = marcaId,
+            MarcaId = novaMarca.Id,
             Titulo = "Volkswagen",
             Modelo = "T-Cross",
             Versao = "Highline",
@@ -126,6 +129,7 @@ public sealed class VeiculoCommandHandlersTests
 
         Assert.Equal("Highline", salvo.Versao);
         Assert.Equal(2024, salvo.AnoModelo);
+        Assert.Equal(novaMarca.Id, salvo.MarcaId);
         Assert.Equal(134900m, salvo.PrecoVenda.Valor);
         Assert.True(salvo.AceitaTroca);
 

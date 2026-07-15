@@ -16,6 +16,7 @@ public sealed class AtualizarVeiculoCommandHandler(ApplicationDbContext db) : IR
         if (veiculo is null) return Result.Failure("Veiculo nao encontrado.");
 
         veiculo.Update(dto.Titulo, dto.Modelo, dto.Versao, dto.AnoFabricacao, dto.AnoModelo, dto.Combustivel, dto.Cambio, dto.Quilometragem, dto.Placa, dto.Cor, dto.Descricao);
+        veiculo.AtualizarVinculos(dto.LojaId, dto.MarcaId);
         veiculo.AtualizarPreco(new Dinheiro(dto.PrecoVenda));
         veiculo.AtualizarComercial(dto.AceitaTroca, dto.Financiavel, dto.Destaque, dto.Seminovo, dto.UrlVideo, null, dto.VendedorId);
 

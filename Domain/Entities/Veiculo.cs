@@ -72,6 +72,16 @@ public sealed class Veiculo : AuditableEntity
         MarcarAtualizacao();
     }
 
+    public void AtualizarVinculos(int lojaId, int marcaId)
+    {
+        if (lojaId <= 0) throw new ArgumentException("Loja obrigatoria.", nameof(lojaId));
+        if (marcaId <= 0) throw new ArgumentException("Marca obrigatoria.", nameof(marcaId));
+
+        LojaId = lojaId;
+        MarcaId = marcaId;
+        MarcarAtualizacao();
+    }
+
     public void AtualizarComercial(
         bool aceitaTroca,
         bool financiavel,
