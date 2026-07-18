@@ -141,7 +141,22 @@ public sealed class UpsertModel(
             return Page();
         }
 
-        var marcaNome = Marcas.FirstOrDefault(x => x.Id == Veiculo.MarcaId)?.Nome ?? Veiculo.Titulo;
+        var lojaId = Veiculo.LojaId.GetValueOrDefault() > 0 ? Veiculo.LojaId.GetValueOrDefault() : Lojas.FirstOrDefault()?.Id ?? 0;
+        var marcaId = Veiculo.MarcaId.GetValueOrDefault() > 0 ? Veiculo.MarcaId.GetValueOrDefault() : Marcas.FirstOrDefault()?.Id ?? 0;
+        if (lojaId <= 0) ModelState.AddModelError("Veiculo.LojaId", "Cadastre uma loja antes de salvar o veiculo.");
+        if (marcaId <= 0) ModelState.AddModelError("Veiculo.MarcaId", "Cadastre uma marca antes de salvar o veiculo.");
+
+        if (!ModelState.IsValid)
+        {
+            if (Veiculo.Id > 0)
+            {
+                MidiasExistentes = await LoadExistingMediaAsync(Veiculo.Id, ct);
+            }
+
+            return Page();
+        }
+
+        var marcaNome = Marcas.FirstOrDefault(x => x.Id == marcaId)?.Nome ?? Veiculo.Modelo;
         var titulo = string.IsNullOrWhiteSpace(Veiculo.Titulo) ? marcaNome : Veiculo.Titulo.Trim();
         var opcionais = Caracteristica.ToOpcionais();
         var preco = ParseDecimal(Veiculo.PrecoVenda);
@@ -151,16 +166,16 @@ public sealed class UpsertModel(
         {
             var result = await sender.Send(new CriarVeiculoCommand(new VeiculoCreateDto
             {
-                LojaId = Veiculo.LojaId,
-                MarcaId = Veiculo.MarcaId,
+                LojaId = lojaId,
+                MarcaId = marcaId,
                 Titulo = titulo,
                 Modelo = Veiculo.Modelo.Trim(),
                 Versao = NullIfWhiteSpace(Veiculo.Versao),
                 AnoFabricacao = Veiculo.AnoFabricacao,
-                AnoModelo = Veiculo.AnoModelo,
+                AnoModelo = Veiculo.AnoModelo ?? 0,
                 Cor = NullIfWhiteSpace(Veiculo.Cor),
-                Combustivel = Veiculo.Combustivel,
-                Cambio = Veiculo.Cambio,
+                Combustivel = Veiculo.Combustivel ?? Combustivel.NaoInformado,
+                Cambio = Veiculo.Cambio ?? Cambio.NaoInformado,
                 PrecoVenda = preco,
                 Quilometragem = quilometragem,
                 Placa = NullIfWhiteSpace(Veiculo.Placa),
@@ -186,16 +201,16 @@ public sealed class UpsertModel(
         var updateResult = await sender.Send(new AtualizarVeiculoCommand(new VeiculoUpdateDto
         {
             Id = Veiculo.Id,
-            LojaId = Veiculo.LojaId,
-            MarcaId = Veiculo.MarcaId,
+            LojaId = lojaId,
+            MarcaId = marcaId,
             Titulo = titulo,
             Modelo = Veiculo.Modelo.Trim(),
             Versao = NullIfWhiteSpace(Veiculo.Versao),
             AnoFabricacao = Veiculo.AnoFabricacao,
-            AnoModelo = Veiculo.AnoModelo,
+            AnoModelo = Veiculo.AnoModelo ?? 0,
             Cor = NullIfWhiteSpace(Veiculo.Cor),
-            Combustivel = Veiculo.Combustivel,
-            Cambio = Veiculo.Cambio,
+            Combustivel = Veiculo.Combustivel ?? Combustivel.NaoInformado,
+            Cambio = Veiculo.Cambio ?? Cambio.NaoInformado,
             PrecoVenda = preco,
             Quilometragem = quilometragem,
             Placa = NullIfWhiteSpace(Veiculo.Placa),
@@ -281,12 +296,7 @@ public sealed class UpsertModel(
 
     private void ValidateInput()
     {
-        if (Veiculo.LojaId <= 0) ModelState.AddModelError("Veiculo.LojaId", "Selecione uma loja.");
-        if (Veiculo.MarcaId <= 0) ModelState.AddModelError("Veiculo.MarcaId", "Selecione uma marca.");
         if (string.IsNullOrWhiteSpace(Veiculo.Modelo)) ModelState.AddModelError("Veiculo.Modelo", "Informe o modelo.");
-        if (Veiculo.AnoModelo <= 0) ModelState.AddModelError("Veiculo.AnoModelo", "Informe o ano modelo.");
-        if (Veiculo.Combustivel == Combustivel.NaoInformado) ModelState.AddModelError("Veiculo.Combustivel", "Selecione o combustível.");
-        if (Veiculo.Cambio == Cambio.NaoInformado) ModelState.AddModelError("Veiculo.Cambio", "Selecione o câmbio.");
         if (ParseDecimal(Veiculo.PrecoVenda) < 0) ModelState.AddModelError("Veiculo.PrecoVenda", "Informe um preço válido.");
     }
 
@@ -488,17 +498,17 @@ public sealed class UpsertModel(
     public sealed class VehicleInputModel
     {
         public int Id { get; set; }
-        public int LojaId { get; set; }
-        public int MarcaId { get; set; }
+        public int? LojaId { get; set; }
+        public int? MarcaId { get; set; }
         public string Titulo { get; set; } = string.Empty;
         public string Modelo { get; set; } = string.Empty;
         public string? Versao { get; set; }
         public int? AnoFabricacao { get; set; }
-        public int AnoModelo { get; set; }
+        public int? AnoModelo { get; set; }
         public string? Cor { get; set; }
         public string? Quilometragem { get; set; }
-        public Combustivel Combustivel { get; set; }
-        public Cambio Cambio { get; set; }
+        public Combustivel? Combustivel { get; set; }
+        public Cambio? Cambio { get; set; }
         public string? Placa { get; set; }
         public string? PrecoVenda { get; set; }
         [MaxLength(4000)]

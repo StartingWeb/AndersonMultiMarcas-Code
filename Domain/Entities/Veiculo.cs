@@ -50,16 +50,16 @@ public sealed class Veiculo : AuditableEntity
     {
         LojaId = lojaId;
         MarcaId = marcaId;
-        Titulo = string.IsNullOrWhiteSpace(titulo) ? throw new ArgumentException("Titulo obrigatorio.") : titulo.Trim();
         Modelo = string.IsNullOrWhiteSpace(modelo) ? throw new ArgumentException("Modelo obrigatorio.") : modelo.Trim();
+        Titulo = string.IsNullOrWhiteSpace(titulo) ? Modelo : titulo.Trim();
         AnoModelo = anoModelo;
         PrecoVenda = precoVenda;
     }
 
     public void Update(string titulo, string modelo, string? versao, int? anoFabricacao, int anoModelo, Combustivel combustivel, Cambio cambio, int? quilometragem, string? placa, string? cor, string? descricao)
     {
-        Titulo = string.IsNullOrWhiteSpace(titulo) ? throw new ArgumentException("Titulo obrigatorio.") : titulo.Trim();
         Modelo = string.IsNullOrWhiteSpace(modelo) ? throw new ArgumentException("Modelo obrigatorio.") : modelo.Trim();
+        Titulo = string.IsNullOrWhiteSpace(titulo) ? Modelo : titulo.Trim();
         Versao = string.IsNullOrWhiteSpace(versao) ? null : versao.Trim();
         AnoFabricacao = anoFabricacao;
         AnoModelo = anoModelo;
