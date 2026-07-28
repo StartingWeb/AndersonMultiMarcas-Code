@@ -11,7 +11,7 @@ public sealed class ObterCatalogoFacetasQueryHandler(ApplicationDbContext db)
 {
     public async Task<Result<CatalogoFacetasDto>> Handle(ObterCatalogoFacetasQuery request, CancellationToken cancellationToken)
     {
-        var baseQuery = db.Veiculos.AsNoTracking().Include(x => x.Marca).Where(x => x.Ativo);
+        var baseQuery = db.Veiculos.AsNoTracking().Include(x => x.Marca).Where(x => x.Ativo && !x.Vendido);
 
         var marcas = await baseQuery.Select(x => x.Marca.Nome).Distinct().OrderBy(x => x).ToListAsync(cancellationToken);
         var modelos = await baseQuery.Select(x => x.Modelo).Distinct().OrderBy(x => x).ToListAsync(cancellationToken);

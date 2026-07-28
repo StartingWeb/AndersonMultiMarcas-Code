@@ -91,6 +91,353 @@ namespace Data.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.ImportJob", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("CanceladoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("DryRun")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("FinalizadoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("IdInicial")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ImagensComErro")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ImagensIgnoradas")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ImagensImportadas")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("IniciadoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LockExpiraEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LockId")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<bool>("PreparacaoConcluida")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("QuantidadeMaxima")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RelatorioConsolidadoJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RelatorioGeradoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<bool>("Sobrescrever")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SomenteSemBlobName")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<int>("TotalImagens")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalVeiculos")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UltimaAtualizacaoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UltimaMensagem")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("UrlBase")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("UsuarioId")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("UsuarioNome")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("VeiculoAtualId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VeiculosProcessados")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CriadoEm");
+
+                    b.HasIndex("LockExpiraEm");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ImportJob", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.ImportJobHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("DuracaoMs")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("ImportJobId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Mensagem")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("Quantidade")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Resultado")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("UsuarioId")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("UsuarioNome")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ImportJobId", "CriadoEm");
+
+                    b.HasIndex("Tipo", "CriadoEm");
+
+                    b.ToTable("ImportJobHistory", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.ImportJobItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("BlobNameDestino")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool>("Capa")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ContainerDestino")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Erro")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("FinalizadoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ImportJobId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("IniciadoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LockExpiraEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LockId")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("MaxTentativas")
+                        .HasColumnType("int");
+
+                    b.Property<string>("NomeArquivoDestino")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<int>("Ordem")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<long?>("TamanhoBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Tentativas")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UrlDestino")
+                        .HasMaxLength(800)
+                        .HasColumnType("nvarchar(800)");
+
+                    b.Property<string>("UrlLegada")
+                        .IsRequired()
+                        .HasMaxLength(800)
+                        .HasColumnType("nvarchar(800)");
+
+                    b.Property<int>("VeiculoId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("VeiculoMidiaId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VeiculoId");
+
+                    b.HasIndex("VeiculoMidiaId");
+
+                    b.HasIndex("ImportJobId", "BlobNameDestino")
+                        .IsUnique();
+
+                    b.HasIndex("ImportJobId", "Status");
+
+                    b.HasIndex("ImportJobId", "UrlLegada")
+                        .IsUnique();
+
+                    b.HasIndex("ImportJobId", "VeiculoId");
+
+                    b.ToTable("ImportJobItem", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.ImportJobLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Etapa")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int?>("ImagemOrdem")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ImportJobId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ImportJobItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Mensagem")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("UrlLegada")
+                        .HasMaxLength(800)
+                        .HasColumnType("nvarchar(800)");
+
+                    b.Property<int?>("VeiculoId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ImportJobItemId");
+
+                    b.HasIndex("ImportJobId", "CriadoEm");
+
+                    b.HasIndex("ImportJobId", "Id");
+
+                    b.ToTable("ImportJobLog", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Entities.Loja", b =>
                 {
                     b.Property<int>("Id")
@@ -789,6 +1136,61 @@ namespace Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.ImportJobHistory", b =>
+                {
+                    b.HasOne("Domain.Entities.ImportJob", "ImportJob")
+                        .WithMany("Historico")
+                        .HasForeignKey("ImportJobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ImportJob");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ImportJobItem", b =>
+                {
+                    b.HasOne("Domain.Entities.ImportJob", "ImportJob")
+                        .WithMany("Items")
+                        .HasForeignKey("ImportJobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Veiculo", "Veiculo")
+                        .WithMany()
+                        .HasForeignKey("VeiculoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.VeiculoMidia", "VeiculoMidia")
+                        .WithMany()
+                        .HasForeignKey("VeiculoMidiaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ImportJob");
+
+                    b.Navigation("Veiculo");
+
+                    b.Navigation("VeiculoMidia");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ImportJobLog", b =>
+                {
+                    b.HasOne("Domain.Entities.ImportJob", "ImportJob")
+                        .WithMany("Logs")
+                        .HasForeignKey("ImportJobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.ImportJobItem", "ImportJobItem")
+                        .WithMany("Logs")
+                        .HasForeignKey("ImportJobItemId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("ImportJob");
+
+                    b.Navigation("ImportJobItem");
+                });
+
             modelBuilder.Entity("Domain.Entities.Loja", b =>
                 {
                     b.OwnsOne("Domain.ValueObjects.Endereco", "Endereco", b1 =>
@@ -957,6 +1359,20 @@ namespace Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Domain.Entities.ImportJob", b =>
+                {
+                    b.Navigation("Historico");
+
+                    b.Navigation("Items");
+
+                    b.Navigation("Logs");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ImportJobItem", b =>
+                {
+                    b.Navigation("Logs");
                 });
 
             modelBuilder.Entity("Domain.Entities.Loja", b =>

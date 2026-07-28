@@ -1,3 +1,4 @@
+using Core.Storage;
 using Data;
 using Domain.Application;
 using FluentValidation;
@@ -6,7 +7,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Project.Features.Storage.Legacy;
+using Project.Features.Storage.Validation;
 using Project.Features.Veiculos.Services;
+using Project.Infrastructure.Storage;
 using Project.Shared;
 using System.Globalization;
 using System.Net;
@@ -64,11 +68,42 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 });
 builder.Services.AddMemoryCache();
 builder.Services.AddResponseCaching();
+builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection(StorageOptions.SectionName));
+builder.Services.Configure<LegacyImageImportOptions>(builder.Configuration.GetSection(LegacyImageImportOptions.SectionName));
 builder.Services.AddMediatR(typeof(Program).Assembly);
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 builder.Services.AddScoped<IVeiculoSlugService, VeiculoSlugService>();
 builder.Services.AddScoped<IVeiculoMediaService, VeiculoMediaService>();
+builder.Services.AddSingleton<R2StorageService>();
+builder.Services.AddSingleton<LocalWebRootStorageService>();
+builder.Services.AddScoped<IStorageService, ApplicationStorageService>();
+builder.Services.AddScoped<IStorageImageResolver, StorageImageResolver>();
+builder.Services.AddSingleton<LegacyImageImportQueue>();
+builder.Services.AddSingleton<LegacyImportCancellationRegistry>();
+builder.Services.AddScoped<LegacyImageImportJobManager>();
+builder.Services.AddScoped<LegacyVehicleJsonLdParser>();
+builder.Services.AddScoped<LegacyVehicleImageImportService>();
+builder.Services.AddScoped<LegacyVehicleImageImportItemProcessor>();
+builder.Services.AddScoped<LegacyImageImportReportService>();
+builder.Services.AddScoped<StorageImportValidationService>();
+builder.Services.AddHostedService<LegacyImageImportWorker>();
+builder.Services.AddHttpClient(LegacyVehicleImageImportService.HttpClientName, client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("AndersonMultimarcasStorageImporter/1.0");
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    AllowAutoRedirect = false
+});
+builder.Services.AddHttpClient(StorageImportValidationService.HttpClientName, client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(20);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("AndersonMultimarcasStorageValidator/1.0");
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    AllowAutoRedirect = false
+});
 builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true;

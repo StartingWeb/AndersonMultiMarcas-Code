@@ -1,8 +1,10 @@
+using Core.Storage;
 using Data;
 using Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Project.Infrastructure.Storage;
 using Project.Shared;
 using Project.Pages.ViewModels;
 
@@ -10,7 +12,7 @@ namespace Project.Pages;
 
 public sealed class VeiculoModel(
     ApplicationDbContext db,
-    IWebHostEnvironment environment) : PageModel
+    IStorageImageResolver imageResolver) : PageModel
 {
     private static readonly IReadOnlyDictionary<TipoVeiculoOpcional, string> OpcionalLabels = new Dictionary<TipoVeiculoOpcional, string>
     {
@@ -94,7 +96,7 @@ public sealed class VeiculoModel(
     {
         var veiculo = await db.Veiculos
             .AsNoTracking()
-            .Where(x => x.Id == Id && x.Ativo)
+            .Where(x => x.Id == Id && x.Ativo && !x.Vendido)
             .Select(x => new
             {
                 x.Id,
@@ -130,18 +132,20 @@ public sealed class VeiculoModel(
             """,
             ct);
 
-        Vendedores = await db.Vendedores
+        var vendedores = await db.Vendedores
             .AsNoTracking()
             .Where(x => x.Ativo)
             .OrderBy(x => x.Nome)
-            .Select(x => new HomeSellerViewModel
+            .Select(x => new SellerProjection
             {
                 Nome = x.Nome,
                 Telefone = x.Whatsapp.HasValue ? x.Whatsapp.Value.Valor : (x.Telefone.HasValue ? x.Telefone.Value.Valor : string.Empty),
-                FotoUrl = SellerImageHelper.Normalize(x.FotoUrl)
+                FotoUrl = x.FotoUrl
             })
             .Take(12)
             .ToListAsync(ct);
+
+        Vendedores = await ToSellerViewModelsAsync(vendedores, ct);
 
         var nomeCompleto = BuildNomeCompleto(veiculo.Titulo, veiculo.Modelo, veiculo.Versao);
         var medias = new List<VehiclePhotoViewModel>
@@ -160,12 +164,20 @@ public sealed class VeiculoModel(
             .Where(x => x.Ativo && x.VeiculoId == veiculo.Id && x.Tipo == TipoMidia.Imagem)
             .OrderByDescending(x => x.Capa)
             .ThenBy(x => x.Ordem)
-            .Select(x => x.Url)
+            .Select(x => new MediaProjection
+            {
+                Url = x.Url,
+                BlobName = x.BlobName,
+                Container = x.Container,
+                NomeArquivo = x.NomeArquivo,
+                ContentType = x.ContentType,
+                TamanhoBytes = x.TamanhoBytes
+            })
             .ToListAsync(ct);
 
         if (vehicleMedia.Count > 0)
         {
-            medias = VehicleImageHelper.NormalizeGallery(vehicleMedia, webRootPath: environment.WebRootPath)
+            medias = (await imageResolver.ResolveVehicleGalleryAsync(vehicleMedia.Select(ToStorageReference), includeDefault: true, ct))
                 .Select(x => new VehiclePhotoViewModel
                 {
                     Url = x,
@@ -472,6 +484,25 @@ public sealed class VeiculoModel(
         _ => "Não informado"
     };
 
+    private async Task<IReadOnlyList<HomeSellerViewModel>> ToSellerViewModelsAsync(IEnumerable<SellerProjection> sellers, CancellationToken ct)
+    {
+        var result = new List<HomeSellerViewModel>();
+        foreach (var seller in sellers)
+        {
+            result.Add(new HomeSellerViewModel
+            {
+                Nome = seller.Nome,
+                Telefone = seller.Telefone,
+                FotoUrl = await imageResolver.ResolveSellerPhotoAsync(seller.FotoUrl, ct)
+            });
+        }
+
+        return result;
+    }
+
+    private static StorageImageReference ToStorageReference(MediaProjection media)
+        => new(media.Url, media.BlobName, media.Container, media.NomeArquivo, media.ContentType, media.TamanhoBytes);
+
     public sealed class VehicleDetailViewModel
     {
         public int Id { get; init; }
@@ -502,6 +533,23 @@ public sealed class VeiculoModel(
         public string Alt { get; init; } = string.Empty;
         public int Width { get; init; }
         public int Height { get; init; }
+    }
+
+    private sealed class SellerProjection
+    {
+        public string Nome { get; init; } = string.Empty;
+        public string Telefone { get; init; } = string.Empty;
+        public string? FotoUrl { get; init; }
+    }
+
+    private sealed class MediaProjection
+    {
+        public string? Url { get; init; }
+        public string? BlobName { get; init; }
+        public string? Container { get; init; }
+        public string? NomeArquivo { get; init; }
+        public string? ContentType { get; init; }
+        public long? TamanhoBytes { get; init; }
     }
 
     private sealed class VehicleFeaturesProjection

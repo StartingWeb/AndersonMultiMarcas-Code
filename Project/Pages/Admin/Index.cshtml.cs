@@ -1,8 +1,10 @@
+using Core.Storage;
 using Data;
 using Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Project.Infrastructure.Storage;
 using Project.Shared;
 using System.Globalization;
 using System.Linq;
@@ -10,7 +12,7 @@ using System.Linq;
 namespace Project.Pages.Admin;
 
 [Authorize]
-public class IndexModel(ApplicationDbContext db) : PageModel
+public class IndexModel(ApplicationDbContext db, IStorageImageResolver imageResolver) : PageModel
 {
     public int TotalVeiculosAtivos { get; private set; }
     public decimal ValorTotalEstoque { get; private set; }
@@ -26,7 +28,7 @@ public class IndexModel(ApplicationDbContext db) : PageModel
     public IReadOnlyList<VehicleEngagementItem> VeiculosMaisVisualizacoes { get; private set; } = [];
     public IReadOnlyList<SellerRankingItem> RankingVendedores { get; private set; } = [];
 
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(CancellationToken ct)
     {
         ViewData["Title"] = "Painel administrativo";
         ViewData["Robots"] = "noindex,nofollow";
@@ -53,7 +55,7 @@ public class IndexModel(ApplicationDbContext db) : PageModel
         VendedoresAtivos = await db.Vendedores.AsNoTracking().CountAsync(x => x.Ativo);
         VeiculosDestaque = await veiculosAtivos.CountAsync(x => x.Destaque);
 
-        RankingVendedores = await db.Veiculos
+        var rankingVendedores = await db.Veiculos
             .AsNoTracking()
             .Where(x =>
                 x.Vendido &&
@@ -78,59 +80,81 @@ public class IndexModel(ApplicationDbContext db) : PageModel
             .OrderByDescending(x => x.TotalVendas)
             .ThenBy(x => x.Nome)
             .Take(5)
-            .Select(x => new SellerRankingItem(
-                x.Id,
-                x.Nome,
-                SellerImageHelper.Normalize(x.FotoUrl),
-                x.TotalVendas))
-            .ToListAsync();
+            .ToListAsync(ct);
 
-        var engagementItems = await db.Veiculos
-            .AsNoTracking()
-            .Where(x => x.Ativo)
+        var rankingItems = new List<SellerRankingItem>();
+        foreach (var vendedor in rankingVendedores)
+        {
+            rankingItems.Add(new SellerRankingItem(
+                vendedor.Id,
+                vendedor.Nome,
+                await imageResolver.ResolveSellerPhotoAsync(vendedor.FotoUrl, ct),
+                vendedor.TotalVendas));
+        }
+
+        RankingVendedores = rankingItems;
+
+        var engagementItems = await veiculosAtivos
             .Select(x => new
             {
                 x.Id,
                 Nome = BuildNomeSemDuplicacao(x.Titulo, x.Modelo, x.Versao),
-                Imagem = x.Midias
+                Midias = x.Midias
                     .Where(m => m.Ativo && m.Tipo == TipoMidia.Imagem)
                     .OrderByDescending(m => m.Capa)
                     .ThenBy(m => m.Ordem)
-                    .Select(m => m.Url)
-                    .FirstOrDefault(),
+                    .ThenBy(m => m.Id)
+                    .Select(m => new MediaProjection
+                    {
+                        Url = m.Url,
+                        BlobName = m.BlobName,
+                        Container = m.Container,
+                        NomeArquivo = m.NomeArquivo,
+                        ContentType = m.ContentType,
+                        TamanhoBytes = m.TamanhoBytes
+                    })
+                    .ToList(),
                 Preco = x.PrecoVenda.Valor,
                 Cliques = x.QuantidadeCliques,
                 Visualizacoes = x.QuantidadeVisualizacoes
             })
-            .ToListAsync();
+            .ToListAsync(ct);
 
-        VeiculosMaisCliques = engagementItems
+        var veiculosMaisCliques = new List<VehicleEngagementItem>();
+        foreach (var x in engagementItems
             .OrderByDescending(x => x.Cliques)
             .ThenByDescending(x => x.Visualizacoes)
             .ThenByDescending(x => x.Id)
-            .Take(6)
-            .Select(x => new VehicleEngagementItem(
+            .Take(6))
+        {
+            veiculosMaisCliques.Add(new VehicleEngagementItem(
                 x.Id,
                 x.Nome,
-                VehicleImageHelper.Normalize(x.Imagem),
+                await SelectDashboardVehicleCoverAsync(x.Midias, ct),
                 x.Preco,
                 x.Cliques,
-                x.Visualizacoes))
-            .ToList();
+                x.Visualizacoes));
+        }
 
-        VeiculosMaisVisualizacoes = engagementItems
+        VeiculosMaisCliques = veiculosMaisCliques;
+
+        var veiculosMaisVisualizacoes = new List<VehicleEngagementItem>();
+        foreach (var x in engagementItems
             .OrderByDescending(x => x.Visualizacoes)
             .ThenByDescending(x => x.Cliques)
             .ThenByDescending(x => x.Id)
-            .Take(6)
-            .Select(x => new VehicleEngagementItem(
+            .Take(6))
+        {
+            veiculosMaisVisualizacoes.Add(new VehicleEngagementItem(
                 x.Id,
                 x.Nome,
-                VehicleImageHelper.Normalize(x.Imagem),
+                await SelectDashboardVehicleCoverAsync(x.Midias, ct),
                 x.Preco,
                 x.Cliques,
-                x.Visualizacoes))
-            .ToList();
+                x.Visualizacoes));
+        }
+
+        VeiculosMaisVisualizacoes = veiculosMaisVisualizacoes;
 
         var veiculos = await veiculosAtivos
             .Include(x => x.Loja)
@@ -149,32 +173,43 @@ public class IndexModel(ApplicationDbContext db) : PageModel
                 x.DataCadastro,
                 x.PrecoVenda,
                 Loja = x.Loja.Nome,
-                Imagem = x.Midias
+                Midias = x.Midias
                     .Where(m => m.Ativo && m.Tipo == TipoMidia.Imagem)
                     .OrderByDescending(m => m.Capa)
                     .ThenBy(m => m.Ordem)
-                    .Select(m => m.Url)
-                    .FirstOrDefault()
+                    .ThenBy(m => m.Id)
+                    .Select(m => new MediaProjection
+                    {
+                        Url = m.Url,
+                        BlobName = m.BlobName,
+                        Container = m.Container,
+                        NomeArquivo = m.NomeArquivo,
+                        ContentType = m.ContentType,
+                        TamanhoBytes = m.TamanhoBytes
+                    })
+                    .ToList()
             })
-            .ToListAsync();
+            .ToListAsync(ct);
 
-        VeiculosNoPatio = veiculos
-            .Select(x =>
-            {
-                var diasNoPatio = Math.Max(0, (hoje - x.DataCadastro.Date).Days);
-                var imagem = VehicleImageHelper.Normalize(x.Imagem);
+        var veiculosNoPatio = new List<VehicleStockItem>();
+        foreach (var x in veiculos)
+        {
+            var diasNoPatio = Math.Max(0, (hoje - x.DataCadastro.Date).Days);
+            var imagem = await SelectDashboardVehicleCoverAsync(x.Midias, ct);
 
-                return new VehicleStockItem(
-                    x.Id,
-                    BuildNomeSemDuplicacao(x.Titulo, x.Modelo, x.Versao),
-                    x.Loja,
-                    x.AnoFabricacao.HasValue ? $"{x.AnoFabricacao}/{x.AnoModelo}" : x.AnoModelo.ToString(CultureInfo.InvariantCulture),
-                    x.Quilometragem,
-                    x.PrecoVenda.Valor,
-                    x.DataCadastro,
-                    diasNoPatio,
-                    imagem);
-            })
+            veiculosNoPatio.Add(new VehicleStockItem(
+                x.Id,
+                BuildNomeSemDuplicacao(x.Titulo, x.Modelo, x.Versao),
+                x.Loja,
+                x.AnoFabricacao.HasValue ? $"{x.AnoFabricacao}/{x.AnoModelo}" : x.AnoModelo.ToString(CultureInfo.InvariantCulture),
+                x.Quilometragem,
+                x.PrecoVenda.Valor,
+                x.DataCadastro,
+                diasNoPatio,
+                imagem));
+        }
+
+        VeiculosNoPatio = veiculosNoPatio
             .OrderByDescending(x => x.DiasNoPatio)
             .ToList();
     }
@@ -221,5 +256,21 @@ public class IndexModel(ApplicationDbContext db) : PageModel
         return incluirModelo
             ? $"{tituloLimpo} {modeloLimpo} {versaoLimpa}"
             : $"{tituloLimpo} {versaoLimpa}";
+    }
+
+    private Task<string> SelectDashboardVehicleCoverAsync(IEnumerable<MediaProjection> sources, CancellationToken ct)
+        => imageResolver.SelectVehicleCoverAsync(sources.Select(ToStorageReference), ct);
+
+    private static StorageImageReference ToStorageReference(MediaProjection media)
+        => new(media.Url, media.BlobName, media.Container, media.NomeArquivo, media.ContentType, media.TamanhoBytes);
+
+    private sealed class MediaProjection
+    {
+        public string? Url { get; init; }
+        public string? BlobName { get; init; }
+        public string? Container { get; init; }
+        public string? NomeArquivo { get; init; }
+        public string? ContentType { get; init; }
+        public long? TamanhoBytes { get; init; }
     }
 }

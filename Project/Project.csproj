@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.9.0" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
     <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.13" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.13" />
@@ -26,6 +27,12 @@
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.csproj" />
     <ProjectReference Include="..\Data\Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="artifacts\**;**\artifacts\**;**\bin\**;**\obj\**" />
+    <None Remove="artifacts\**;**\artifacts\**;**\bin\**;**\obj\**" />
+    <StaticWebAsset Remove="artifacts\**;**\artifacts\**;**\bin\**;**\obj\**" />
   </ItemGroup>
 
 </Project>

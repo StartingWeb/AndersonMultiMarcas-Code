@@ -1,34 +1,28 @@
 using System.Text;
+using Core.Storage;
 using Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Project.Features.Veiculos.DTOs;
 using Project.Features.Veiculos.Queries;
 using Project.Features.Veiculos.Services;
+using Project.Infrastructure.Storage;
 using Project.Shared;
 
 namespace Project.Features.Veiculos.Handlers;
 
 public sealed class ObterVeiculoPorSlugQueryHandler(
     ApplicationDbContext db,
-    IMemoryCache cache,
     IVeiculoSlugService slugService,
-    IWebHostEnvironment environment) : IRequestHandler<ObterVeiculoPorSlugQuery, Result<VeiculoDetalheDto>>
+    IStorageImageResolver imageResolver) : IRequestHandler<ObterVeiculoPorSlugQuery, Result<VeiculoDetalheDto>>
 {
     public async Task<Result<VeiculoDetalheDto>> Handle(ObterVeiculoPorSlugQuery request, CancellationToken cancellationToken)
     {
         var id = slugService.ObterIdPorSlug(request.Slug);
         if (!id.HasValue) return Result<VeiculoDetalheDto>.Failure("Slug invalido.");
 
-        var cacheKey = $"veiculos:detalhe:{id.Value}";
-        if (cache.TryGetValue(cacheKey, out VeiculoDetalheDto? cached) && cached is not null)
-        {
-            return Result<VeiculoDetalheDto>.Success(cached);
-        }
-
         var veiculo = await db.Veiculos.AsNoTracking()
-            .Where(x => x.Id == id.Value)
+            .Where(x => x.Id == id.Value && x.Ativo && !x.Vendido)
             .Select(x => new
             {
                 x.Id,
@@ -51,7 +45,15 @@ public sealed class ObterVeiculoPorSlugQueryHandler(
                     .Where(m => m.Ativo && m.Tipo == Domain.Enums.TipoMidia.Imagem)
                     .OrderByDescending(m => m.Capa)
                     .ThenBy(m => m.Ordem)
-                    .Select(m => new { m.Url, m.Capa, m.Ordem })
+                    .Select(m => new MediaProjection
+                    {
+                        Url = m.Url,
+                        BlobName = m.BlobName,
+                        Container = m.Container,
+                        NomeArquivo = m.NomeArquivo,
+                        ContentType = m.ContentType,
+                        TamanhoBytes = m.TamanhoBytes
+                    })
                     .ToList()
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -60,7 +62,10 @@ public sealed class ObterVeiculoPorSlugQueryHandler(
 
         var slug = slugService.CriarSlug(veiculo.Titulo, veiculo.Modelo, veiculo.Versao, veiculo.Id);
         var canonical = $"{request.BaseUrl.TrimEnd('/')}/api/veiculos/{slug}";
-        var vehicleMidias = VehicleImageHelper.NormalizeGallery(veiculo.Midias.Select(x => x.Url), includeDefault: false, webRootPath: environment.WebRootPath);
+        var vehicleMidias = await imageResolver.ResolveVehicleGalleryAsync(
+            veiculo.Midias.Select(ToStorageReference),
+            includeDefault: false,
+            cancellationToken);
 
         var image = vehicleMidias.FirstOrDefault() ?? string.Empty;
         var tituloSeo = $"{veiculo.Titulo} {veiculo.Modelo} {veiculo.Versao}".Trim();
@@ -109,7 +114,19 @@ public sealed class ObterVeiculoPorSlugQueryHandler(
             VehicleJsonLd = vehicleJson.ToString()
         };
 
-        cache.Set(cacheKey, dto, TimeSpan.FromMinutes(5));
         return Result<VeiculoDetalheDto>.Success(dto);
     }
+
+    private sealed class MediaProjection
+    {
+        public string? Url { get; init; }
+        public string? BlobName { get; init; }
+        public string? Container { get; init; }
+        public string? NomeArquivo { get; init; }
+        public string? ContentType { get; init; }
+        public long? TamanhoBytes { get; init; }
+    }
+
+    private static StorageImageReference ToStorageReference(MediaProjection media)
+        => new(media.Url, media.BlobName, media.Container, media.NomeArquivo, media.ContentType, media.TamanhoBytes);
 }

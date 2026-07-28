@@ -538,7 +538,7 @@
                         </div>
                         <div class="commercial-metric-icon brand"><i class="bi bi-car-front-fill"></i></div>
                     </div>
-                    <div class="commercial-metric-help">Anuncios ativos e prontos para conversao.</div>
+                    <div class="commercial-metric-help">Anúncios ativos e prontos para conversão.</div>
                 </div>
             </article>
 
@@ -551,7 +551,7 @@
                         </div>
                         <div class="commercial-metric-icon gold"><i class="bi bi-cash-stack"></i></div>
                     </div>
-                    <div class="commercial-metric-help">Preco principal somado dos veiculos ativos.</div>
+                    <div class="commercial-metric-help">Preço principal somado dos veículos ativos.</div>
                 </div>
             </article>
 
@@ -559,7 +559,7 @@
                 <div class="commercial-metric-body">
                     <div class="commercial-metric-top">
                         <div>
-                            <div class="commercial-metric-label">Saida do dia</div>
+                            <div class="commercial-metric-label">Saída do dia</div>
                             <div class="commercial-metric-value">@Model.VendasHoje</div>
                         </div>
                         <div class="commercial-metric-icon success"><i class="bi bi-graph-up-arrow"></i></div>
@@ -572,20 +572,20 @@
                 <div class="commercial-metric-body">
                     <div class="commercial-metric-top">
                         <div>
-                            <div class="commercial-metric-label">Estoque critico</div>
+                            <div class="commercial-metric-label">Estoque crítico</div>
                             <div class="commercial-metric-value" style="color: var(--dash-brand);">@Model.EstoqueCritico</div>
                         </div>
                         <div class="commercial-metric-icon alert"><i class="bi bi-exclamation-diamond-fill"></i></div>
                     </div>
-                    <div class="commercial-metric-help">Veiculos com mais de 100 dias no patio.</div>
+                    <div class="commercial-metric-help">Veículos com mais de 100 dias no pátio.</div>
                 </div>
             </article>
         </section>
 
         <section class="dashboard-section">
             <div class="dashboard-section-header">
-                <span class="dashboard-section-kicker"><i class="bi bi-activity"></i> Operacao</span>
-                <h2 class="dashboard-section-title">Indicadores do negocio</h2>
+                <span class="dashboard-section-kicker"><i class="bi bi-activity"></i> Operação</span>
+                <h2 class="dashboard-section-title">Indicadores do negócio</h2>
                 <p class="dashboard-section-subtitle">Base atual de lojas, vendedores e vitrine comercial.</p>
             </div>
             <div class="dashboard-section-body">
@@ -603,7 +603,7 @@
                         <strong>@Model.VendedoresAtivos</strong>
                     </div>
                     <div class="operations-item">
-                        <div class="operations-item-label"><i class="bi bi-stars"></i>Veiculos em destaque</div>
+                        <div class="operations-item-label"><i class="bi bi-stars"></i>Veículos em destaque</div>
                         <strong>@Model.VeiculosDestaque</strong>
                     </div>
                 </div>
@@ -621,7 +621,7 @@
                 {
                     <div class="dashboard-empty">
                         <i class="bi bi-trophy fs-3 d-block mb-2"></i>
-                        Nenhuma venda registrada para este mes.
+                        Nenhuma venda registrada para este mês.
                     </div>
                 }
                 else
@@ -647,7 +647,7 @@
                                 </div>
                                 <div class="seller-podium-total">
                                     <strong>@vendedor.TotalVendas</strong>
-                                    <span>@(vendedor.TotalVendas == 1 ? "veiculo" : "veiculos")</span>
+                                    <span>@(vendedor.TotalVendas == 1 ? "veículo" : "veículos")</span>
                                 </div>
                             </div>
                         }
@@ -659,8 +659,8 @@
         <section class="dashboard-section">
             <div class="engagement-card-header">
                 <span class="dashboard-section-kicker"><i class="bi bi-graph-up-arrow"></i> Engajamento</span>
-                <h2 class="dashboard-section-title">Carros com mais cliques e visualizacoes</h2>
-                <p class="dashboard-section-subtitle">Os veiculos que mais chamaram atencao no site recentemente.</p>
+                <h2 class="dashboard-section-title">Carros com mais cliques e visualizações</h2>
+                <p class="dashboard-section-subtitle">Os veículos que mais chamaram atenção no site recentemente.</p>
             </div>
             <div class="dashboard-section-body">
                 <div class="dashboard-engagement-grid">
@@ -682,7 +682,7 @@
                                     var imagem = string.IsNullOrWhiteSpace(veiculo.Imagem) ? "/img/carroDefault.png" : veiculo.Imagem;
                                     <a class="engagement-item text-decoration-none" href="/Admin/Veiculo/Upsert/@veiculo.Id">
                                         <div class="engagement-thumb">
-                                            <img src="@ImageUrlBuilder.Build(imagem, 240)" alt="@veiculo.Nome" loading="lazy" decoding="async">
+                                            <img src="@ImageUrlBuilder.Build(imagem, 240)" alt="@veiculo.Nome" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='@ImageUrlBuilder.Build(VehicleImageHelper.DefaultVehicleImage, 240)';">
                                         </div>
                                         <div class="engagement-copy">
                                             <strong>@veiculo.Nome</strong>
@@ -700,12 +700,12 @@
 
                     <div class="engagement-card">
                         <div class="engagement-card-header">
-                            <span class="dashboard-section-kicker"><i class="bi bi-eye-fill"></i> Mais visualizacoes</span>
+                            <span class="dashboard-section-kicker"><i class="bi bi-eye-fill"></i> Mais visualizações</span>
                         </div>
                         @if (Model.VeiculosMaisVisualizacoes.Count == 0)
                         {
                             <div class="engagement-card-list">
-                                <div class="dashboard-empty">Nenhuma visualizacao registrada ainda.</div>
+                                <div class="dashboard-empty">Nenhuma visualização registrada ainda.</div>
                             </div>
                         }
                         else
@@ -716,7 +716,7 @@
                                     var imagem = string.IsNullOrWhiteSpace(veiculo.Imagem) ? "/img/carroDefault.png" : veiculo.Imagem;
                                     <a class="engagement-item text-decoration-none" href="/Admin/Veiculo/Upsert/@veiculo.Id">
                                         <div class="engagement-thumb">
-                                            <img src="@ImageUrlBuilder.Build(imagem, 240)" alt="@veiculo.Nome" loading="lazy" decoding="async">
+                                            <img src="@ImageUrlBuilder.Build(imagem, 240)" alt="@veiculo.Nome" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='@ImageUrlBuilder.Build(VehicleImageHelper.DefaultVehicleImage, 240)';">
                                         </div>
                                         <div class="engagement-copy">
                                             <strong>@veiculo.Nome</strong>
@@ -724,7 +724,7 @@
                                         </div>
                                         <div class="engagement-metrics">
                                             <strong>@veiculo.Visualizacoes</strong>
-                                            <small>visualizacoes</small>
+                                            <small>visualizações</small>
                                         </div>
                                     </a>
                                 }
@@ -739,16 +739,16 @@
             <div class="stock-commercial-header">
                 <div>
                     <span class="dashboard-section-kicker"><i class="bi bi-hourglass-split"></i> Giro de estoque</span>
-                    <h2 class="dashboard-section-title">Carros ha mais tempo no patio</h2>
+                    <h2 class="dashboard-section-title">Carros há mais tempo no pátio</h2>
                     <p class="dashboard-section-subtitle">Slider em ordem decrescente pela quantidade de dias em estoque.</p>
                 </div>
 
                 <div class="stock-slider-actions" aria-label="Controles do slider">
                     <button class="stock-slider-btn" type="button" data-stock-slider-prev aria-label="Voltar"><i class="bi bi-chevron-left"></i></button>
-                    <button class="stock-slider-btn" type="button" data-stock-slider-next aria-label="Avancar"><i class="bi bi-chevron-right"></i></button>
+                    <button class="stock-slider-btn" type="button" data-stock-slider-next aria-label="Avançar"><i class="bi bi-chevron-right"></i></button>
                     <a href="/veiculos" class="btn-dashboard-soft">
                         <i class="bi bi-box-arrow-up-right"></i>
-                        Estoque publico
+                        Estoque público
                     </a>
                 </div>
             </div>
@@ -758,7 +758,7 @@
                 <div class="dashboard-section-body">
                     <div class="dashboard-empty">
                         <i class="bi bi-check-circle fs-3 d-block mb-2"></i>
-                        Nenhum veiculo ativo encontrado no estoque.
+                        Nenhum veículo ativo encontrado no estoque.
                     </div>
                 </div>
             }
@@ -775,11 +775,12 @@
                                     alt="@veiculo.Nome"
                                     class="stock-commercial-image"
                                     loading="lazy"
-                                    decoding="async">
+                                    decoding="async"
+                                    onerror="this.onerror=null;this.src='@ImageUrlBuilder.Build(VehicleImageHelper.DefaultVehicleImage, 520)';">
                                 <div class="stock-commercial-body">
                                     <span class="stock-commercial-chip">
                                         <i class="bi bi-calendar2-week"></i>
-                                        @veiculo.DiasNoPatio @(veiculo.DiasNoPatio == 1 ? "dia" : "dias") no patio
+                                        @veiculo.DiasNoPatio @(veiculo.DiasNoPatio == 1 ? "dia" : "dias") no pátio
                                     </span>
                                     <h3 class="stock-commercial-title">@veiculo.Nome</h3>
                                     <div class="stock-commercial-meta">
@@ -792,7 +793,7 @@
                                     <div class="stock-commercial-meta"><i class="bi bi-shop"></i> @veiculo.Loja</div>
                                     <div class="stock-commercial-price">@veiculo.Preco.ToString("C", br)</div>
                                     <div class="stock-commercial-tip @tipClass">
-                                        Entrada em @veiculo.DataEntrada.ToString("dd/MM/yyyy", br). Reavaliar preco, fotos e destaque para acelerar o giro.
+                                        Entrada em @veiculo.DataEntrada.ToString("dd/MM/yyyy", br). Reavaliar preço, fotos e destaque para acelerar o giro.
                                     </div>
                                 </div>
                             </article>

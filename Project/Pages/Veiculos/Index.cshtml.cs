@@ -7,13 +7,14 @@ using Microsoft.EntityFrameworkCore;
 using Project.Features.Veiculos.DTOs;
 using Project.Features.Veiculos.Queries;
 using Project.Features.Veiculos.Queries.Facets;
+using Project.Infrastructure.Storage;
 using Project.Pages.ViewModels;
 using Project.Pages.Veiculos.ViewModels;
 using Project.Shared;
 
 namespace Project.Pages.Veiculos;
 
-public class IndexModel(ISender sender, ApplicationDbContext db) : PageModel
+public class IndexModel(ISender sender, ApplicationDbContext db, IStorageImageResolver imageResolver) : PageModel
 {
     [BindProperty(SupportsGet = true)] public string? Segmento { get; set; }
     [BindProperty(SupportsGet = true)] public string? Busca { get; set; }
@@ -35,6 +36,8 @@ public class IndexModel(ISender sender, ApplicationDbContext db) : PageModel
 
     public async Task OnGetAsync(CancellationToken ct)
     {
+        PaginaAtual = ReadCurrentPage();
+
         var anoAtual = DateTime.UtcNow.Year;
         var anoMinimo = AnoMinimo;
         var anoMaximo = AnoMaximo;
@@ -124,8 +127,11 @@ public class IndexModel(ISender sender, ApplicationDbContext db) : PageModel
 
         var listaResult = await sender.Send(new BuscarVeiculosQuery(filtro), ct);
         var facetasResult = await sender.Send(new ObterCatalogoFacetasQuery(), ct);
+        var pageResult = listaResult.Value;
+        var currentPage = pageResult?.Page > 0 ? pageResult.Page : filtro.Page;
 
-        var items = listaResult.Value?.Items?.ToList() ?? [];
+        PaginaAtual = currentPage;
+        var items = pageResult?.Items?.ToList() ?? [];
         var destaquesRecentes = items.OrderByDescending(x => x.Destaque).ThenByDescending(x => x.Id).Take(3).ToList();
         var outros = items.Skip(destaquesRecentes.Count).ToList();
 
@@ -133,11 +139,11 @@ public class IndexModel(ISender sender, ApplicationDbContext db) : PageModel
             .AsNoTracking()
             .Where(x => x.Ativo)
             .OrderBy(x => x.Nome)
-            .Select(x => new HomeSellerViewModel
+            .Select(x => new SellerProjection
             {
                 Nome = x.Nome,
                 Telefone = x.Whatsapp.HasValue ? x.Whatsapp.Value.Valor : (x.Telefone.HasValue ? x.Telefone.Value.Valor : string.Empty),
-                FotoUrl = SellerImageHelper.Normalize(x.FotoUrl)
+                FotoUrl = x.FotoUrl
             })
             .Take(12)
             .ToListAsync(ct);
@@ -146,14 +152,15 @@ public class IndexModel(ISender sender, ApplicationDbContext db) : PageModel
         {
             Filtro = filtro,
             CondicaoSelecionada = Condicao,
-            Vendedores = vendedores,
+            Vendedores = await ToSellerViewModelsAsync(vendedores, ct),
             DestaquesRecentes = destaquesRecentes,
             OutrosVeiculos = outros,
             Marcas = facetasResult.Value?.Marcas ?? [],
             Modelos = facetasResult.Value?.Modelos ?? [],
             Anos = facetasResult.Value?.Anos ?? [],
-            TotalItems = listaResult.Value?.TotalItems ?? 0,
-            TotalPages = listaResult.Value?.TotalPages ?? 0,
+            TotalItems = pageResult?.TotalItems ?? 0,
+            CurrentPage = currentPage,
+            TotalPages = pageResult?.TotalPages ?? 0,
             HeaderKicker = landing?.Title ?? GetSegmentTitle(segmento),
             HeaderTitle = landing?.Title ?? GetSegmentTitle(segmento),
             HeaderSubtitle = landing is null
@@ -201,6 +208,29 @@ public class IndexModel(ISender sender, ApplicationDbContext db) : PageModel
         });
     }
 
+    private async Task<IReadOnlyList<HomeSellerViewModel>> ToSellerViewModelsAsync(IEnumerable<SellerProjection> sellers, CancellationToken ct)
+    {
+        var result = new List<HomeSellerViewModel>();
+        foreach (var seller in sellers)
+        {
+            result.Add(new HomeSellerViewModel
+            {
+                Nome = seller.Nome,
+                Telefone = seller.Telefone,
+                FotoUrl = await imageResolver.ResolveSellerPhotoAsync(seller.FotoUrl, ct)
+            });
+        }
+
+        return result;
+    }
+
+    private sealed class SellerProjection
+    {
+        public string Nome { get; init; } = string.Empty;
+        public string Telefone { get; init; } = string.Empty;
+        public string? FotoUrl { get; init; }
+    }
+
     private static string? NormalizeSegment(string? segment)
     {
         if (string.IsNullOrWhiteSpace(segment))
@@ -224,6 +254,17 @@ public class IndexModel(ISender sender, ApplicationDbContext db) : PageModel
             "troca-de-veiculos" => "troca-de-veiculos",
             _ => null
         };
+    }
+
+    private int ReadCurrentPage()
+    {
+        var pageValue = Request.Query.TryGetValue("page", out var lowerPage)
+            ? lowerPage.ToString()
+            : Request.Query.TryGetValue("Page", out var upperPage)
+                ? upperPage.ToString()
+                : null;
+
+        return int.TryParse(pageValue, out var page) && page > 0 ? page : 1;
     }
 
     private static SeoLandingContentViewModel? BuildLandingContent(string? segment) => segment switch

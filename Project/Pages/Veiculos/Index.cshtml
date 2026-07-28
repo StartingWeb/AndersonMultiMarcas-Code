@@ -26,6 +26,8 @@
                 }
                 else
                 {
+                    <partial name="Partials/_Pagination" model="(Model.Vm.CurrentPage, Model.Vm.TotalPages)" />
+
                     @if (Model.Vm.DestaquesRecentes.Count > 0)
                     {
                         <section class="vehicle-group">
@@ -66,7 +68,7 @@
                         </section>
                     }
 
-                    <partial name="Partials/_Pagination" model="(Model.PaginaAtual, Model.Vm.TotalPages)" />
+                    <partial name="Partials/_Pagination" model="(Model.Vm.CurrentPage, Model.Vm.TotalPages)" />
                 }
             </div>
         </div>

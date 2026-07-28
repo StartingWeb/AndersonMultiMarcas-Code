@@ -1,0 +1,1214 @@
+@page "/Admin/Storage/ImportarImagens"
+@model Project.Pages.Admin.Storage.ImportarImagensModel
+
+@{
+    ViewData["Title"] = "Importar imagens do legado";
+    var jobId = Model.JobId?.ToString() ?? string.Empty;
+    var current = Model.CurrentJob;
+    var dashboard = Model.Dashboard;
+    var details = Model.CurrentDetails;
+}
+
+<style>
+    :root {
+        --brand-primary: #9f0a10;
+        --brand-dark: #222222;
+        --brand-border: #ececec;
+        --brand-muted: #6c757d;
+        --brand-soft: rgba(159, 10, 16, .08);
+    }
+
+    .storage-page {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .page-title {
+        margin: 0;
+        color: var(--brand-dark);
+        font-size: 1.28rem;
+        font-weight: 800;
+    }
+
+    .page-subtitle {
+        margin: .18rem 0 0;
+        color: var(--brand-muted);
+        font-size: .9rem;
+    }
+
+    .tool-card {
+        background: #fff;
+        border: 1px solid var(--brand-border);
+        border-radius: .75rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .05);
+        overflow: hidden;
+    }
+
+    .tool-card-body {
+        padding: 1rem;
+    }
+
+    .form-label {
+        font-size: .82rem;
+        font-weight: 800;
+        color: var(--brand-dark);
+    }
+
+    .form-control {
+        min-height: 44px;
+        border-radius: .65rem;
+        border-color: #e6e6e6;
+        box-shadow: none !important;
+    }
+
+    .option-row {
+        display: grid;
+        gap: .55rem;
+    }
+
+    .option-check {
+        display: flex;
+        align-items: center;
+        gap: .55rem;
+        min-height: 34px;
+        color: var(--brand-dark);
+        font-size: .9rem;
+        font-weight: 700;
+    }
+
+    .option-check input {
+        width: 1rem;
+        height: 1rem;
+        accent-color: var(--brand-primary);
+    }
+
+    .btn-brand,
+    .btn-soft-dark {
+        min-height: 40px;
+        border-radius: .65rem;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .45rem;
+        text-decoration: none;
+    }
+
+    .btn-brand {
+        border-color: var(--brand-primary);
+        background: var(--brand-primary);
+        color: #fff;
+    }
+
+    .btn-brand:hover {
+        background: #86080d;
+        border-color: #86080d;
+        color: #fff;
+    }
+
+    .btn-soft-dark {
+        border: 1px solid var(--brand-border);
+        background: #fff;
+        color: var(--brand-dark);
+    }
+
+    .btn-soft-dark:hover {
+        background: #f8f8f8;
+        color: var(--brand-dark);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .75rem;
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: .75rem;
+    }
+
+    .stat-item {
+        border: 1px solid var(--brand-border);
+        border-radius: .65rem;
+        padding: .85rem;
+        min-height: 82px;
+        display: grid;
+        align-content: center;
+        gap: .25rem;
+    }
+
+    .stat-label {
+        color: var(--brand-muted);
+        font-size: .76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .stat-value {
+        color: var(--brand-dark);
+        font-size: 1.18rem;
+        font-weight: 900;
+        line-height: 1.1;
+    }
+
+    .progress {
+        height: 12px;
+        border-radius: 999px;
+        background: #f1f1f1;
+    }
+
+    .progress-bar {
+        background: var(--brand-primary);
+    }
+
+    .progress-block {
+        display: grid;
+        gap: .45rem;
+    }
+
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        gap: .75rem;
+        color: var(--brand-dark);
+        font-size: .82rem;
+        font-weight: 800;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        min-height: 34px;
+        padding: .35rem .65rem;
+        border-radius: 999px;
+        background: var(--brand-soft);
+        color: var(--brand-primary);
+        font-size: .84rem;
+        font-weight: 800;
+    }
+
+    .status-dot {
+        width: .72rem;
+        height: .72rem;
+        border-radius: 999px;
+        display: inline-block;
+        flex: 0 0 auto;
+    }
+
+    .dot-success { background: #1f9d55; }
+    .dot-running { background: #f0ad4e; }
+    .dot-pending { background: #4f8cff; }
+    .dot-retry { background: #e67e22; }
+    .dot-error { background: #c91f37; }
+    .dot-cancelled { background: #555; }
+
+    .status-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        white-space: nowrap;
+    }
+
+    .table-wrap {
+        overflow: auto;
+    }
+
+    .jobs-table,
+    .log-table,
+    .details-table {
+        margin: 0;
+        min-width: 900px;
+    }
+
+    .jobs-table th,
+    .log-table th,
+    .details-table th {
+        background: #f8f8f8;
+        color: var(--brand-dark);
+        font-size: .72rem;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        white-space: nowrap;
+    }
+
+    .jobs-table td,
+    .log-table td,
+    .details-table td {
+        font-size: .82rem;
+        vertical-align: middle;
+    }
+
+    .log-panel {
+        max-height: 440px;
+        overflow: auto;
+        border-top: 1px solid var(--brand-border);
+    }
+
+    .log-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .log-message {
+        max-width: 420px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .image-compare {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(72px, 1fr));
+        gap: .5rem;
+        width: 190px;
+    }
+
+    .image-compare a {
+        display: block;
+        border: 1px solid var(--brand-border);
+        border-radius: .45rem;
+        overflow: hidden;
+        background: #f8f8f8;
+        min-height: 72px;
+    }
+
+    .image-compare img {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        display: block;
+    }
+
+    @@media (max-width: 980px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .dashboard-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .page-header {
+            align-items: stretch;
+            flex-direction: column;
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="container-fluid storage-page" data-job-id="@jobId">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <i class="bi bi-cloud-upload-fill me-2"></i>
+                Importar imagens do legado
+            </h1>
+            <p class="page-subtitle">Jobs persistidos com retomada por item e dual-read durante a transicao</p>
+        </div>
+
+        @if (Model.JobId.HasValue)
+        {
+            <div class="d-flex gap-2 flex-wrap">
+                <a class="btn-soft-dark px-3" href="?handler=LogCsv&jobId=@Model.JobId">
+                    <i class="bi bi-download"></i>
+                    CSV log
+                </a>
+                <a class="btn-soft-dark px-3" href="?handler=JobExport&jobId=@Model.JobId&format=csv">
+                    <i class="bi bi-filetype-csv"></i>
+                    CSV
+                </a>
+                <a class="btn-soft-dark px-3" href="?handler=JobExport&jobId=@Model.JobId&format=json">
+                    <i class="bi bi-braces"></i>
+                    JSON
+                </a>
+                <a class="btn-soft-dark px-3" href="?handler=JobExport&jobId=@Model.JobId&format=xlsx">
+                    <i class="bi bi-file-earmark-spreadsheet"></i>
+                    XLSX
+                </a>
+                <a class="btn-soft-dark px-3" href="?handler=ReportExport&jobId=@Model.JobId&format=csv">
+                    <i class="bi bi-clipboard-data"></i>
+                    Relatorio
+                </a>
+                @if (current?.Status is "Pendente" or "EmExecucao" or "CancelamentoSolicitado")
+                {
+                    <form method="post" asp-page-handler="Cancel" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="jobId" value="@Model.JobId" />
+                        <button type="submit" class="btn-soft-dark px-3">
+                            <i class="bi bi-stop-circle"></i>
+                            Cancelar
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <form method="post" asp-page-handler="Resume" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="jobId" value="@Model.JobId" />
+                        <button type="submit" class="btn-soft-dark px-3">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            Retomar
+                        </button>
+                    </form>
+                    <form method="post" asp-page-handler="RetryFailures" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="jobId" value="@Model.JobId" />
+                        <button type="submit" class="btn-soft-dark px-3">
+                            <i class="bi bi-repeat"></i>
+                            Retry falhas
+                        </button>
+                    </form>
+                }
+            </div>
+        }
+    </div>
+
+    @if (!Model.R2WriteEnabled)
+    {
+        <div class="alert alert-warning mb-0">
+            Storage real exige <strong>Storage:Provider=R2</strong>. O modo Dry Run pode ser executado com a configuracao atual.
+        </div>
+    }
+
+    <section class="tool-card">
+        <div class="tool-card-body">
+            <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
+                <div>
+                    <h2 class="page-title fs-6">Dashboard da migracao</h2>
+                    <p class="page-subtitle">Resumo operacional atualizado de forma adaptativa</p>
+                </div>
+                <a class="btn-soft-dark px-3" href="/Admin/Storage/ValidarImportacao">
+                    <i class="bi bi-patch-check-fill"></i>
+                    Validar R2
+                </a>
+            </div>
+            <div class="dashboard-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Jobs ativos</span>
+                    <span id="dashboardActiveJobs" class="stat-value">@(dashboard?.ActiveJobs ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Jobs concluidos</span>
+                    <span id="dashboardCompletedJobs" class="stat-value">@(dashboard?.CompletedJobs ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Jobs com erro</span>
+                    <span id="dashboardFailedJobs" class="stat-value">@(dashboard?.FailedJobs ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Veiculos processados</span>
+                    <span id="dashboardVehiclesProcessed" class="stat-value">@(dashboard?.VehiclesProcessed ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Veiculos restantes</span>
+                    <span id="dashboardVehiclesRemaining" class="stat-value">@(dashboard?.VehiclesRemaining ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Imagens importadas</span>
+                    <span id="dashboardImagesImported" class="stat-value">@(dashboard?.ImagesImported ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Imagens pendentes</span>
+                    <span id="dashboardImagesPending" class="stat-value">@(dashboard?.ImagesPending ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Imagens com erro</span>
+                    <span id="dashboardImagesWithError" class="stat-value">@(dashboard?.ImagesWithError ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Imagens ignoradas</span>
+                    <span id="dashboardImagesSkipped" class="stat-value">@(dashboard?.ImagesSkipped ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Tempo decorrido</span>
+                    <span id="dashboardElapsed" class="stat-value">@(dashboard?.Elapsed.ToString(@"hh\:mm\:ss") ?? "00:00:00")</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">ETA</span>
+                    <span id="dashboardEta" class="stat-value">@(dashboard?.EstimatedRemaining.ToString(@"hh\:mm\:ss") ?? "00:00:00")</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Veiculos/min</span>
+                    <span id="dashboardVehiclesRate" class="stat-value">@(dashboard?.VehiclesPerMinute.ToString("N2") ?? "0,00")</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Imagens/min</span>
+                    <span id="dashboardImagesRate" class="stat-value">@(dashboard?.ImagesPerMinute.ToString("N2") ?? "0,00")</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Sucesso</span>
+                    <span id="dashboardSuccessRate" class="stat-value">@(dashboard?.SuccessRate.ToString("N1") ?? "0,0")%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Erro / retry</span>
+                    <span class="stat-value"><span id="dashboardErrorRate">@(dashboard?.ErrorRate.ToString("N1") ?? "0,0")</span>% / <span id="dashboardRetryRate">@(dashboard?.RetryRate.ToString("N1") ?? "0,0")</span>%</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="tool-card">
+        <div class="tool-card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <input type="hidden" name="jobId" value="@Model.JobId" />
+                <div class="col-12 col-md-3 col-xl-2">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" asp-for="Filters.Status">
+                        <option value="">Todos</option>
+                        <option value="Pendente">Pendente</option>
+                        <option value="EmExecucao">Executando</option>
+                        <option value="Concluido">Concluido</option>
+                        <option value="ConcluidoComFalhas">Concluido com falhas</option>
+                        <option value="Falha">Erro</option>
+                        <option value="Cancelado">Cancelado</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-3 col-xl-2">
+                    <label class="form-label">Veiculo</label>
+                    <input class="form-control" asp-for="Filters.VehicleId" min="1" />
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                    <label class="form-label">Pesquisa</label>
+                    <input class="form-control" asp-for="Filters.Search" placeholder="ID, nome, blob ou erro" />
+                </div>
+                <div class="col-12 col-md-3 col-xl-2">
+                    <label class="form-label">Marca</label>
+                    <input class="form-control" asp-for="Filters.Marca" />
+                </div>
+                <div class="col-12 col-md-3 col-xl-2">
+                    <label class="form-label">Modelo</label>
+                    <input class="form-control" asp-for="Filters.Modelo" />
+                </div>
+                <div class="col-12 col-md-3 col-xl-2">
+                    <label class="form-label">Inicio</label>
+                    <input class="form-control" asp-for="Filters.PeriodStart" type="date" />
+                </div>
+                <div class="col-12 col-md-3 col-xl-2">
+                    <label class="form-label">Fim</label>
+                    <input class="form-control" asp-for="Filters.PeriodEnd" type="date" />
+                </div>
+                <div class="col-12 col-md-3 col-xl-2">
+                    <label class="form-label">Usuario</label>
+                    <input class="form-control" asp-for="Filters.User" />
+                </div>
+                <div class="col-12 col-xl-3">
+                    <div class="option-row">
+                        <label class="option-check"><input asp-for="Filters.OnlyErrors" /> Somente erros</label>
+                        <label class="option-check"><input asp-for="Filters.OnlyPending" /> Somente pendentes</label>
+                        <label class="option-check"><input asp-for="Filters.OnlyCompleted" /> Somente concluidos</label>
+                    </div>
+                </div>
+                <div class="col-12 col-xl-1 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-brand px-3">
+                        <i class="bi bi-funnel"></i>
+                        Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <section class="tool-card">
+        <div class="tool-card-body">
+            <form method="post" asp-page-handler="Start">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <div class="row g-3">
+                    <div class="col-12 col-xl-5">
+                        <label class="form-label" asp-for="Input.BaseUrl"></label>
+                        <input class="form-control" asp-for="Input.BaseUrl" placeholder="https://andersonmultimarcas.com.br" />
+                        <span class="text-danger" asp-validation-for="Input.BaseUrl"></span>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-2">
+                        <label class="form-label" asp-for="Input.MaxVehicles"></label>
+                        <input class="form-control" asp-for="Input.MaxVehicles" min="1" />
+                        <span class="text-danger" asp-validation-for="Input.MaxVehicles"></span>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-2">
+                        <label class="form-label" asp-for="Input.StartId"></label>
+                        <input class="form-control" asp-for="Input.StartId" min="1" />
+                        <span class="text-danger" asp-validation-for="Input.StartId"></span>
+                    </div>
+
+                    <div class="col-12 col-xl-3">
+                        <div class="option-row">
+                            <label class="option-check">
+                                <input asp-for="Input.OnlyWithoutBlobName" />
+                                <span>@Html.DisplayNameFor(x => x.Input.OnlyWithoutBlobName)</span>
+                            </label>
+                            <label class="option-check">
+                                <input asp-for="Input.OverwriteExisting" />
+                                <span>@Html.DisplayNameFor(x => x.Input.OverwriteExisting)</span>
+                            </label>
+                            <label class="option-check">
+                                <input asp-for="Input.DryRun" />
+                                <span>@Html.DisplayNameFor(x => x.Input.DryRun)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="col-12 d-flex justify-content-end">
+                        <button type="submit" class="btn btn-brand px-4">
+                            <i class="bi bi-play-circle"></i>
+                            Enfileirar importacao
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    @if (details is not null)
+    {
+        <section class="tool-card">
+            <div class="tool-card-body">
+                <h2 class="page-title fs-6">Veiculos</h2>
+                <p class="page-subtitle">Resumo por veiculo dentro do job aberto</p>
+            </div>
+            <div class="table-wrap">
+                <table class="table details-table">
+                    <thead>
+                        <tr>
+                            <th>Veiculo</th>
+                            <th>Status</th>
+                            <th>Total</th>
+                            <th>Importadas</th>
+                            <th>Pendentes</th>
+                            <th>Erros</th>
+                            <th>Ignoradas</th>
+                            <th>Tempo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var vehicle in details.Vehicles)
+                        {
+                            var dotClass = vehicle.Status switch
+                            {
+                                "Concluido" => "dot-success",
+                                "Pendente" => "dot-pending",
+                                "Erro" => "dot-error",
+                                _ => "dot-running"
+                            };
+                            <tr>
+                                <td>
+                                    <strong>#@vehicle.VehicleId</strong><br />
+                                    <span class="text-muted">@vehicle.Title</span>
+                                </td>
+                                <td><span class="status-inline"><span class="status-dot @dotClass"></span>@vehicle.Status</span></td>
+                                <td>@vehicle.TotalImages</td>
+                                <td>@vehicle.ImportedImages</td>
+                                <td>@vehicle.PendingImages</td>
+                                <td>@vehicle.ErrorImages</td>
+                                <td>@vehicle.SkippedImages</td>
+                                <td>@vehicle.ProcessingTime.ToString(@"hh\:mm\:ss")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="tool-card">
+            <div class="tool-card-body">
+                <h2 class="page-title fs-6">Imagens e conferencia visual</h2>
+                <p class="page-subtitle">Imagem do legado lado a lado com a imagem armazenada no R2</p>
+            </div>
+            <div class="table-wrap">
+                <table class="table details-table">
+                    <thead>
+                        <tr>
+                            <th>Visual</th>
+                            <th>Veiculo</th>
+                            <th>Status</th>
+                            <th>Blob</th>
+                            <th>Tamanho</th>
+                            <th>Content-Type</th>
+                            <th>Importada em</th>
+                            <th>Tempo</th>
+                            <th>Tentativas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var image in details.Images)
+                        {
+                            var dotClass = image.Status switch
+                            {
+                                "Concluido" => "dot-success",
+                                "EmExecucao" => "dot-running",
+                                "Pendente" => "dot-pending",
+                                "Erro" => "dot-error",
+                                "PendenteRevisao" => "dot-retry",
+                                "Ignorado" => "dot-cancelled",
+                                _ => "dot-pending"
+                            };
+                            <tr>
+                                <td>
+                                    <div class="image-compare">
+                                        <a href="@image.SourceUrl" target="_blank" rel="noopener" title="Imagem do legado">
+                                            <img src="@image.SourceUrl" alt="Legado #@image.ItemId" loading="lazy" />
+                                        </a>
+                                        @if (!string.IsNullOrWhiteSpace(image.StoredUrl))
+                                        {
+                                            <a href="@image.StoredUrl" target="_blank" rel="noopener" title="Imagem armazenada">
+                                                <img src="@image.StoredUrl" alt="R2 #@image.ItemId" loading="lazy" />
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a title="Imagem armazenada indisponivel"></a>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>#@image.VehicleId</strong><br />
+                                    <span class="text-muted">@image.VehicleName</span>
+                                </td>
+                                <td><span class="status-inline"><span class="status-dot @dotClass"></span>@image.Status</span></td>
+                                <td class="log-message" title="@image.BlobName">@image.BlobName</td>
+                                <td>@(image.SizeBytes?.ToString("N0") ?? "-")</td>
+                                <td>@(image.ContentType ?? "-")</td>
+                                <td>@(image.ImportedAt?.ToLocalTime().ToString("dd/MM HH:mm:ss") ?? "-")</td>
+                                <td>@image.ProcessingTime.ToString(@"hh\:mm\:ss")</td>
+                                <td>@image.Attempts/@image.MaxAttempts</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="tool-card">
+            <div class="tool-card-body d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                <div>
+                    <h2 class="page-title fs-6">Erros e retry</h2>
+                    <p class="page-subtitle">Falhas preservadas para reprocessamento seletivo</p>
+                </div>
+                <form method="post" asp-page-handler="RetryFailures" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="jobId" value="@Model.JobId" />
+                    <button type="submit" class="btn-soft-dark px-3">
+                        <i class="bi bi-repeat"></i>
+                        Reprocessar somente falhas
+                    </button>
+                </form>
+            </div>
+            <div class="table-wrap">
+                <table class="table details-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Veiculo</th>
+                            <th>Blob</th>
+                            <th>Status</th>
+                            <th>Tentativas</th>
+                            <th>Erro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (details.Errors.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6" class="text-muted text-center py-4">Nenhum erro no filtro atual.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var error in details.Errors)
+                            {
+                                <tr>
+                                    <td>#@error.ItemId</td>
+                                    <td>#@error.VehicleId</td>
+                                    <td class="log-message" title="@error.BlobName">@error.BlobName</td>
+                                    <td><span class="status-inline"><span class="status-dot dot-error"></span>@error.Status</span></td>
+                                    <td>@error.Attempts/@error.MaxAttempts</td>
+                                    <td class="log-message" title="@error.Error">@error.Error</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="tool-card">
+            <div class="tool-card-body">
+                <h2 class="page-title fs-6">Tempo, metricas e historico</h2>
+                <p class="page-subtitle">Auditoria de operacao e resultado consolidado</p>
+                <div class="stats-grid mt-3">
+                    <div class="stat-item">
+                        <span class="stat-label">Tempo total</span>
+                        <span class="stat-value">@details.Metrics.TotalTime.ToString(@"hh\:mm\:ss")</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Uploads/min</span>
+                        <span class="stat-value">@details.Metrics.UploadsPerMinute.ToString("N2")</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Retries</span>
+                        <span class="stat-value">@details.Metrics.Retries</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Economia local</span>
+                        <span class="stat-value">@((details.Metrics.EstimatedLocalStorageSavingsBytes / 1024d / 1024d).ToString("N1")) MB</span>
+                    </div>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table details-table">
+                    <thead>
+                        <tr>
+                            <th>Quando</th>
+                            <th>Tipo</th>
+                            <th>Usuario</th>
+                            <th>Quantidade</th>
+                            <th>Duracao</th>
+                            <th>Resultado</th>
+                            <th>Mensagem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in details.History)
+                        {
+                            <tr>
+                                <td>@item.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm:ss")</td>
+                                <td>@item.Type</td>
+                                <td>@(item.UserName ?? "-")</td>
+                                <td>@(item.Quantity?.ToString() ?? "-")</td>
+                                <td>@(item.Duration.HasValue ? item.Duration.Value.ToString(@"hh\:mm\:ss") : "-")</td>
+                                <td>@(item.Result ?? "-")</td>
+                                <td class="log-message" title="@item.Message">@item.Message</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(details.ConsolidatedReportJson))
+            {
+                <div class="tool-card-body border-top">
+                    <h2 class="page-title fs-6">Resumo final consolidado</h2>
+                    <pre class="mt-3 mb-0 p-3 bg-light border rounded">@details.ConsolidatedReportJson</pre>
+                </div>
+            }
+        </section>
+    }
+
+    <section class="tool-card">
+        <div class="tool-card-body d-flex justify-content-between align-items-center gap-3 flex-wrap">
+            <div>
+                <h2 class="page-title fs-6">Jobs anteriores</h2>
+                <p class="page-subtitle">Estado e logs ficam no banco mesmo apos restart</p>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table class="table jobs-table">
+                <thead>
+                    <tr>
+                        <th>Job</th>
+                        <th>Status</th>
+                        <th>Criado</th>
+                        <th>Usuario</th>
+                        <th>Modo</th>
+                        <th>Veiculos</th>
+                        <th>Imagens</th>
+                        <th>Ultima mensagem</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Jobs.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="text-muted text-center py-4">Nenhum job persistido.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var job in Model.Jobs)
+                        {
+                            var dotClass = job.Status switch
+                            {
+                                "Concluido" => "dot-success",
+                                "EmExecucao" => "dot-running",
+                                "Pendente" => "dot-pending",
+                                "ConcluidoComFalhas" => "dot-retry",
+                                "Falha" => "dot-error",
+                                "Cancelado" => "dot-cancelled",
+                                _ => "dot-pending"
+                            };
+                            <tr>
+                                <td>#@job.Id</td>
+                                <td><span class="status-inline"><span class="status-dot @dotClass"></span>@job.Status</span></td>
+                                <td>@job.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")</td>
+                                <td>@(job.UserName ?? "-")</td>
+                                <td>@(job.DryRun ? "Dry run" : "Real")</td>
+                                <td>@job.VehiclesProcessed/@job.TotalVehicles</td>
+                                <td>@job.ImagesImported importadas, @job.ImagesWithError erro(s)</td>
+                                <td class="log-message" title="@job.LastMessage">@(job.LastMessage ?? "-")</td>
+                                <td class="text-end">
+                                    <a class="btn-soft-dark px-3" asp-page="./ImportarImagens" asp-route-jobId="@job.Id">
+                                        <i class="bi bi-folder2-open"></i>
+                                        Abrir
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="tool-card">
+        <div class="tool-card-body">
+            <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
+                <span class="status-pill">
+                    <i class="bi bi-activity"></i>
+                    <span id="statusText">@(current?.Status ?? "aguardando")</span>
+                </span>
+                <span class="text-muted fw-bold">Veiculo atual: <span id="currentVehicle">@(current?.CurrentVehicleId?.ToString() ?? "-")</span></span>
+            </div>
+
+            @{
+                var vehicleProgress = current?.TotalVehicles > 0
+                    ? Math.Round((current.VehiclesProcessed / (double)current.TotalVehicles) * 100)
+                    : 0;
+                var imageDoneForProgress = (current?.ImagesUploaded ?? 0) + (current?.ImagesSkipped ?? 0) + (current?.Failures ?? 0);
+                var totalImagesForProgress = current?.TotalImages > 0 ? current.TotalImages : imageDoneForProgress;
+                var imageProgress = totalImagesForProgress > 0 && current is not null
+                    ? Math.Round((imageDoneForProgress / (double)totalImagesForProgress) * 100)
+                    : 0;
+            }
+            <div class="progress-block mb-3">
+                <div class="progress-label">
+                    <span>Veiculos</span>
+                    <span id="vehicleProgressText">@vehicleProgress%</span>
+                </div>
+                <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                    <div id="vehicleProgressBar" class="progress-bar" style="width: @vehicleProgress%"></div>
+                </div>
+                <div class="progress-label">
+                    <span>Imagens</span>
+                    <span id="imageProgressText">@imageProgress%</span>
+                </div>
+                <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                    <div id="imageProgressBar" class="progress-bar" style="width: @imageProgress%"></div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Processados</span>
+                    <span id="vehiclesProcessed" class="stat-value">@(current?.VehiclesProcessed ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Restantes</span>
+                    <span id="vehiclesRemaining" class="stat-value">@(current?.VehiclesRemaining ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Veiculos com imagem</span>
+                    <span id="vehiclesImported" class="stat-value">@(current?.VehiclesImported ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Ignorados</span>
+                    <span id="vehiclesSkipped" class="stat-value">@(current?.VehiclesSkipped ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Com erro</span>
+                    <span id="vehiclesWithError" class="stat-value">@(current?.VehiclesWithError ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Imagens importadas</span>
+                    <span id="imagesUploaded" class="stat-value">@(current?.ImagesUploaded ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Imagens ignoradas</span>
+                    <span id="imagesSkipped" class="stat-value">@(current?.ImagesSkipped ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Falhas/revisao</span>
+                    <span id="failures" class="stat-value">@(current?.Failures ?? 0)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Decorrido</span>
+                    <span id="elapsed" class="stat-value">@(current?.Elapsed.ToString(@"hh\:mm\:ss") ?? "00:00:00")</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Estimativa</span>
+                    <span id="eta" class="stat-value">@(current?.EstimatedRemaining.ToString(@"hh\:mm\:ss") ?? "00:00:00")</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Taxa media</span>
+                    <span id="rate" class="stat-value">@(current?.AverageImportRate.ToString("N1") ?? "0,0")/min</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Job</span>
+                    <span class="stat-value">@(Model.JobId.HasValue ? $"#{Model.JobId}" : "-")</span>
+                </div>
+            </div>
+
+            @if (details is not null)
+            {
+                <div class="stats-grid mt-3">
+                    <div class="stat-item">
+                        <span class="stat-label">Tempo medio/veiculo</span>
+                        <span id="averageVehicleTime" class="stat-value">@details.Metrics.AverageVehicleTime.ToString(@"hh\:mm\:ss")</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Tempo medio/imagem</span>
+                        <span id="averageImageTime" class="stat-value">@details.Metrics.AverageImageTime.ToString(@"hh\:mm\:ss")</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Maior tempo</span>
+                        <span id="maxProcessingTime" class="stat-value">@details.Metrics.MaxProcessingTime.ToString(@"hh\:mm\:ss")</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Menor tempo</span>
+                        <span id="minProcessingTime" class="stat-value">@details.Metrics.MinProcessingTime.ToString(@"hh\:mm\:ss")</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Taxa sucesso</span>
+                        <span id="successRate" class="stat-value">@details.Metrics.SuccessRate.ToString("N1")%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Taxa erro</span>
+                        <span id="errorRate" class="stat-value">@details.Metrics.ErrorRate.ToString("N1")%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Taxa retry</span>
+                        <span id="retryRate" class="stat-value">@details.Metrics.RetryRate.ToString("N1")%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Downloads/min</span>
+                        <span id="downloadsPerMinute" class="stat-value">@details.Metrics.DownloadsPerMinute.ToString("N2")</span>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="tool-card">
+        <div class="tool-card-body d-flex justify-content-between align-items-center gap-3 flex-wrap">
+            <div>
+                <h2 class="page-title fs-6">Log detalhado</h2>
+                <p class="page-subtitle">Veiculo, imagem, download, upload, validacao e banco</p>
+            </div>
+            @if (Model.JobId.HasValue)
+            {
+                <a class="btn-soft-dark px-3" href="?handler=LogCsv&jobId=@Model.JobId">
+                    <i class="bi bi-filetype-csv"></i>
+                    Baixar CSV
+                </a>
+            }
+        </div>
+        <div class="log-panel">
+            <table class="table log-table">
+                <thead>
+                    <tr>
+                        <th>Hora</th>
+                        <th>Veiculo</th>
+                        <th>Imagem</th>
+                        <th>Etapa</th>
+                        <th>Status</th>
+                        <th>Mensagem</th>
+                    </tr>
+                </thead>
+                <tbody id="logBody">
+                    @if (current?.Logs.Count > 0)
+                    {
+                        foreach (var log in current.Logs)
+                        {
+                            <tr data-log-index="@log.Index">
+                                <td>@log.TimestampUtc.ToLocalTime().ToString("HH:mm:ss")</td>
+                                <td>@(log.VehicleId?.ToString() ?? "-")</td>
+                                <td>@(log.ImageIndex?.ToString() ?? "-")</td>
+                                <td>@log.Stage</td>
+                                <td>@log.Status</td>
+                                <td class="log-message" title="@log.Message">@log.Message</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr data-empty-log>
+                            <td colspan="6" class="text-muted text-center py-4">Nenhum log para exibir.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const root = document.querySelector('[data-job-id]');
+            const jobId = root ? root.getAttribute('data-job-id') : '';
+            const logBody = document.getElementById('logBody');
+            const currentQuery = new URLSearchParams(window.location.search);
+            currentQuery.delete('handler');
+            currentQuery.delete('afterLogIndex');
+            let lastLogIndex = Math.max(-1, ...Array.from(document.querySelectorAll('[data-log-index]')).map(x => Number(x.getAttribute('data-log-index'))));
+            let timer = null;
+
+            function setText(id, value) {
+                const element = document.getElementById(id);
+                if (element) element.textContent = value;
+            }
+
+            function shortDuration(value) {
+                if (!value) return '00:00:00';
+                return String(value).split('.')[0].padStart(8, '0');
+            }
+
+            function percent(done, total) {
+                if (!total || total <= 0) return 0;
+                return Math.min(100, Math.max(0, Math.round(done / total * 100)));
+            }
+
+            function number(value, digits) {
+                return Number(value || 0).toLocaleString('pt-BR', { maximumFractionDigits: digits, minimumFractionDigits: digits });
+            }
+
+            function appendLog(log) {
+                if (!logBody) return;
+                document.querySelector('[data-empty-log]')?.remove();
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-log-index', log.index);
+                const time = new Date(log.timestampUtc).toLocaleTimeString('pt-BR');
+                const message = log.message || '';
+                tr.innerHTML = '<td></td><td></td><td></td><td></td><td></td><td class="log-message"></td>';
+                tr.children[0].textContent = time;
+                tr.children[1].textContent = log.vehicleId || '-';
+                tr.children[2].textContent = log.imageIndex || '-';
+                tr.children[3].textContent = log.stage || '-';
+                tr.children[4].textContent = log.status || '-';
+                tr.children[5].textContent = message;
+                tr.children[5].setAttribute('title', message);
+                logBody.appendChild(tr);
+                lastLogIndex = Math.max(lastLogIndex, Number(log.index));
+            }
+
+            function updateDashboard(dashboard) {
+                setText('dashboardActiveJobs', dashboard.activeJobs || 0);
+                setText('dashboardCompletedJobs', dashboard.completedJobs || 0);
+                setText('dashboardFailedJobs', dashboard.failedJobs || 0);
+                setText('dashboardVehiclesProcessed', dashboard.vehiclesProcessed || 0);
+                setText('dashboardVehiclesRemaining', dashboard.vehiclesRemaining || 0);
+                setText('dashboardImagesImported', dashboard.imagesImported || 0);
+                setText('dashboardImagesPending', dashboard.imagesPending || 0);
+                setText('dashboardImagesWithError', dashboard.imagesWithError || 0);
+                setText('dashboardImagesSkipped', dashboard.imagesSkipped || 0);
+                setText('dashboardElapsed', shortDuration(dashboard.elapsed));
+                setText('dashboardEta', shortDuration(dashboard.estimatedRemaining));
+                setText('dashboardVehiclesRate', number(dashboard.vehiclesPerMinute, 2));
+                setText('dashboardImagesRate', number(dashboard.imagesPerMinute, 2));
+                setText('dashboardSuccessRate', number(dashboard.successRate, 1) + '%');
+                setText('dashboardErrorRate', number(dashboard.errorRate, 1));
+                setText('dashboardRetryRate', number(dashboard.retryRate, 1));
+            }
+
+            function update(snapshot) {
+                setText('statusText', snapshot.status || 'aguardando');
+                setText('currentVehicle', snapshot.currentVehicleId || '-');
+                setText('vehiclesProcessed', snapshot.vehiclesProcessed || 0);
+                setText('vehiclesRemaining', snapshot.vehiclesRemaining || 0);
+                setText('vehiclesImported', snapshot.vehiclesImported || 0);
+                setText('vehiclesSkipped', snapshot.vehiclesSkipped || 0);
+                setText('vehiclesWithError', snapshot.vehiclesWithError || 0);
+                setText('imagesUploaded', snapshot.imagesUploaded || 0);
+                setText('imagesSkipped', snapshot.imagesSkipped || 0);
+                setText('failures', snapshot.failures || 0);
+                setText('elapsed', shortDuration(snapshot.elapsed));
+                setText('eta', shortDuration(snapshot.estimatedRemaining));
+                setText('rate', Number(snapshot.averageImportRate || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '/min');
+
+                const vehicleProgress = percent(snapshot.vehiclesProcessed || 0, snapshot.totalVehicles || 0);
+                const imageDone = (snapshot.imagesUploaded || 0) + (snapshot.imagesSkipped || 0) + (snapshot.failures || 0);
+                const imageProgress = percent(imageDone, snapshot.totalImages || imageDone);
+                const vehicleBar = document.getElementById('vehicleProgressBar');
+                const imageBar = document.getElementById('imageProgressBar');
+                if (vehicleBar) vehicleBar.style.width = vehicleProgress + '%';
+                if (imageBar) imageBar.style.width = imageProgress + '%';
+                setText('vehicleProgressText', vehicleProgress + '%');
+                setText('imageProgressText', imageProgress + '%');
+
+                (snapshot.logs || []).forEach(appendLog);
+            }
+
+            function isActiveStatus(status) {
+                return status === 'Pendente' || status === 'EmExecucao' || status === 'CancelamentoSolicitado';
+            }
+
+            async function poll() {
+                if (document.hidden) {
+                    schedule(15000);
+                    return;
+                }
+
+                let active = false;
+                const dashboardQuery = new URLSearchParams(currentQuery);
+                dashboardQuery.set('handler', 'Dashboard');
+                const requests = [fetch('?' + dashboardQuery.toString(), { headers: { Accept: 'application/json' } })];
+                if (jobId) {
+                    const statusQuery = new URLSearchParams(currentQuery);
+                    statusQuery.set('handler', 'Status');
+                    statusQuery.set('jobId', jobId);
+                    statusQuery.set('afterLogIndex', String(lastLogIndex));
+                    requests.push(fetch('?' + statusQuery.toString(), { headers: { Accept: 'application/json' } }));
+                }
+
+                const responses = await Promise.allSettled(requests);
+                if (responses[0].status === 'fulfilled' && responses[0].value.ok) {
+                    const dashboard = await responses[0].value.json();
+                    updateDashboard(dashboard);
+                    active = (dashboard.activeJobs || 0) > 0;
+                }
+
+                if (jobId && responses[1]?.status === 'fulfilled' && responses[1].value.ok) {
+                    const snapshot = await responses[1].value.json();
+                    update(snapshot);
+                    active = active || isActiveStatus(snapshot.status);
+                }
+
+                schedule(active ? 5000 : 15000);
+            }
+
+            function schedule(delay) {
+                window.clearTimeout(timer);
+                timer = window.setTimeout(poll, delay);
+            }
+
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) {
+                    schedule(500);
+                }
+            });
+
+            schedule(1000);
+        })();
+    </script>
+}

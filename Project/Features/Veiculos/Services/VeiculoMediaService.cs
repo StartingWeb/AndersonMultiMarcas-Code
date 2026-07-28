@@ -1,23 +1,24 @@
+using Core.Storage;
+using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
 
 namespace Project.Features.Veiculos.Services;
 
-public sealed class VeiculoMediaService(IWebHostEnvironment environment) : IVeiculoMediaService
+public sealed class VeiculoMediaService(
+    IStorageService storage,
+    IOptions<StorageOptions> storageOptions) : IVeiculoMediaService
 {
     private static readonly HashSet<string> AllowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+    private const string OutputContentType = "image/webp";
 
-    public async Task<IReadOnlyCollection<(string Url, string NomeArquivo, long TamanhoBytes)>> ProcessarUploadAsync(
+    public async Task<IReadOnlyCollection<VeiculoMediaUploadResult>> ProcessarUploadAsync(
         int veiculoId,
         IReadOnlyCollection<IFormFile> arquivos,
         CancellationToken ct)
     {
-        var pastaRelativa = Path.Combine("uploads", "veiculos", veiculoId.ToString());
-        var pastaFisica = Path.Combine(environment.WebRootPath, pastaRelativa);
-        Directory.CreateDirectory(pastaFisica);
-
-        var resultado = new List<(string Url, string NomeArquivo, long TamanhoBytes)>();
+        var resultado = new List<VeiculoMediaUploadResult>();
 
         foreach (var arquivo in arquivos)
         {
@@ -38,30 +39,39 @@ public sealed class VeiculoMediaService(IWebHostEnvironment environment) : IVeic
             }
 
             var nomeArquivo = $"{Guid.NewGuid():N}.webp";
-            var caminhoFisico = Path.Combine(pastaFisica, nomeArquivo);
-            await using var output = File.Create(caminhoFisico);
+            var key = StoragePath.Combine("uploads", "veiculos", veiculoId.ToString(), nomeArquivo);
+            await using var output = new MemoryStream();
             await image.SaveAsync(output, new WebpEncoder { Quality = 75 }, ct);
+            output.Position = 0;
 
-            var info = new FileInfo(caminhoFisico);
-            var url = $"/{pastaRelativa.Replace('\\', '/')}/{nomeArquivo}";
-            resultado.Add((url, nomeArquivo, info.Length));
+            var stored = await storage.SaveAsync(key, output, OutputContentType, ct);
+            resultado.Add(new VeiculoMediaUploadResult(
+                stored.Url,
+                nomeArquivo,
+                stored.Key,
+                stored.Container,
+                stored.ContentType,
+                stored.SizeBytes));
         }
 
         return resultado;
     }
 
     public Task RemoverArquivoAsync(string? caminhoRelativo, CancellationToken ct)
+        => RemoverArquivoAsync(new StorageImageReference(caminhoRelativo), ct);
+
+    public async Task RemoverArquivoAsync(StorageImageReference reference, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(caminhoRelativo)) return Task.CompletedTask;
-
-        var normalized = caminhoRelativo.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-        var completo = Path.Combine(environment.WebRootPath, normalized);
-
-        if (File.Exists(completo))
+        if (StoragePath.TryGetKey(reference, PublicBaseUrls(), out var key))
         {
-            File.Delete(completo);
+            await storage.DeleteAsync(key, ct);
         }
+    }
 
-        return Task.CompletedTask;
+    private IEnumerable<string?> PublicBaseUrls()
+    {
+        yield return storageOptions.Value.PublicBaseUrl;
+        yield return storageOptions.Value.R2.PublicBaseUrl;
+        yield return storageOptions.Value.R2.ServiceUrl;
     }
 }

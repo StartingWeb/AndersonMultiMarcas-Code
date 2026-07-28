@@ -1,24 +1,25 @@
 using Data;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Project.Infrastructure.Storage;
 using Project.Pages.ViewModels;
 using Project.Shared;
 
 namespace Project.Pages;
 
-public class EmpresaModel(ApplicationDbContext db) : PageModel
+public class EmpresaModel(ApplicationDbContext db, IStorageImageResolver imageResolver) : PageModel
 {
     public int TotalVeiculos { get; private set; }
     public IReadOnlyList<HomeStoreViewModel> Lojas { get; private set; } = [];
     public IReadOnlyList<HomeSellerViewModel> Vendedores { get; private set; } = [];
 
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(CancellationToken ct)
     {
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
         TotalVeiculos = await db.Veiculos
             .AsNoTracking()
-            .CountAsync(x => x.Ativo && !x.Vendido);
+            .CountAsync(x => x.Ativo && !x.Vendido, ct);
 
         Lojas = await db.Lojas
             .AsNoTracking()
@@ -30,20 +31,22 @@ public class EmpresaModel(ApplicationDbContext db) : PageModel
                 MapsQuery = Uri.EscapeDataString($"{x.Endereco.Logradouro}, {x.Endereco.Numero}, {x.Endereco.Bairro}, {x.Endereco.Cidade} - {x.Endereco.Uf}, {x.Endereco.Cep}")
             })
             .Take(3)
-            .ToListAsync();
+            .ToListAsync(ct);
 
-        Vendedores = await db.Vendedores
+        var vendedores = await db.Vendedores
             .AsNoTracking()
             .Where(x => x.Ativo)
             .OrderBy(x => x.Nome)
-            .Select(x => new HomeSellerViewModel
+            .Select(x => new SellerProjection
             {
                 Nome = x.Nome,
                 Telefone = x.Whatsapp.HasValue ? x.Whatsapp.Value.Valor : (x.Telefone.HasValue ? x.Telefone.Value.Valor : string.Empty),
-                FotoUrl = SellerImageHelper.Normalize(x.FotoUrl)
+                FotoUrl = x.FotoUrl
             })
             .Take(12)
-            .ToListAsync();
+            .ToListAsync(ct);
+
+        Vendedores = await ToSellerViewModelsAsync(vendedores, ct);
 
         ViewData["SeoTitle"] = "Quem somos | Anderson Multimarcas em Taquaritinga/SP";
         ViewData["MetaDescription"] = "Conheça a história da Anderson Multimarcas, nossas lojas em Taquaritinga/SP e o atendimento pensado para gerar confiança em cada negócio.";
@@ -52,5 +55,28 @@ public class EmpresaModel(ApplicationDbContext db) : PageModel
         ViewData["FaqSchema"] = SeoJsonLd.Faq(
             ("Onde fica a Anderson Multimarcas?", "A Anderson Multimarcas atende em Taquaritinga/SP e região, com unidades presenciais e vendedores especializados."),
             ("A loja trabalha com quais tipos de veículo?", "O estoque inclui carros seminovos, opções 0 km, modelos eletrificados e motos elétricas conforme disponibilidade."));
+    }
+
+    private async Task<IReadOnlyList<HomeSellerViewModel>> ToSellerViewModelsAsync(IEnumerable<SellerProjection> sellers, CancellationToken ct)
+    {
+        var result = new List<HomeSellerViewModel>();
+        foreach (var seller in sellers)
+        {
+            result.Add(new HomeSellerViewModel
+            {
+                Nome = seller.Nome,
+                Telefone = seller.Telefone,
+                FotoUrl = await imageResolver.ResolveSellerPhotoAsync(seller.FotoUrl, ct)
+            });
+        }
+
+        return result;
+    }
+
+    private sealed class SellerProjection
+    {
+        public string Nome { get; init; } = string.Empty;
+        public string Telefone { get; init; } = string.Empty;
+        public string? FotoUrl { get; init; }
     }
 }

@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Text.Json;
+using Core.Storage;
 using Data;
 using Domain.Entities;
 using Domain.Enums;
@@ -12,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Project.Features.Veiculos.Commands;
 using Project.Features.Veiculos.DTOs;
 using Project.Features.Veiculos.Services;
+using Project.Infrastructure.Storage;
 using Project.Shared;
 
 namespace Project.Pages.Admin.Veiculo;
@@ -21,13 +23,16 @@ public sealed class UpsertModel(
     ApplicationDbContext db,
     ISender sender,
     IVeiculoMediaService mediaService,
-    IWebHostEnvironment environment) : PageModel
+    IStorageImageResolver imageResolver) : PageModel
 {
     private static readonly CultureInfo BrCulture = new("pt-BR");
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     [BindProperty(SupportsGet = true)]
     public int? Id { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? Step { get; set; }
 
     [BindProperty]
     public VehicleInputModel Veiculo { get; set; } = new();
@@ -54,6 +59,7 @@ public sealed class UpsertModel(
     public string PageSubtitle { get; private set; } = "Preencha os dados para cadastrar um novo veículo";
     public string SubmitLabel { get; private set; } = "Cadastrar veículo";
     public bool IsEdit => Veiculo.Id > 0;
+    public bool IsMediaStep => string.Equals(Step, "midias", StringComparison.OrdinalIgnoreCase);
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
@@ -62,6 +68,7 @@ public sealed class UpsertModel(
         if (!Id.HasValue)
         {
             Veiculo.Ativo = true;
+            Step = null;
             ViewData["Title"] = PageTitle;
             return Page();
         }
@@ -105,15 +112,19 @@ public sealed class UpsertModel(
         };
 
         Caracteristica = CaracteristicaInputModel.FromEntity(veiculo.Caracteristicas);
-        MidiasExistentes = veiculo.Midias
-            .Where(x => x.Ativo && x.Tipo == TipoMidia.Imagem)
-            .OrderBy(x => x.Ordem)
-            .Select(ToExistingMediaItem)
-            .Where(x => x is not null)
-            .Cast<ExistingMediaItem>()
-            .ToList();
+        MidiasExistentes = await BuildExistingMediaItemsAsync(
+            veiculo.Midias
+                .Where(x => x.Ativo && x.Tipo == TipoMidia.Imagem)
+                .OrderBy(x => x.Ordem),
+            ct);
 
-        ApplyEditTitle(BuildNomeCompleto(veiculo.Titulo, veiculo.Modelo, veiculo.Versao));
+        var nomeCompleto = BuildNomeCompleto(veiculo.Titulo, veiculo.Modelo, veiculo.Versao);
+        ApplyEditTitle(nomeCompleto);
+        if (IsMediaStep)
+        {
+            ApplyMediaTitle(nomeCompleto);
+        }
+
         ViewData["Title"] = PageTitle;
         return Page();
     }
@@ -133,6 +144,7 @@ public sealed class UpsertModel(
 
         if (!ModelState.IsValid)
         {
+            TempData["WarningMessage"] = "Confira os campos destacados antes de continuar.";
             if (Veiculo.Id > 0)
             {
                 MidiasExistentes = await LoadExistingMediaAsync(Veiculo.Id, ct);
@@ -143,11 +155,12 @@ public sealed class UpsertModel(
 
         var lojaId = Veiculo.LojaId.GetValueOrDefault() > 0 ? Veiculo.LojaId.GetValueOrDefault() : Lojas.FirstOrDefault()?.Id ?? 0;
         var marcaId = Veiculo.MarcaId.GetValueOrDefault() > 0 ? Veiculo.MarcaId.GetValueOrDefault() : Marcas.FirstOrDefault()?.Id ?? 0;
-        if (lojaId <= 0) ModelState.AddModelError("Veiculo.LojaId", "Cadastre uma loja antes de salvar o veiculo.");
-        if (marcaId <= 0) ModelState.AddModelError("Veiculo.MarcaId", "Cadastre uma marca antes de salvar o veiculo.");
+        if (lojaId <= 0) ModelState.AddModelError(string.Empty, "Cadastre uma loja antes de salvar veiculos.");
+        if (marcaId <= 0) ModelState.AddModelError(string.Empty, "Cadastre uma marca antes de salvar veiculos.");
 
         if (!ModelState.IsValid)
         {
+            TempData["WarningMessage"] = "Nao foi possivel salvar o veiculo. Confira o aviso exibido na tela.";
             if (Veiculo.Id > 0)
             {
                 MidiasExistentes = await LoadExistingMediaAsync(Veiculo.Id, ct);
@@ -156,7 +169,8 @@ public sealed class UpsertModel(
             return Page();
         }
 
-        var marcaNome = Marcas.FirstOrDefault(x => x.Id == marcaId)?.Nome ?? Veiculo.Modelo;
+        var marcaNome = Marcas.FirstOrDefault(x => x.Id == marcaId)?.Nome ?? "Veiculo";
+        var modelo = string.IsNullOrWhiteSpace(Veiculo.Modelo) ? "Sem modelo informado" : Veiculo.Modelo.Trim();
         var titulo = string.IsNullOrWhiteSpace(Veiculo.Titulo) ? marcaNome : Veiculo.Titulo.Trim();
         var opcionais = Caracteristica.ToOpcionais();
         var preco = ParseDecimal(Veiculo.PrecoVenda);
@@ -169,7 +183,7 @@ public sealed class UpsertModel(
                 LojaId = lojaId,
                 MarcaId = marcaId,
                 Titulo = titulo,
-                Modelo = Veiculo.Modelo.Trim(),
+                Modelo = modelo,
                 Versao = NullIfWhiteSpace(Veiculo.Versao),
                 AnoFabricacao = Veiculo.AnoFabricacao,
                 AnoModelo = Veiculo.AnoModelo ?? 0,
@@ -193,9 +207,9 @@ public sealed class UpsertModel(
                 return Page();
             }
 
-            await ApplyStatusAndMediaAsync(result.Value, ct);
-            TempData["SuccessMessage"] = "Veículo cadastrado com sucesso.";
-            return RedirectToPage("/Admin/Veiculo/Index");
+            await ApplyStatusAsync(result.Value, ct);
+            TempData["SuccessMessage"] = "Veículo cadastrado com sucesso. Agora envie as fotos.";
+            return RedirectToPage("/Admin/Veiculo/Upsert", new { id = result.Value, step = "midias" });
         }
 
         var updateResult = await sender.Send(new AtualizarVeiculoCommand(new VeiculoUpdateDto
@@ -204,7 +218,7 @@ public sealed class UpsertModel(
             LojaId = lojaId,
             MarcaId = marcaId,
             Titulo = titulo,
-            Modelo = Veiculo.Modelo.Trim(),
+            Modelo = modelo,
             Versao = NullIfWhiteSpace(Veiculo.Versao),
             AnoFabricacao = Veiculo.AnoFabricacao,
             AnoModelo = Veiculo.AnoModelo ?? 0,
@@ -229,9 +243,33 @@ public sealed class UpsertModel(
             return Page();
         }
 
-        await ApplyStatusAndMediaAsync(Veiculo.Id, ct);
-        TempData["SuccessMessage"] = "Veículo salvo com sucesso.";
-        return RedirectToPage("/Admin/Veiculo/Index");
+        await ApplyStatusAsync(Veiculo.Id, ct);
+        TempData["SuccessMessage"] = "Dados do veículo salvos com sucesso.";
+        return RedirectToPage("/Admin/Veiculo/Upsert", new { id = Veiculo.Id, step = "midias" });
+    }
+
+    public async Task<IActionResult> OnPostMidiasAsync(CancellationToken ct)
+    {
+        if (Veiculo.Id <= 0)
+        {
+            TempData["ErrorMessage"] = "Salve os dados do veículo antes de enviar fotos.";
+            return RedirectToPage("/Admin/Veiculo/Upsert");
+        }
+
+        var exists = await db.Veiculos.AsNoTracking().AnyAsync(x => x.Id == Veiculo.Id, ct);
+        if (!exists)
+        {
+            TempData["ErrorMessage"] = "Veículo não encontrado.";
+            return RedirectToPage("/Admin/Veiculo/Index");
+        }
+
+        await RemoveSelectedMediaAsync(Veiculo.Id, ct);
+        await UploadNewMediaAsync(Veiculo.Id, ct);
+        await ApplyMediaOrderAsync(Veiculo.Id, ct);
+        await db.SaveChangesAsync(ct);
+
+        TempData["SuccessMessage"] = "Fotos do veículo salvas com sucesso.";
+        return RedirectToPage("/Admin/Veiculo/Upsert", new { id = Veiculo.Id, step = "midias" });
     }
 
     private async Task LoadSelectsAsync(CancellationToken ct)
@@ -259,23 +297,23 @@ public sealed class UpsertModel(
             .OrderBy(x => x.Ordem)
             .ToListAsync(ct);
 
-        return midias
-            .Select(ToExistingMediaItem)
-            .Where(x => x is not null)
-            .Cast<ExistingMediaItem>()
-            .ToList();
+        return await BuildExistingMediaItemsAsync(midias, ct);
     }
 
-    private ExistingMediaItem? ToExistingMediaItem(VeiculoMidia midia)
+    private async Task<IReadOnlyList<ExistingMediaItem>> BuildExistingMediaItemsAsync(IEnumerable<VeiculoMidia> midias, CancellationToken ct)
     {
-        var imagens = VehicleImageHelper.NormalizeGallery([midia.Url], includeDefault: false, environment.WebRootPath);
-        var url = imagens.FirstOrDefault();
-        if (string.IsNullOrWhiteSpace(url))
+        var result = new List<ExistingMediaItem>();
+        foreach (var midia in midias)
         {
-            return null;
+            var imagens = await imageResolver.ResolveVehicleGalleryAsync([ToStorageReference(midia)], includeDefault: false, ct);
+            var url = imagens.FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(url))
+            {
+                result.Add(new ExistingMediaItem(midia.Id, url, midia.NomeArquivo, midia.TamanhoBytes, midia.Capa));
+            }
         }
 
-        return new ExistingMediaItem(midia.Id, url, midia.NomeArquivo, midia.TamanhoBytes, midia.Capa);
+        return result;
     }
 
     private void ApplyEditTitle(string nome)
@@ -283,6 +321,13 @@ public sealed class UpsertModel(
         PageTitle = $"Editando veículo {nome}";
         PageSubtitle = "Atualize os dados do veículo selecionado";
         SubmitLabel = "Salvar veículo";
+    }
+
+    private void ApplyMediaTitle(string nome)
+    {
+        PageTitle = $"Fotos do veiculo {nome}";
+        PageSubtitle = "Envie, ordene e escolha a capa do veiculo";
+        SubmitLabel = "Salvar fotos";
     }
 
     private void NormalizeInput()
@@ -296,11 +341,10 @@ public sealed class UpsertModel(
 
     private void ValidateInput()
     {
-        if (string.IsNullOrWhiteSpace(Veiculo.Modelo)) ModelState.AddModelError("Veiculo.Modelo", "Informe o modelo.");
         if (ParseDecimal(Veiculo.PrecoVenda) < 0) ModelState.AddModelError("Veiculo.PrecoVenda", "Informe um preço válido.");
     }
 
-    private async Task ApplyStatusAndMediaAsync(int veiculoId, CancellationToken ct)
+    private async Task ApplyStatusAsync(int veiculoId, CancellationToken ct)
     {
         var veiculo = await db.Veiculos.FirstAsync(x => x.Id == veiculoId, ct);
 
@@ -317,10 +361,6 @@ public sealed class UpsertModel(
             veiculo.Ativar();
         }
 
-        await RemoveSelectedMediaAsync(veiculoId, ct);
-        await UploadNewMediaAsync(veiculoId, ct);
-        await ApplyMediaOrderAsync(veiculoId, ct);
-
         await db.SaveChangesAsync(ct);
     }
 
@@ -334,7 +374,7 @@ public sealed class UpsertModel(
 
         foreach (var midia in midias)
         {
-            await mediaService.RemoverArquivoAsync(midia.Url, ct);
+            await mediaService.RemoverArquivoAsync(ToStorageReference(midia), ct);
             db.VeiculoMidias.Remove(midia);
         }
     }
@@ -353,7 +393,7 @@ public sealed class UpsertModel(
         {
             nextOrder++;
             var midia = new VeiculoMidia(veiculoId, item.NomeArquivo, item.Url, TipoMidia.Imagem, nextOrder);
-            midia.UpdateStorage(null, null, "image/webp", item.TamanhoBytes);
+            midia.UpdateStorage(item.BlobName, item.Container, item.ContentType, item.TamanhoBytes);
             db.VeiculoMidias.Add(midia);
         }
 
@@ -470,6 +510,9 @@ public sealed class UpsertModel(
     private static string? NullIfWhiteSpace(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
+    private static StorageImageReference ToStorageReference(VeiculoMidia midia)
+        => new(midia.Url, midia.BlobName, midia.Container, midia.NomeArquivo, midia.ContentType, midia.TamanhoBytes);
+
     private static string BuildNomeCompleto(string? titulo, string? modelo, string? versao)
     {
         var tituloLimpo = (titulo ?? string.Empty).Trim();
@@ -500,8 +543,8 @@ public sealed class UpsertModel(
         public int Id { get; set; }
         public int? LojaId { get; set; }
         public int? MarcaId { get; set; }
-        public string Titulo { get; set; } = string.Empty;
-        public string Modelo { get; set; } = string.Empty;
+        public string? Titulo { get; set; }
+        public string? Modelo { get; set; }
         public string? Versao { get; set; }
         public int? AnoFabricacao { get; set; }
         public int? AnoModelo { get; set; }

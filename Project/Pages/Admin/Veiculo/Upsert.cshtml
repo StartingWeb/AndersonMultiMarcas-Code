@@ -60,6 +60,32 @@
         padding: 1.25rem;
     }
 
+    .upsert-steps {
+        display: flex;
+        gap: .75rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+
+    .upsert-step {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        border: 1px solid var(--brand-border);
+        border-radius: .85rem;
+        padding: .65rem .85rem;
+        color: var(--brand-muted);
+        background: #fff;
+        font-size: .86rem;
+        font-weight: 700;
+    }
+
+    .upsert-step.active {
+        border-color: rgba(159, 10, 16, .25);
+        background: rgba(159, 10, 16, .06);
+        color: var(--brand-primary);
+    }
+
     .section-title {
         font-size: 1rem;
         font-weight: 700;
@@ -110,6 +136,10 @@
 
     .text-danger {
         font-size: .8rem;
+    }
+
+    .validation-summary-valid {
+        display: none;
     }
 
     .btn-brand {
@@ -604,15 +634,28 @@
 
     <div class="form-card">
         <div class="form-card-body">
-            <form method="post" enctype="multipart/form-data" id="formVeiculo" novalidate>
+            <div class="upsert-steps" aria-label="Etapas do cadastro">
+                <span class="upsert-step @(!Model.IsMediaStep ? "active" : "")">
+                    <i class="bi bi-1-circle-fill"></i>
+                    Dados do veiculo
+                </span>
+                <span class="upsert-step @(Model.IsMediaStep ? "active" : "")">
+                    <i class="bi bi-2-circle-fill"></i>
+                    Fotos e capa
+                </span>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" id="formVeiculo" asp-page-handler="@(Model.IsMediaStep ? "Midias" : null)" novalidate>
                 @Html.AntiForgeryToken()
-                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <div asp-validation-summary="All" class="alert alert-danger validation-summary-errors mb-3"></div>
 
                 <input type="hidden" asp-for="Veiculo.Id">
                 <input type="hidden" asp-for="Veiculo.Titulo">
                 <input type="hidden" asp-for="MidiasOrdenadasJson" id="MidiasOrdenadasJson">
                 <input type="hidden" asp-for="CapaItemKey" id="CapaItemKey">
 
+                @if (!Model.IsMediaStep)
+                {
                 <div class="mb-4">
                     <div class="section-title">Dados principais</div>
                     <div class="section-subtitle">Informações básicas do veículo.</div>
@@ -920,9 +963,10 @@
                         </div>
                     </div>
                 </div>
+                }
 
-                <hr class="my-4">
-
+                @if (Model.IsMediaStep)
+                {
                 <div class="mb-3">
                     <div class="section-title">Fotos do veículo</div>
                     <div class="section-subtitle">Envie varias imagens, arraste para ordenar e marque qual sera a capa.</div>
@@ -988,8 +1032,17 @@
                 </div>
 
                 <div id="removedMediaInputs"></div>
+                }
 
                 <div class="form-actions">
+                    @if (Model.IsMediaStep)
+                    {
+                        <a class="btn btn-soft-dark" href="/Admin/Veiculo/Upsert/@Model.Veiculo.Id">
+                            <i class="bi bi-pencil-square me-2"></i>
+                            Editar dados
+                        </a>
+                    }
+
                     <a class="btn btn-soft-dark" href="/Admin/Veiculo">
                         <i class="bi bi-x-circle me-2"></i>
                         Cancelar
@@ -1253,6 +1306,7 @@
             }
 
             function syncFileInputFromArray() {
+                if (!mediaInput) return;
                 const dt = new DataTransfer();
                 newFiles.forEach(file => dt.items.add(file));
                 mediaInput.files = dt.files;
@@ -1269,6 +1323,7 @@
             }
 
             function collectOrder() {
+                if (!mediaList || !midiasOrdenadasJson) return;
                 const items = [];
                 Array.from(mediaList.querySelectorAll('.media-item')).forEach((card, index) => {
                     items.push({
@@ -1283,11 +1338,13 @@
             }
 
             function updateCapaHidden() {
+                if (!capaItemKey) return;
                 const selected = document.querySelector('.js-capa-radio:checked');
                 capaItemKey.value = selected ? selected.value : '';
             }
 
             function refreshNewIndexesFromDom() {
+                if (!mediaList) return;
                 const newCards = Array.from(mediaList.querySelectorAll('.media-item[data-kind="new"]'));
                 const reorderedFiles = [];
 
@@ -1309,6 +1366,7 @@
             }
 
             function refreshExistingBadges() {
+                if (!mediaList) return;
                 mediaList.querySelectorAll('.media-item').forEach(card => {
                     const badge = card.querySelector('.media-badge');
                     const radio = card.querySelector('.js-capa-radio');
@@ -1402,6 +1460,7 @@
             }
 
             function refreshDragAndDrop() {
+                if (!mediaList) return;
                 mediaList.querySelectorAll('.media-item').forEach(card => {
                     card.removeEventListener('dragstart', onDragStart);
                     card.removeEventListener('dragend', onDragEnd);
@@ -1455,21 +1514,26 @@
             }
 
             form?.addEventListener('submit', function () {
-                refreshNewIndexesFromDom();
-                ensureDefaultCoverSelection();
-                updateCapaHidden();
-                collectOrder();
+                if (mediaList) {
+                    refreshNewIndexesFromDom();
+                    ensureDefaultCoverSelection();
+                    updateCapaHidden();
+                    collectOrder();
+                }
+
                 normalizeMaskedInputsBeforeSubmit();
             });
 
             applyInputMasks();
             bindSelectAllButtons();
             bindBaseCarroButton();
-            refreshDragAndDrop();
-            ensureDefaultCoverSelection();
-            updateCapaHidden();
-            collectOrder();
-            refreshExistingBadges();
+            if (mediaList) {
+                refreshDragAndDrop();
+                ensureDefaultCoverSelection();
+                updateCapaHidden();
+                collectOrder();
+                refreshExistingBadges();
+            }
         })();
     </script>
 }

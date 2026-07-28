@@ -18,6 +18,11 @@ public static class AdminMenuCatalog
             new("marcas", "Marcas", "/Admin/Cadastros/Marcas", "bi bi-tags-fill"),
             new("vendedores", "Vendedores", "/Admin/Cadastros/Vendedores", "bi bi-person-badge-fill")
         ]),
+        new("Storage",
+        [
+            new("storage-importar-imagens", "Importar Imagens", "/Admin/Storage/ImportarImagens", "bi bi-cloud-upload-fill", DeveloperOnly: true),
+            new("storage-validar-importacao", "Validar Importacao", "/Admin/Storage/ValidarImportacao", "bi bi-patch-check-fill", DeveloperOnly: true)
+        ]),
         new("Auth",
         [
             new("usuarios", "Usuarios", "/Admin/Auth/Usuarios", "bi bi-people-fill", DeveloperOnly: true),

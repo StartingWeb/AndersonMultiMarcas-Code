@@ -14,6 +14,7 @@ public sealed class CatalogoPageViewModel
     public required IReadOnlyCollection<string> Modelos { get; init; }
     public required IReadOnlyCollection<int> Anos { get; init; }
     public int TotalItems { get; init; }
+    public int CurrentPage { get; init; }
     public int TotalPages { get; init; }
     public string HeaderKicker { get; init; } = "Estoque multimarcas";
     public string HeaderTitle { get; init; } = "Encontre seu proximo veiculo";

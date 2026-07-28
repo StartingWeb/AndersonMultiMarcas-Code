@@ -1,32 +1,28 @@
+using Core.Storage;
 using Data;
 using Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Project.Features.Veiculos.DTOs;
 using Project.Features.Veiculos.Queries;
 using Project.Features.Veiculos.Services;
+using Project.Infrastructure.Storage;
 using Project.Shared;
 
 namespace Project.Features.Veiculos.Handlers;
 
 public sealed class BuscarVeiculosQueryHandler(
     ApplicationDbContext db,
-    IMemoryCache cache,
     IVeiculoSlugService slugService,
-    IWebHostEnvironment environment) : IRequestHandler<BuscarVeiculosQuery, Result<PagedResult<VeiculoListItemDto>>>
+    IStorageImageResolver imageResolver) : IRequestHandler<BuscarVeiculosQuery, Result<PagedResult<VeiculoListItemDto>>>
 {
     public async Task<Result<PagedResult<VeiculoListItemDto>>> Handle(BuscarVeiculosQuery request, CancellationToken cancellationToken)
     {
         var filtro = request.Filtro;
-        var cacheKey = $"veiculos:list:{filtro.Page}:{filtro.PageSize}:{filtro.Busca}:{filtro.MarcaId}:{filtro.Marca}:{filtro.Modelo}:{filtro.AnoModelo}:{filtro.AnoMinimo}:{filtro.AnoMaximo}:{filtro.PrecoMinimo}:{filtro.PrecoMaximo}:{filtro.Combustivel}:{filtro.Cambio}:{filtro.Destaque}:{filtro.Disponivel}:{filtro.Seminovo}:{filtro.Financiavel}:{filtro.AceitaTroca}:{filtro.OrdenarPor}";
-        if (cache.TryGetValue(cacheKey, out PagedResult<VeiculoListItemDto>? cached) && cached is not null)
-        {
-            return Result<PagedResult<VeiculoListItemDto>>.Success(cached);
-        }
 
         var query = db.Veiculos
             .AsNoTracking()
+            .Where(x => x.Ativo && !x.Vendido)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
@@ -63,7 +59,7 @@ public sealed class BuscarVeiculosQueryHandler(
         if (filtro.Combustivel.HasValue) query = query.Where(x => x.Combustivel == filtro.Combustivel.Value);
         if (filtro.Cambio.HasValue) query = query.Where(x => x.Cambio == filtro.Cambio.Value);
         if (filtro.Destaque.HasValue) query = query.Where(x => x.Destaque == filtro.Destaque.Value);
-        if (filtro.Disponivel.HasValue) query = query.Where(x => x.Ativo && x.Vendido == !filtro.Disponivel.Value);
+        if (filtro.Disponivel == false) query = query.Where(x => false);
         if (filtro.Seminovo.HasValue) query = query.Where(x => x.Seminovo == filtro.Seminovo.Value);
         if (filtro.Financiavel.HasValue) query = query.Where(x => x.Financiavel == filtro.Financiavel.Value);
         if (filtro.AceitaTroca.HasValue) query = query.Where(x => x.AceitaTroca == filtro.AceitaTroca.Value);
@@ -100,32 +96,44 @@ public sealed class BuscarVeiculosQueryHandler(
                     .OrderByDescending(m => m.Capa)
                     .ThenBy(m => m.Ordem)
                     .ThenBy(m => m.Id)
-                    .Select(m => m.Url)
+                    .Select(m => new MediaProjection
+                    {
+                        Url = m.Url,
+                        BlobName = m.BlobName,
+                        Container = m.Container,
+                        NomeArquivo = m.NomeArquivo,
+                        ContentType = m.ContentType,
+                        TamanhoBytes = m.TamanhoBytes
+                    })
                     .ToList(),
                 MarcaNome = x.Marca.Nome,
                 LojaNome = x.Loja.Nome
             })
             .ToListAsync(cancellationToken);
 
-        var items = projections.Select(x => new VeiculoListItemDto
+        var items = new List<VeiculoListItemDto>();
+        foreach (var x in projections)
         {
-            Id = x.Id,
-            Slug = x.Slug,
-            Titulo = x.Titulo,
-            Modelo = x.Modelo,
-            Versao = x.Versao,
-            AnoFabricacao = x.AnoFabricacao,
-            AnoModelo = x.AnoModelo,
-            Cor = x.Cor,
-            Combustivel = x.Combustivel,
-            Cambio = x.Cambio,
-            PrecoVenda = x.PrecoVenda,
-            Destaque = x.Destaque,
-            EstaDisponivel = x.EstaDisponivel,
-            MidiaCapaUrl = VehicleImageHelper.SelectCover(x.Midias, environment.WebRootPath),
-            MarcaNome = x.MarcaNome,
-            LojaNome = x.LojaNome
-        }).ToList();
+            items.Add(new VeiculoListItemDto
+            {
+                Id = x.Id,
+                Slug = x.Slug,
+                Titulo = x.Titulo,
+                Modelo = x.Modelo,
+                Versao = x.Versao,
+                AnoFabricacao = x.AnoFabricacao,
+                AnoModelo = x.AnoModelo,
+                Cor = x.Cor,
+                Combustivel = x.Combustivel,
+                Cambio = x.Cambio,
+                PrecoVenda = x.PrecoVenda,
+                Destaque = x.Destaque,
+                EstaDisponivel = x.EstaDisponivel,
+                MidiaCapaUrl = await imageResolver.SelectVehicleCoverAsync(x.Midias.Select(ToStorageReference), cancellationToken),
+                MarcaNome = x.MarcaNome,
+                LojaNome = x.LojaNome
+            });
+        }
 
         var result = new PagedResult<VeiculoListItemDto>
         {
@@ -135,7 +143,6 @@ public sealed class BuscarVeiculosQueryHandler(
             TotalItems = totalItems
         };
 
-        cache.Set(cacheKey, result, TimeSpan.FromMinutes(3));
         return Result<PagedResult<VeiculoListItemDto>>.Success(result);
     }
 
@@ -154,8 +161,21 @@ public sealed class BuscarVeiculosQueryHandler(
         public decimal PrecoVenda { get; init; }
         public bool Destaque { get; init; }
         public bool EstaDisponivel { get; init; }
-        public IReadOnlyList<string?> Midias { get; init; } = [];
+        public IReadOnlyList<MediaProjection> Midias { get; init; } = [];
         public string MarcaNome { get; init; } = string.Empty;
         public string LojaNome { get; init; } = string.Empty;
     }
+
+    private sealed class MediaProjection
+    {
+        public string? Url { get; init; }
+        public string? BlobName { get; init; }
+        public string? Container { get; init; }
+        public string? NomeArquivo { get; init; }
+        public string? ContentType { get; init; }
+        public long? TamanhoBytes { get; init; }
+    }
+
+    private static StorageImageReference ToStorageReference(MediaProjection media)
+        => new(media.Url, media.BlobName, media.Container, media.NomeArquivo, media.ContentType, media.TamanhoBytes);
 }

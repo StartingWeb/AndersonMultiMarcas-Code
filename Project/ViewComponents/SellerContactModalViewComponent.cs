@@ -1,11 +1,11 @@
 using Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Project.Shared;
+using Project.Infrastructure.Storage;
 
 namespace Project.ViewComponents;
 
-public sealed class SellerContactModalViewComponent(ApplicationDbContext db) : ViewComponent
+public sealed class SellerContactModalViewComponent(ApplicationDbContext db, IStorageImageResolver imageResolver) : ViewComponent
 {
     public async Task<IViewComponentResult> InvokeAsync()
     {
@@ -15,15 +15,24 @@ public sealed class SellerContactModalViewComponent(ApplicationDbContext db) : V
             .Select(x => new
             {
                 LojaNome = x.Loja.Nome,
-                Vendedor = new SellerContactModalSellerViewModel(
-                    x.Nome,
-                    x.Whatsapp.HasValue ? x.Whatsapp.Value.Valor : (x.Telefone.HasValue ? x.Telefone.Value.Valor : string.Empty),
-                    SellerImageHelper.Normalize(x.FotoUrl))
+                x.Nome,
+                Telefone = x.Whatsapp.HasValue ? x.Whatsapp.Value.Valor : (x.Telefone.HasValue ? x.Telefone.Value.Valor : string.Empty),
+                x.FotoUrl
             })
             .ToListAsync();
 
-        var model = grupos
-            .Where(x => !string.IsNullOrWhiteSpace(x.Vendedor.Telefone))
+        var vendedores = new List<(string LojaNome, SellerContactModalSellerViewModel Vendedor)>();
+        foreach (var grupo in grupos.Where(x => !string.IsNullOrWhiteSpace(x.Telefone)))
+        {
+            vendedores.Add((
+                grupo.LojaNome,
+                new SellerContactModalSellerViewModel(
+                    grupo.Nome,
+                    grupo.Telefone,
+                    await imageResolver.ResolveSellerPhotoAsync(grupo.FotoUrl, HttpContext.RequestAborted))));
+        }
+
+        var model = vendedores
             .GroupBy(x => string.IsNullOrWhiteSpace(x.LojaNome) ? "Sem loja vinculada" : x.LojaNome)
             .OrderBy(x => x.Key)
             .Select(x => new SellerContactModalStoreGroupViewModel(

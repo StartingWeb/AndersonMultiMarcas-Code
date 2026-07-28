@@ -1,6 +1,10 @@
+using System.Security.Cryptography;
+using System.Text;
+using Core.Storage;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
@@ -13,7 +17,8 @@ namespace Project.Controllers;
 [Route("media")]
 [ApiExplorerSettings(IgnoreApi = true)]
 public sealed class MediaController(
-    IWebHostEnvironment environment,
+    IStorageService storage,
+    IOptions<StorageOptions> storageOptions,
     IMemoryCache cache) : ControllerBase
 {
     private const string DefaultImageVirtualPath = "/img/carroDefault.png";
@@ -27,28 +32,30 @@ public sealed class MediaController(
     };
 
     [HttpGet("img")]
-    [ResponseCache(Duration = 60 * 60 * 24 * 30, Location = ResponseCacheLocation.Any, NoStore = false)]
+    [ResponseCache(Duration = 60 * 60 * 24 * 30, Location = ResponseCacheLocation.Any, NoStore = false, VaryByHeader = "Accept", VaryByQueryKeys = ["src", "w", "q"])]
     public async Task<IActionResult> GetImage([FromQuery] string src, [FromQuery] int? w, [FromQuery] int? q, CancellationToken ct)
     {
-        if (!TryResolveLocalPath(src, out var filePath))
+        var storageKey = await ResolveExistingKeyAsync(src, ct);
+        if (storageKey is null)
         {
-            if (!TryResolveLocalPath(DefaultImageVirtualPath, out filePath))
+            storageKey = await ResolveExistingKeyAsync(DefaultImageVirtualPath, ct);
+            if (storageKey is null)
             {
                 return NotFound();
             }
         }
 
-        var extension = Path.GetExtension(filePath);
+        var extension = Path.GetExtension(storageKey);
         if (!OptimizableExtensions.Contains(extension))
         {
-            return PhysicalFile(filePath, GetContentType(filePath));
+            var raw = await storage.OpenReadAsync(storageKey, ct);
+            return raw is null ? NotFound() : File(raw, GetContentType(storageKey));
         }
 
         var width = Math.Clamp(w ?? 0, 0, 2200);
         var quality = Math.Clamp(q ?? 68, 35, 90);
         var format = ShouldUseWebp(Request.Headers.Accept.ToString()) ? "webp" : NormalizeFormat(extension);
-        var lastWrite = System.IO.File.GetLastWriteTimeUtc(filePath).Ticks;
-        var etag = $"\"img-{lastWrite}-{width}-{quality}-{format}\"";
+        var etag = $"\"img-{StableHash(storageKey)}-{width}-{quality}-{format}\"";
 
         Response.Headers.ETag = etag;
         Response.Headers.CacheControl = "public,max-age=2592000,immutable";
@@ -58,12 +65,14 @@ public sealed class MediaController(
             return StatusCode(StatusCodes.Status304NotModified);
         }
 
-        var cacheKey = $"imgopt::{filePath}::{lastWrite}::{width}::{quality}::{format}";
+        var cacheKey = $"imgopt::{storageKey}::{width}::{quality}::{format}";
         var payload = await cache.GetOrCreateAsync(cacheKey, async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(30);
 
-            using var image = await Image.LoadAsync(filePath, ct);
+            await using var input = await storage.OpenReadAsync(storageKey, ct)
+                ?? throw new FileNotFoundException("Imagem nao encontrada no storage.", storageKey);
+            using var image = await Image.LoadAsync(input, ct);
             image.Mutate(ctx =>
             {
                 ctx.AutoOrient();
@@ -88,30 +97,28 @@ public sealed class MediaController(
         return File(payload!.Bytes, payload.ContentType);
     }
 
-    private bool TryResolveLocalPath(string src, out string filePath)
+    private async Task<string?> ResolveExistingKeyAsync(string? src, CancellationToken ct)
     {
-        filePath = string.Empty;
-
-        if (string.IsNullOrWhiteSpace(src) || !src.StartsWith('/'))
+        if (!StoragePath.TryGetKeyFromSource(src, PublicBaseUrls(), out var key))
         {
-            return false;
+            return null;
         }
 
-        var relativePath = src.Split('?', '#')[0].TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-        var root = Path.GetFullPath(environment.WebRootPath);
-        var fullPath = Path.GetFullPath(Path.Combine(root, relativePath));
-
-        if (!fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase) || !System.IO.File.Exists(fullPath))
-        {
-            return false;
-        }
-
-        filePath = fullPath;
-        return true;
+        return await storage.ExistsAsync(key, ct) ? key : null;
     }
 
-    private static string GetContentType(string filePath)
-        => ContentTypeProvider.TryGetContentType(filePath, out var contentType) ? contentType : "application/octet-stream";
+    private IEnumerable<string?> PublicBaseUrls()
+    {
+        yield return storageOptions.Value.PublicBaseUrl;
+        yield return storageOptions.Value.R2.PublicBaseUrl;
+        yield return storageOptions.Value.R2.ServiceUrl;
+    }
+
+    private static string GetContentType(string key)
+        => ContentTypeProvider.TryGetContentType(key, out var contentType) ? contentType : "application/octet-stream";
+
+    private static string StableHash(string value)
+        => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant()[..16];
 
     private static bool ShouldUseWebp(string? acceptHeader)
         => !string.IsNullOrWhiteSpace(acceptHeader) && acceptHeader.Contains("image/webp", StringComparison.OrdinalIgnoreCase);

@@ -38,4 +38,9 @@ public sealed class VeiculoMidia : BaseEntity
         ContentType = string.IsNullOrWhiteSpace(contentType) ? null : contentType.Trim();
         TamanhoBytes = tamanhoBytes;
     }
+
+    public void UpdateUrl(string url)
+    {
+        Url = string.IsNullOrWhiteSpace(url) ? throw new ArgumentException("Url obrigatoria.") : url.Trim();
+    }
 }

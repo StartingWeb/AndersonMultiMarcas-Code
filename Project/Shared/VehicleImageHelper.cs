@@ -5,6 +5,7 @@ namespace Project.Shared;
 public static class VehicleImageHelper
 {
     public const string DefaultVehicleImage = "/img/carroDefault.png";
+    private const string LegacyImportedVehiclePrefix = "/anderson-multimarcas/veiculos/";
 
     public static string Normalize(string? source)
         => TryNormalize(source, out var normalized) ? normalized : DefaultVehicleImage;
@@ -54,10 +55,12 @@ public static class VehicleImageHelper
 
         if (lower.StartsWith("http://") || lower.StartsWith("https://"))
         {
-            return lower.Contains("/uploads/veiculos/", StringComparison.OrdinalIgnoreCase);
+            return lower.Contains("/uploads/veiculos/", StringComparison.OrdinalIgnoreCase)
+                || lower.Contains(LegacyImportedVehiclePrefix, StringComparison.OrdinalIgnoreCase);
         }
 
         return normalized.StartsWith("/uploads/veiculos/", StringComparison.OrdinalIgnoreCase)
+            || normalized.StartsWith(LegacyImportedVehiclePrefix, StringComparison.OrdinalIgnoreCase)
             || normalized.Equals(DefaultVehicleImage, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -100,6 +103,11 @@ public static class VehicleImageHelper
         }
 
         if (path.StartsWith("uploads/veiculos/", StringComparison.OrdinalIgnoreCase))
+        {
+            path = "/" + path;
+        }
+
+        if (path.StartsWith("anderson-multimarcas/veiculos/", StringComparison.OrdinalIgnoreCase))
         {
             path = "/" + path;
         }

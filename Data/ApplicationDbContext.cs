@@ -15,6 +15,10 @@ public class ApplicationDbContext : IdentityDbContext<AspNetCoreUser, IdentityRo
     public DbSet<VeiculoCaracteristica> VeiculoCaracteristicas => Set<VeiculoCaracteristica>();
     public DbSet<VeiculoMidia> VeiculoMidias => Set<VeiculoMidia>();
     public DbSet<Vendedor> Vendedores => Set<Vendedor>();
+    public DbSet<ImportJob> ImportJobs => Set<ImportJob>();
+    public DbSet<ImportJobItem> ImportJobItems => Set<ImportJobItem>();
+    public DbSet<ImportJobLog> ImportJobLogs => Set<ImportJobLog>();
+    public DbSet<ImportJobHistory> ImportJobHistory => Set<ImportJobHistory>();
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)

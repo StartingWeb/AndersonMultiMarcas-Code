@@ -1,17 +1,18 @@
 using Data;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Project.Infrastructure.Storage;
 using Project.Pages.ViewModels;
 using Project.Shared;
 
 namespace Project.Pages;
 
-public class ContatoModel(ApplicationDbContext db, IWebHostEnvironment environment) : PageModel
+public class ContatoModel(ApplicationDbContext db, IStorageImageResolver imageResolver) : PageModel
 {
     public IReadOnlyList<ContactStoreViewModel> Lojas { get; private set; } = [];
     public IReadOnlyList<HomeSellerViewModel> Vendedores { get; private set; } = [];
 
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(CancellationToken ct)
     {
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
@@ -55,10 +56,25 @@ public class ContatoModel(ApplicationDbContext db, IWebHostEnvironment environme
                     })
                     .ToList()
             })
-            .ToListAsync();
+            .ToListAsync(ct);
 
-        Lojas = lojas
-            .Select(loja => new ContactStoreViewModel
+        var lojasResolvidas = new List<ContactStoreViewModel>();
+        foreach (var loja in lojas)
+        {
+            var vendedoresLoja = new List<ContactSellerViewModel>();
+            foreach (var vendedor in loja.Vendedores.Where(v => !string.IsNullOrWhiteSpace(v.Telefone)))
+            {
+                vendedoresLoja.Add(new ContactSellerViewModel
+                {
+                    Nome = vendedor.Nome,
+                    Telefone = vendedor.Telefone,
+                    TelefoneExibicao = vendedor.TelefoneExibicao,
+                    Cargo = vendedor.Cargo,
+                    FotoUrl = await imageResolver.ResolveSellerPhotoAsync(vendedor.FotoUrl, ct)
+                });
+            }
+
+            lojasResolvidas.Add(new ContactStoreViewModel
             {
                 Nome = loja.Nome,
                 EnderecoCompleto = loja.EnderecoCompleto,
@@ -66,19 +82,11 @@ public class ContatoModel(ApplicationDbContext db, IWebHostEnvironment environme
                 TelefoneExibicao = loja.TelefoneExibicao,
                 Email = loja.Email,
                 MapsQuery = loja.MapsQuery,
-                Vendedores = loja.Vendedores
-                    .Where(v => !string.IsNullOrWhiteSpace(v.Telefone))
-                    .Select(v => new ContactSellerViewModel
-                    {
-                        Nome = v.Nome,
-                        Telefone = v.Telefone,
-                        TelefoneExibicao = v.TelefoneExibicao,
-                        Cargo = v.Cargo,
-                        FotoUrl = NormalizeSellerPhoto(v.FotoUrl)
-                    })
-                    .ToList()
-            })
-            .ToList();
+                Vendedores = vendedoresLoja
+            });
+        }
+
+        Lojas = lojasResolvidas;
 
         var vendedores = await db.Vendedores
             .AsNoTracking()
@@ -90,17 +98,20 @@ public class ContatoModel(ApplicationDbContext db, IWebHostEnvironment environme
                 Telefone = x.Whatsapp.HasValue ? x.Whatsapp.Value.Valor : (x.Telefone.HasValue ? x.Telefone.Value.Valor : string.Empty),
                 FotoUrl = x.FotoUrl
             })
-            .ToListAsync();
+            .ToListAsync(ct);
 
-        Vendedores = vendedores
-            .Where(x => !string.IsNullOrWhiteSpace(x.Telefone))
-            .Select(x => new HomeSellerViewModel
+        var vendedoresResolvidos = new List<HomeSellerViewModel>();
+        foreach (var vendedor in vendedores.Where(x => !string.IsNullOrWhiteSpace(x.Telefone)))
+        {
+            vendedoresResolvidos.Add(new HomeSellerViewModel
             {
-                Nome = x.Nome,
-                Telefone = x.Telefone,
-                FotoUrl = NormalizeSellerPhoto(x.FotoUrl)
-            })
-            .ToList();
+                Nome = vendedor.Nome,
+                Telefone = vendedor.Telefone,
+                FotoUrl = await imageResolver.ResolveSellerPhotoAsync(vendedor.FotoUrl, ct)
+            });
+        }
+
+        Vendedores = vendedoresResolvidos;
 
         ViewData["SeoTitle"] = "Contato e lojas em Taquaritinga/SP | Anderson Multimarcas";
         ViewData["MetaDescription"] = "Veja contatos, endereco, telefone, e-mail, mapa e vendedores das lojas Anderson Multimarcas em Taquaritinga/SP.";
@@ -147,25 +158,4 @@ public class ContatoModel(ApplicationDbContext db, IWebHostEnvironment environme
         };
     }
 
-    private string? NormalizeSellerPhoto(string? photoUrl)
-    {
-        var normalized = SellerImageHelper.Normalize(photoUrl);
-        if (string.IsNullOrWhiteSpace(normalized))
-        {
-            return null;
-        }
-
-        if (!normalized.StartsWith("/uploads/vendedores/", StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
-
-        var relativePath = normalized.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-        var fullPath = Path.GetFullPath(Path.Combine(environment.WebRootPath, relativePath));
-        var webRoot = Path.GetFullPath(environment.WebRootPath);
-
-        return fullPath.StartsWith(webRoot, StringComparison.OrdinalIgnoreCase) && System.IO.File.Exists(fullPath)
-            ? normalized
-            : null;
-    }
 }

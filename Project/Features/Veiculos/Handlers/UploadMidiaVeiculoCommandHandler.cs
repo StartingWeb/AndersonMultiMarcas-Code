@@ -24,7 +24,7 @@ public sealed class UploadMidiaVeiculoCommandHandler(ApplicationDbContext db, IV
         foreach (var item in processados)
         {
             var midia = new VeiculoMidia(dto.VeiculoId, item.NomeArquivo, item.Url, TipoMidia.Imagem, ordemBase + index);
-            midia.UpdateStorage(item.NomeArquivo, $"uploads/veiculos/{dto.VeiculoId}", "image/webp", item.TamanhoBytes);
+            midia.UpdateStorage(item.BlobName, item.Container, item.ContentType, item.TamanhoBytes);
             db.VeiculoMidias.Add(midia);
             index++;
         }

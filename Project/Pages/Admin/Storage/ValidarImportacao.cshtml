@@ -1,0 +1,288 @@
+@page "/Admin/Storage/ValidarImportacao"
+@using Project.Features.Storage.Validation
+@model Project.Pages.Admin.Storage.ValidarImportacaoModel
+
+@{
+    ViewData["Title"] = "Validar importacao de imagens";
+    var report = Model.Report;
+    var exportQuery = $"Input.Run=true&Input.VehicleId={Model.Input.VehicleId}&Input.Scope={Uri.EscapeDataString(Model.Input.Scope ?? string.Empty)}&Input.MaxRecords={Model.Input.MaxRecords}";
+}
+
+<style>
+    .validation-page {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .panel {
+        background: #fff;
+        border: 1px solid #ececec;
+        border-radius: .75rem;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .05);
+    }
+
+    .panel-body {
+        padding: 1rem;
+    }
+
+    .page-title {
+        margin: 0;
+        color: #222;
+        font-size: 1.28rem;
+        font-weight: 800;
+    }
+
+    .page-subtitle {
+        margin: .18rem 0 0;
+        color: #6c757d;
+        font-size: .9rem;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .75rem;
+    }
+
+    .summary-card {
+        border: 1px solid #ececec;
+        border-radius: .65rem;
+        padding: .85rem;
+        min-height: 78px;
+        display: grid;
+        align-content: center;
+        gap: .25rem;
+    }
+
+    .summary-label {
+        color: #6c757d;
+        font-size: .75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .summary-value {
+        color: #222;
+        font-size: 1.2rem;
+        font-weight: 900;
+    }
+
+    .status-dot {
+        width: .72rem;
+        height: .72rem;
+        border-radius: 999px;
+        display: inline-block;
+        margin-right: .35rem;
+        vertical-align: middle;
+    }
+
+    .status-ok { background: #1f9d55; }
+    .status-warn { background: #f0ad4e; }
+    .status-error { background: #c91f37; }
+    .status-muted { background: #555; }
+
+    .results-wrap {
+        overflow: auto;
+    }
+
+    .results-table {
+        min-width: 1200px;
+        margin: 0;
+    }
+
+    .results-table th {
+        background: #f8f8f8;
+        color: #222;
+        font-size: .72rem;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        white-space: nowrap;
+    }
+
+    .results-table td {
+        font-size: .82rem;
+        vertical-align: middle;
+    }
+
+    .blob-cell {
+        max-width: 280px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    @@media (max-width: 980px) {
+        .summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+</style>
+
+<div class="container-fluid validation-page">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-patch-check-fill me-2"></i>
+            Validar importacao de imagens
+        </h1>
+        <p class="page-subtitle">Valida registros do banco contra HEAD no R2 e URL publica, sem importar imagens.</p>
+    </div>
+
+    @if (!Model.R2Configured)
+    {
+        <div class="alert alert-warning mb-0">
+            Configure <strong>Storage:R2</strong> para validar objetos no Cloudflare R2.
+        </div>
+    }
+
+    <section class="panel">
+        <div class="panel-body">
+            <form method="get" class="row g-3 align-items-end">
+                <input type="hidden" asp-for="Input.Run" value="true" />
+                <div class="col-12 col-md-3">
+                    <label class="form-label" asp-for="Input.VehicleId"></label>
+                    <input class="form-control" asp-for="Input.VehicleId" min="1" />
+                    <span class="text-danger" asp-validation-for="Input.VehicleId"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label" asp-for="Input.Scope"></label>
+                    <select class="form-select" asp-for="Input.Scope">
+                        <option value="@StorageImportValidationScopes.All">Validar todos</option>
+                        <option value="@StorageImportValidationScopes.Errors">Validar apenas veiculos com erro</option>
+                        <option value="@StorageImportValidationScopes.Pending">Validar apenas pendentes</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label" asp-for="Input.MaxRecords"></label>
+                    <input class="form-control" asp-for="Input.MaxRecords" min="1" placeholder="Sem limite" />
+                    <span class="text-danger" asp-validation-for="Input.MaxRecords"></span>
+                </div>
+                <div class="col-12 col-md-3 d-flex gap-2 justify-content-md-end">
+                    <button class="btn btn-danger fw-bold px-4" type="submit">
+                        <i class="bi bi-search"></i>
+                        Validar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    @if (report is not null)
+    {
+        <section class="summary-grid">
+            <div class="summary-card">
+                <span class="summary-label">Total</span>
+                <span class="summary-value">@report.Summary.Total</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">OK</span>
+                <span class="summary-value">@report.Summary.Ok</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Ausentes</span>
+                <span class="summary-value">@report.Summary.Missing</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Erro acesso</span>
+                <span class="summary-value">@report.Summary.AccessError</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Content-Type</span>
+                <span class="summary-value">@report.Summary.ContentTypeMismatch</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Tamanho</span>
+                <span class="summary-value">@report.Summary.SizeMismatch</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">URL invalida</span>
+                <span class="summary-value">@report.Summary.InvalidUrl</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Invalidos</span>
+                <span class="summary-value">@report.Summary.Invalid</span>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-body d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                <div>
+                    <h2 class="page-title fs-6">Resultado da validacao</h2>
+                    <p class="page-subtitle">Gerado em @report.GeneratedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a class="btn btn-outline-dark fw-bold" href="?handler=Export&format=csv&@exportQuery">
+                        <i class="bi bi-filetype-csv"></i>
+                        CSV
+                    </a>
+                    <a class="btn btn-outline-dark fw-bold" href="?handler=Export&format=json&@exportQuery">
+                        <i class="bi bi-braces"></i>
+                        JSON
+                    </a>
+                    <a class="btn btn-outline-dark fw-bold" href="?handler=Export&format=xlsx&@exportQuery">
+                        <i class="bi bi-file-earmark-spreadsheet"></i>
+                        XLSX
+                    </a>
+                </div>
+            </div>
+            <div class="results-wrap">
+                <table class="table results-table">
+                    <thead>
+                        <tr>
+                            <th>Midia</th>
+                            <th>Veiculo</th>
+                            <th>Blob</th>
+                            <th>Status</th>
+                            <th>Content-Type</th>
+                            <th>Tamanho</th>
+                            <th>URL publica</th>
+                            <th>Mensagem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in report.Results)
+                        {
+                            var statusClass = item.Status == StorageImportValidationStatus.Ok
+                                ? "status-ok"
+                                : item.Status == StorageImportValidationStatus.Missing || item.Status == StorageImportValidationStatus.InvalidUrl
+                                    ? "status-warn"
+                                    : "status-error";
+                            <tr>
+                                <td>#@item.MediaId</td>
+                                <td>
+                                    <strong>#@item.VehicleId</strong><br />
+                                    <span class="text-muted">@item.VehicleName</span>
+                                </td>
+                                <td class="blob-cell" title="@item.BlobName">@(item.BlobName ?? "-")</td>
+                                <td><span class="status-dot @statusClass"></span>@item.Status</td>
+                                <td>
+                                    <span>@(item.ActualContentType ?? "-")</span><br />
+                                    <span class="text-muted">Esperado: @(item.ExpectedContentType ?? "-")</span>
+                                </td>
+                                <td>
+                                    <span>@(item.ActualSizeBytes?.ToString("N0") ?? "-")</span><br />
+                                    <span class="text-muted">Esperado: @(item.ExpectedSizeBytes?.ToString("N0") ?? "-")</span>
+                                </td>
+                                <td class="blob-cell" title="@item.PublicUrl">
+                                    @if (!string.IsNullOrWhiteSpace(item.PublicUrl))
+                                    {
+                                        <a href="@item.PublicUrl" target="_blank" rel="noopener">Abrir</a>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+                                <td>@item.Message</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
