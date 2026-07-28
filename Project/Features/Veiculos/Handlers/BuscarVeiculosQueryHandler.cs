@@ -41,20 +41,17 @@ public sealed class BuscarVeiculosQueryHandler(
         {
             var min = filtro.PrecoMinimo.Value;
             var max = filtro.PrecoMaximo.Value;
-            var ids = db.Database.SqlQuery<int>($"SELECT [Id] AS [Value] FROM [Veiculo] WHERE [PrecoVenda] >= {min} AND [PrecoVenda] <= {max}");
-            query = query.Where(x => ids.Contains(x.Id));
+            query = query.Where(x => x.PrecoVenda.Valor >= min && x.PrecoVenda.Valor <= max);
         }
         else if (filtro.PrecoMinimo.HasValue)
         {
             var min = filtro.PrecoMinimo.Value;
-            var ids = db.Database.SqlQuery<int>($"SELECT [Id] AS [Value] FROM [Veiculo] WHERE [PrecoVenda] >= {min}");
-            query = query.Where(x => ids.Contains(x.Id));
+            query = query.Where(x => x.PrecoVenda.Valor >= min);
         }
         else if (filtro.PrecoMaximo.HasValue)
         {
             var max = filtro.PrecoMaximo.Value;
-            var ids = db.Database.SqlQuery<int>($"SELECT [Id] AS [Value] FROM [Veiculo] WHERE [PrecoVenda] <= {max}");
-            query = query.Where(x => ids.Contains(x.Id));
+            query = query.Where(x => x.PrecoVenda.Valor <= max);
         }
         if (filtro.Combustivel.HasValue) query = query.Where(x => x.Combustivel == filtro.Combustivel.Value);
         if (filtro.Cambio.HasValue) query = query.Where(x => x.Cambio == filtro.Cambio.Value);

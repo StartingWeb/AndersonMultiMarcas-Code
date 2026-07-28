@@ -1,5 +1,4 @@
 using Core.Storage;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Project.Shared;
 
@@ -8,13 +7,8 @@ namespace Project.Infrastructure.Storage;
 public sealed class StorageImageResolver(
     LocalWebRootStorageService local,
     R2StorageService r2,
-    IOptions<StorageOptions> options,
-    IMemoryCache cache,
-    ILogger<StorageImageResolver> logger) : IStorageImageResolver
+    IOptions<StorageOptions> options) : IStorageImageResolver
 {
-    private static readonly TimeSpan PositiveRemoteCacheDuration = TimeSpan.FromMinutes(20);
-    private static readonly TimeSpan NegativeRemoteCacheDuration = TimeSpan.FromMinutes(3);
-
     public async Task<IReadOnlyList<string>> ResolveVehicleGalleryAsync(
         IEnumerable<StorageImageReference> references,
         bool includeDefault,
@@ -83,7 +77,7 @@ public sealed class StorageImageResolver(
             return IsAbsoluteHttpUrl(normalized) ? normalized : null;
         }
 
-        if (await RemoteExistsAsync(key, ct))
+        if (ShouldReadR2First)
         {
             return r2.GetPublicUrl(key);
         }
@@ -94,33 +88,6 @@ public sealed class StorageImageResolver(
         }
 
         return IsAbsoluteHttpUrl(normalized) ? normalized : null;
-    }
-
-    private async Task<bool> RemoteExistsAsync(string key, CancellationToken ct)
-    {
-        if (!ShouldReadR2First)
-        {
-            return false;
-        }
-
-        var normalizedKey = StoragePath.NormalizeKey(key);
-        var cacheKey = $"storage:r2:exists:{normalizedKey}";
-        try
-        {
-            return await cache.GetOrCreateAsync(cacheKey, async entry =>
-            {
-                var exists = await r2.ExistsAsync(normalizedKey, ct);
-                entry.AbsoluteExpirationRelativeToNow = exists
-                    ? PositiveRemoteCacheDuration
-                    : NegativeRemoteCacheDuration;
-                return exists;
-            });
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            logger.LogWarning(ex, "Nao foi possivel validar {StorageKey} no R2. Usando fallback local.", normalizedKey);
-            return false;
-        }
     }
 
     private IEnumerable<string?> PublicBaseUrls()

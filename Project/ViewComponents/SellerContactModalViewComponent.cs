@@ -1,13 +1,30 @@
 using Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Project.Infrastructure.Storage;
 
 namespace Project.ViewComponents;
 
-public sealed class SellerContactModalViewComponent(ApplicationDbContext db, IStorageImageResolver imageResolver) : ViewComponent
+public sealed class SellerContactModalViewComponent(
+    ApplicationDbContext db,
+    IStorageImageResolver imageResolver,
+    IMemoryCache cache) : ViewComponent
 {
+    private const string CacheKey = "seller-contact-modal:v1";
+
     public async Task<IViewComponentResult> InvokeAsync()
+    {
+        var model = await cache.GetOrCreateAsync(CacheKey, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
+            return await LoadModelAsync();
+        });
+
+        return View(model ?? []);
+    }
+
+    private async Task<IReadOnlyList<SellerContactModalStoreGroupViewModel>> LoadModelAsync()
     {
         var grupos = await db.Vendedores
             .AsNoTracking()
@@ -41,7 +58,7 @@ public sealed class SellerContactModalViewComponent(ApplicationDbContext db, ISt
             .Where(x => x.Vendedores.Count > 0)
             .ToList();
 
-        return View(model);
+        return model;
     }
 }
 

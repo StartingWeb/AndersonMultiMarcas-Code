@@ -385,23 +385,40 @@
         }
     }
 
-    videos.forEach(function (video) {
+    function loadVideo(video) {
+        const source = video.getAttribute('data-src');
+        if (source && !video.getAttribute('src')) {
+            video.setAttribute('src', source);
+            video.load();
+        }
+
         if (video.readyState >= 2) {
             tryPlay(video);
         }
+    }
 
-        video.addEventListener('loadedmetadata', function () {
-            tryPlay(video);
-        });
-
+    videos.forEach(function (video) {
         video.addEventListener('canplay', function () {
             tryPlay(video);
         });
 
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden && video.paused) {
-                tryPlay(video);
+                loadVideo(video);
             }
         });
     });
+
+    function loadVideos() {
+        videos.forEach(loadVideo);
+    }
+
+    window.addEventListener('load', function () {
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(loadVideos, { timeout: 2500 });
+            return;
+        }
+
+        window.setTimeout(loadVideos, 1200);
+    }, { once: true });
 })();

@@ -134,7 +134,7 @@ public sealed class MediaController(
             {
                 Quality = quality,
                 FileFormat = WebpFileFormatType.Lossy,
-                Method = WebpEncodingMethod.BestQuality
+                Method = WebpEncodingMethod.Fastest
             }, ct);
             return "image/webp";
         }
