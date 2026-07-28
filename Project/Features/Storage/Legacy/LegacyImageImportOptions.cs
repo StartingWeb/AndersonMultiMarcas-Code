@@ -10,6 +10,7 @@ public sealed class LegacyImageImportOptions
     public int DownloadTimeoutSeconds { get; set; } = 45;
     public int PageTimeoutSeconds { get; set; } = 45;
     public int LockTimeoutMinutes { get; set; } = 10;
+    public bool RecoverPendingJobsOnStartup { get; set; }
     public string[] AllowedHosts { get; set; } =
     [
         "andersonmultimarcas.com.br",

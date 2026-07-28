@@ -3,8 +3,11 @@ using Data;
 using Domain.Application;
 using FluentValidation;
 using MediatR;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Project.Features.Storage.Legacy;
@@ -25,19 +28,40 @@ var builder = WebApplication.CreateBuilder(args);
 // ==============================
 // BANCO DE DADOS
 // ==============================
-if (builder.Environment.IsProduction())
-{
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlServer(
-            builder.Configuration.GetConnectionString("DefaultConnectionProd"))
+var connectionStringName = builder.Environment.IsProduction()
+    ? "DefaultConnectionProd"
+    : "DefaultConnectionDev";
+var connectionString = GetRequiredConnectionString(
+    builder.Configuration,
+    connectionStringName,
+    builder.Environment.IsProduction());
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(connectionString)
         .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
+        | ForwardedHeaders.XForwardedProto
+        | ForwardedHeaders.XForwardedHost;
+    options.ForwardLimit = null;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+var dataProtection = builder.Services.AddDataProtection()
+    .SetApplicationName(builder.Configuration["DataProtection:ApplicationName"] ?? "AndersonMultiMarcas");
+var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
+if (string.IsNullOrWhiteSpace(dataProtectionKeysPath) && builder.Environment.IsProduction())
+{
+    dataProtectionKeysPath = "/home/app/.aspnet/DataProtection-Keys";
 }
-else
+
+if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
 {
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlServer(
-            builder.Configuration.GetConnectionString("DefaultConnectionDev"))
-        .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
+    Directory.CreateDirectory(dataProtectionKeysPath);
+    dataProtection.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
 }
 
 // ==============================
@@ -136,6 +160,8 @@ var siteBaseUrl = builder.Configuration["Seo:BaseUrl"]?.TrimEnd('/');
 // ==============================
 // PIPELINE
 // ==============================
+app.UseForwardedHeaders();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -195,6 +221,8 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGet("/health", () => Results.Ok("OK")).AllowAnonymous();
 
 app.MapGet("/Admin/Login", (HttpContext context) =>
 {
@@ -289,3 +317,33 @@ app.MapControllers();
 app.MapRazorPages();
 
 await app.RunAsync();
+
+static string GetRequiredConnectionString(IConfiguration configuration, string name, bool production)
+{
+    var connectionString = configuration.GetConnectionString(name);
+    if (string.IsNullOrWhiteSpace(connectionString))
+    {
+        throw new InvalidOperationException($"ConnectionStrings:{name} deve ser configurada por variavel de ambiente.");
+    }
+
+    if (production && IsLocalOrWindowsSqlServer(connectionString))
+    {
+        throw new InvalidOperationException("ConnectionStrings:DefaultConnectionProd deve apontar para o SQL Server de producao em Docker/Linux.");
+    }
+
+    return connectionString;
+}
+
+static bool IsLocalOrWindowsSqlServer(string connectionString)
+{
+    var builder = new SqlConnectionStringBuilder(connectionString);
+    var dataSource = builder.DataSource.Trim();
+
+    return dataSource.Contains("(localdb)", StringComparison.OrdinalIgnoreCase)
+        || dataSource.Contains("MSSQLLocalDB", StringComparison.OrdinalIgnoreCase)
+        || dataSource.Contains("SQLEXPRESS", StringComparison.OrdinalIgnoreCase)
+        || dataSource.Contains('\\')
+        || dataSource.Equals(".", StringComparison.Ordinal)
+        || dataSource.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+        || dataSource.StartsWith("127.", StringComparison.Ordinal);
+}

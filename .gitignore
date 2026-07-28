@@ -62,6 +62,9 @@ node_modules/
 # Config local
 # =========================
 appsettings.Development.json
+.env
+.env.*
+!.env.example
 
 # =========================
 # Cache

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Data;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Project.Features.Storage.Legacy;
 
@@ -9,13 +10,21 @@ public sealed class LegacyImageImportWorker(
     IServiceScopeFactory scopeFactory,
     LegacyImageImportQueue queue,
     LegacyImportCancellationRegistry cancellationRegistry,
+    IOptions<LegacyImageImportOptions> importOptions,
     ILogger<LegacyImageImportWorker> logger) : BackgroundService
 {
     private readonly ConcurrentDictionary<int, byte> activeJobs = new();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await RecoverPendingJobsAsync(stoppingToken);
+        if (importOptions.Value.RecoverPendingJobsOnStartup)
+        {
+            await RecoverPendingJobsAsync(stoppingToken);
+        }
+        else
+        {
+            logger.LogInformation("Retomada automatica de jobs de importacao legado desativada.");
+        }
 
         await foreach (var jobId in queue.ReadAllAsync(stoppingToken))
         {
