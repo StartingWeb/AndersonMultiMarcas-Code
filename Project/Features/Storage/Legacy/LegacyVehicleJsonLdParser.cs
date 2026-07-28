@@ -40,7 +40,10 @@ public sealed class LegacyVehicleJsonLdParser
     }
 
     private static bool IsJsonLdScript(string type)
-        => type.Split(';', 2)[0].Trim().Equals("application/ld+json", StringComparison.OrdinalIgnoreCase);
+        => HtmlEntity.DeEntitize(type)
+            .Split(';', 2)[0]
+            .Trim()
+            .Equals("application/ld+json", StringComparison.OrdinalIgnoreCase);
 
     private static void ExtractFromElement(JsonElement element, Uri pageUri, List<string> imageUrls)
     {
@@ -76,7 +79,8 @@ public sealed class LegacyVehicleJsonLdParser
 
     private static bool IsVehicle(JsonElement element)
     {
-        if (!TryGetPropertyIgnoreCase(element, "@type", out var typeElement))
+        if (!TryGetPropertyIgnoreCase(element, "@type", out var typeElement)
+            && !TryGetPropertyIgnoreCase(element, "type", out typeElement))
         {
             return false;
         }

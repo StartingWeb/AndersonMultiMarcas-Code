@@ -10,6 +10,52 @@ namespace Project.Tests.Features.Storage.Legacy;
 public sealed class LegacyImageImportReportServiceTests
 {
     [Fact]
+    public async Task GetDashboardAsync_DeveCalcularRetriesComExpressaoTraduzivel()
+    {
+        await using var db = CreateDbContext();
+        var job = new ImportJob("https://andersonmultimarcas.com.br", dryRun: false, somenteSemBlobName: true, sobrescrever: false, idInicial: null, quantidadeMaxima: null, usuarioId: "1", usuarioNome: "Operador");
+        db.ImportJobs.Add(job);
+        await db.SaveChangesAsync();
+
+        var first = new ImportJobItem(job.Id, 10, null, 0, true, "https://andersonmultimarcas.com.br/a.jpg", "a.jpg", "legacy/a.jpg", 3);
+        first.IncrementAttempt();
+        first.IncrementAttempt();
+        first.MarkSucceeded();
+
+        var second = new ImportJobItem(job.Id, 11, null, 0, true, "https://andersonmultimarcas.com.br/b.jpg", "b.jpg", "legacy/b.jpg", 3);
+        second.IncrementAttempt();
+        second.MarkFailed("Falha no download.");
+
+        var third = new ImportJobItem(job.Id, 12, null, 0, true, "https://andersonmultimarcas.com.br/c.jpg", "c.jpg", "legacy/c.jpg", 3);
+        third.IncrementAttempt();
+        third.IncrementAttempt();
+        third.IncrementAttempt();
+        third.RequestReview("Associacao pendente.");
+
+        db.ImportJobItems.AddRange(first, second, third);
+        await db.SaveChangesAsync();
+
+        var service = new LegacyImageImportReportService(db);
+        var dashboard = await service.GetDashboardAsync(new LegacyImageImportFilters(), CancellationToken.None);
+
+        Assert.Equal(3, dashboard.ImagesImported + dashboard.ImagesWithError);
+        Assert.Equal(100d, dashboard.RetryRate);
+    }
+
+    [Fact]
+    public void DashboardRetriesExpression_DeveGerarCaseWhenParaSqlServer()
+    {
+        using var db = CreateSqlServerTranslationDbContext();
+
+        var sql = db.ImportJobItems
+            .GroupBy(x => 1)
+            .Select(x => x.Sum(i => i.Tentativas > 1 ? i.Tentativas - 1 : 0))
+            .ToQueryString();
+
+        Assert.Contains("CASE", sql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task BuildConsolidatedReportAsync_DeveCalcularResumoPersistido()
     {
         await using var db = CreateDbContext();
@@ -53,6 +99,15 @@ public sealed class LegacyImageImportReportServiceTests
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+            .Options;
+
+        return new ApplicationDbContext(options);
+    }
+
+    private static ApplicationDbContext CreateSqlServerTranslationDbContext()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlServer("Server=localhost;Database=TranslationOnly;User Id=sa;Password=Password123!;TrustServerCertificate=True")
             .Options;
 
         return new ApplicationDbContext(options);

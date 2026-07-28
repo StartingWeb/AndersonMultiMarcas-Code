@@ -42,7 +42,7 @@ public sealed class LegacyVehicleJsonLdParserTests
     public void ExtractVehicleImageUrls_DeveIgnorarImagemHttp()
     {
         var html = """
-            <script type="application/ld+json">
+            <script type="application/ld&#x2B;json">
             {
               "@type": "Vehicle",
               "image": [
@@ -58,5 +58,29 @@ public sealed class LegacyVehicleJsonLdParserTests
 
         Assert.Single(urls);
         Assert.Equal("https://andersonmultimarcas.com.br/uploads/veiculos/1/2.jpg", urls[0]);
+    }
+
+    [Fact]
+    public void ExtractVehicleImageUrls_DeveLerFormatoLegadoSemArrobaNoType()
+    {
+        var html = """
+            <script type="application/ld&#x2B;json">
+            {
+              "context": "https://schema.org",
+              "type": "Vehicle",
+              "image": [
+                "https://andersonmultimarcas.com.br/uploads/veiculos/964/1.webp",
+                "https://andersonmultimarcas.com.br/uploads/veiculos/964/2.webp"
+              ]
+            }
+            </script>
+            """;
+
+        var parser = new LegacyVehicleJsonLdParser();
+        var urls = parser.ExtractVehicleImageUrls(html, new Uri("https://andersonmultimarcas.com.br/veiculo/964/"));
+
+        Assert.Equal(2, urls.Count);
+        Assert.Equal("https://andersonmultimarcas.com.br/uploads/veiculos/964/1.webp", urls[0]);
+        Assert.Equal("https://andersonmultimarcas.com.br/uploads/veiculos/964/2.webp", urls[1]);
     }
 }

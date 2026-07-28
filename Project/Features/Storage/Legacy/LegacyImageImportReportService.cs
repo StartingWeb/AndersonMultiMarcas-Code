@@ -26,7 +26,7 @@ public sealed class LegacyImageImportReportService(ApplicationDbContext db)
         var ignored = await itemsQuery.CountAsync(x => x.Status == LegacyImageImportItemStatus.Ignored, ct);
         var failed = await itemsQuery.CountAsync(x => x.Status == LegacyImageImportItemStatus.Failed || x.Status == LegacyImageImportItemStatus.Review, ct);
         var pending = await itemsQuery.CountAsync(x => x.Status == LegacyImageImportItemStatus.Pending || x.Status == LegacyImageImportItemStatus.Running, ct);
-        var retries = await itemsQuery.SumAsync(x => Math.Max(0, x.Tentativas - 1), ct);
+        var retries = await itemsQuery.SumAsync(x => x.Tentativas > 1 ? x.Tentativas - 1 : 0, ct);
 
         var activeJobs = jobs.Count(x => LegacyImageImportJobStatus.Active.Contains(x.Status));
         var elapsed = SumElapsed(jobs);
@@ -275,26 +275,47 @@ public sealed class LegacyImageImportReportService(ApplicationDbContext db)
                 .ThenInclude(x => x.Marca)
             .Where(x => x.ImportJobId == jobId), filters);
 
-        return await query
+        var images = await query
             .OrderBy(x => x.VeiculoId)
             .ThenBy(x => x.Ordem)
-            .Select(x => new LegacyImageImportImageDetail(
+            .Select(x => new
+            {
                 x.Id,
                 x.VeiculoId,
-                x.Ordem + 1,
-                x.Veiculo.Titulo + " " + x.Veiculo.Modelo,
+                x.Ordem,
+                VehicleName = x.Veiculo.Titulo + " " + x.Veiculo.Modelo,
                 x.UrlLegada,
                 x.UrlDestino,
                 x.BlobNameDestino,
                 x.Status,
                 x.ContentType,
                 x.TamanhoBytes,
-                x.FinalizadoEm.HasValue ? new DateTimeOffset(DateTime.SpecifyKind(x.FinalizadoEm.Value, DateTimeKind.Utc)) : null,
+                x.FinalizadoEm,
+                x.IniciadoEm,
+                x.Tentativas,
+                x.MaxTentativas,
+                x.Erro
+            })
+            .ToListAsync(ct);
+
+        return images
+            .Select(x => new LegacyImageImportImageDetail(
+                x.Id,
+                x.VeiculoId,
+                x.Ordem + 1,
+                x.VehicleName,
+                x.UrlLegada,
+                x.UrlDestino,
+                x.BlobNameDestino,
+                x.Status,
+                x.ContentType,
+                x.TamanhoBytes,
+                ToOffset(x.FinalizadoEm),
                 Duration(x.IniciadoEm, x.FinalizadoEm),
                 x.Tentativas,
                 x.MaxTentativas,
                 x.Erro))
-            .ToListAsync(ct);
+            .ToList();
     }
 
     private async Task<IReadOnlyList<LegacyImageImportLogEntry>> BuildLogsAsync(int jobId, int? afterLogIndex, CancellationToken ct)
@@ -305,20 +326,34 @@ public sealed class LegacyImageImportReportService(ApplicationDbContext db)
             query = query.Where(x => x.Id > afterLogIndex.Value);
         }
 
-        return await query
+        var logs = await query
             .OrderByDescending(x => x.Id)
             .Take(500)
             .OrderBy(x => x.Id)
+            .Select(x => new
+            {
+                x.Id,
+                x.CriadoEm,
+                x.VeiculoId,
+                x.ImagemOrdem,
+                x.Etapa,
+                x.Status,
+                x.Mensagem,
+                x.UrlLegada
+            })
+            .ToListAsync(ct);
+
+        return logs
             .Select(x => new LegacyImageImportLogEntry(
                 x.Id,
-                new DateTimeOffset(DateTime.SpecifyKind(x.CriadoEm, DateTimeKind.Utc)),
+                ToOffset(x.CriadoEm)!.Value,
                 x.VeiculoId,
                 x.ImagemOrdem,
                 x.Etapa,
                 x.Status,
                 x.Mensagem,
                 x.UrlLegada))
-            .ToListAsync(ct);
+            .ToList();
     }
 
     private async Task<IReadOnlyList<LegacyImageImportHistoryEntry>> BuildHistoryAsync(int jobId, CancellationToken ct)
@@ -333,7 +368,7 @@ public sealed class LegacyImageImportReportService(ApplicationDbContext db)
             .Select(x => new LegacyImageImportHistoryEntry(
                 x.Id,
                 x.Tipo,
-                new DateTimeOffset(DateTime.SpecifyKind(x.CriadoEm, DateTimeKind.Utc)),
+                ToOffset(x.CriadoEm)!.Value,
                 x.UsuarioNome,
                 x.Quantidade,
                 x.DuracaoMs.HasValue ? TimeSpan.FromMilliseconds(x.DuracaoMs.Value) : null,
