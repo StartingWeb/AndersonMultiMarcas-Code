@@ -46,7 +46,13 @@ public static class ImageUrlBuilder
             return false;
         }
 
-        var lower = source.Split('?', '#')[0].ToLowerInvariant();
+        var path = source.Split('?', '#')[0];
+        if (string.Equals(path, VehicleImageHelper.DefaultVehicleImage, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var lower = path.ToLowerInvariant();
         return lower.EndsWith(".jpg")
             || lower.EndsWith(".jpeg")
             || lower.EndsWith(".png")
