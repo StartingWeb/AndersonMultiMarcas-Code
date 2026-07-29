@@ -18,6 +18,8 @@ public sealed class SincronizarImagensR2Model(
 {
     public R2VehicleImageSyncSnapshot Snapshot { get; private set; } = null!;
     public int TotalVehiclesPreview { get; private set; }
+    [BindProperty]
+    public int? VehicleId { get; set; }
     public bool R2Configured => storageOptions.Value.R2.IsConfigured;
     public string BucketName => storageOptions.Value.R2.BucketName ?? "(nao configurado)";
     public string Prefix => StoragePath.LegacyImportedVehiclePrefix;
@@ -46,6 +48,40 @@ public sealed class SincronizarImagensR2Model(
 
         TempData[started ? "SuccessMessage" : "WarningMessage"] = started
             ? "Sincronizacao iniciada."
+            : "Ja existe uma sincronizacao em andamento.";
+
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostStartVehicle(CancellationToken ct)
+    {
+        if (!R2Configured)
+        {
+            TempData["ErrorMessage"] = "Cloudflare R2 nao esta configurado. Verifique Storage:R2.";
+            return RedirectToPage();
+        }
+
+        if (!VehicleId.HasValue || VehicleId.Value <= 0)
+        {
+            TempData["ErrorMessage"] = "Informe um Id de veiculo valido.";
+            return RedirectToPage();
+        }
+
+        var exists = await db.Veiculos.AsNoTracking().AnyAsync(x => x.Id == VehicleId.Value, ct);
+        if (!exists)
+        {
+            TempData["ErrorMessage"] = $"Veiculo {VehicleId.Value} nao encontrado.";
+            return RedirectToPage();
+        }
+
+        var started = await jobManager.StartAsync(
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            User.Identity?.Name,
+            VehicleId.Value,
+            ct);
+
+        TempData[started ? "SuccessMessage" : "WarningMessage"] = started
+            ? $"Sincronizacao do veiculo {VehicleId.Value} iniciada."
             : "Ja existe uma sincronizacao em andamento.";
 
         return RedirectToPage();

@@ -22,6 +22,8 @@ public sealed record R2VehicleImageSyncProgress(
     int VehiclesWithoutImages,
     int VehiclesSynchronized,
     int ImagesLinked,
+    int MediaCreated,
+    int MediaUpdated,
     int RecordsCorrected,
     int Errors,
     int? CurrentVehicleId);
@@ -30,7 +32,7 @@ public sealed record R2VehicleImageSyncLogEntry(
     int Index,
     DateTimeOffset TimestampUtc,
     int? VehicleId,
-    int? LegacyVehicleId,
+    int? R2FolderId,
     string Stage,
     string Status,
     string Message);
@@ -49,6 +51,8 @@ public sealed record R2VehicleImageSyncSnapshot(
     int VehiclesWithoutImages,
     int VehiclesSynchronized,
     int ImagesLinked,
+    int MediaCreated,
+    int MediaUpdated,
     int RecordsCorrected,
     int Errors,
     TimeSpan Elapsed,

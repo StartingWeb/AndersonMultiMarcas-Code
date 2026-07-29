@@ -14,6 +14,9 @@ public sealed class R2VehicleImageSyncJobManager(
     private MutableState state = MutableState.Idle();
 
     public Task<bool> StartAsync(string? userId, string? userName, CancellationToken ct)
+        => StartAsync(userId, userName, null, ct);
+
+    public Task<bool> StartAsync(string? userId, string? userName, int? vehicleId, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -26,8 +29,15 @@ public sealed class R2VehicleImageSyncJobManager(
             }
 
             cts = CancellationTokenSource.CreateLinkedTokenSource(applicationLifetime.ApplicationStopping);
-            state = MutableState.Start(userId, userName, cts);
-            AddLogUnsafe(null, null, "Inicio", "Pendente", "Sincronizacao enfileirada.");
+            state = MutableState.Start(userId, userName, vehicleId, cts);
+            AddLogUnsafe(
+                vehicleId,
+                vehicleId,
+                "Inicio",
+                "Pendente",
+                vehicleId.HasValue
+                    ? $"Sincronizacao enfileirada para veiculo {vehicleId.Value}."
+                    : "Sincronizacao enfileirada.");
         }
 
         _ = Task.Run(() => RunAsync(cts.Token), CancellationToken.None);
@@ -44,7 +54,8 @@ public sealed class R2VehicleImageSyncJobManager(
             }
 
             state.Status = R2VehicleImageSyncStatus.Cancelling;
-            AddLogUnsafe(state.CurrentVehicleId, null, "Sistema", "Cancelamento", "Cancelamento solicitado pelo usuario.");
+            var currentVehicleId = state.CurrentVehicleId ?? state.TargetVehicleId;
+            AddLogUnsafe(currentVehicleId, currentVehicleId, "Sistema", "Cancelamento", "Cancelamento solicitado pelo usuario.");
             state.Cancellation.Cancel();
             return true;
         }
@@ -87,6 +98,8 @@ public sealed class R2VehicleImageSyncJobManager(
                 state.VehiclesWithoutImages,
                 state.VehiclesSynchronized,
                 state.ImagesLinked,
+                state.MediaCreated,
+                state.MediaUpdated,
                 state.RecordsCorrected,
                 state.Errors,
                 elapsed,
@@ -103,7 +116,7 @@ public sealed class R2VehicleImageSyncJobManager(
 
             using var scope = scopeFactory.CreateScope();
             var service = scope.ServiceProvider.GetRequiredService<R2VehicleImageSyncService>();
-            await service.SynchronizeAsync(ReportProgress, AddLog, ct);
+            await service.SynchronizeAsync(ReportProgress, AddLog, ct, state.TargetVehicleId);
             Complete();
         }
         catch (OperationCanceledException)
@@ -145,17 +158,19 @@ public sealed class R2VehicleImageSyncJobManager(
             state.VehiclesWithoutImages = progress.VehiclesWithoutImages;
             state.VehiclesSynchronized = progress.VehiclesSynchronized;
             state.ImagesLinked = progress.ImagesLinked;
+            state.MediaCreated = progress.MediaCreated;
+            state.MediaUpdated = progress.MediaUpdated;
             state.RecordsCorrected = progress.RecordsCorrected;
             state.Errors = progress.Errors;
             state.CurrentVehicleId = progress.CurrentVehicleId;
         }
     }
 
-    private void AddLog(int? vehicleId, int? legacyVehicleId, string stage, string status, string message)
+    private void AddLog(int? vehicleId, int? r2FolderId, string stage, string status, string message)
     {
         lock (gate)
         {
-            AddLogUnsafe(vehicleId, legacyVehicleId, stage, status, message);
+            AddLogUnsafe(vehicleId, r2FolderId, stage, status, message);
         }
     }
 
@@ -195,13 +210,13 @@ public sealed class R2VehicleImageSyncJobManager(
         }
     }
 
-    private void AddLogUnsafe(int? vehicleId, int? legacyVehicleId, string stage, string status, string message)
+    private void AddLogUnsafe(int? vehicleId, int? r2FolderId, string stage, string status, string message)
     {
         var entry = new R2VehicleImageSyncLogEntry(
             ++state.LastLogIndex,
             DateTimeOffset.UtcNow,
             vehicleId,
-            legacyVehicleId,
+            r2FolderId,
             stage,
             status,
             message);
@@ -213,11 +228,11 @@ public sealed class R2VehicleImageSyncJobManager(
         }
 
         logger.LogInformation(
-            "Sincronizacao R2: {Stage}/{Status}. Veiculo={VehicleId}; IdLegado={LegacyVehicleId}; Mensagem={Message}",
+            "Sincronizacao R2: {Stage}/{Status}. Veiculo={VehicleId}; PastaR2={R2FolderId}; Mensagem={Message}",
             stage,
             status,
             vehicleId,
-            legacyVehicleId,
+            r2FolderId,
             message);
     }
 
@@ -235,22 +250,26 @@ public sealed class R2VehicleImageSyncJobManager(
         public int VehiclesWithoutImages { get; set; }
         public int VehiclesSynchronized { get; set; }
         public int ImagesLinked { get; set; }
+        public int MediaCreated { get; set; }
+        public int MediaUpdated { get; set; }
         public int RecordsCorrected { get; set; }
         public int Errors { get; set; }
         public int LastLogIndex { get; set; }
+        public int? TargetVehicleId { get; set; }
         public List<R2VehicleImageSyncLogEntry> Logs { get; } = [];
         public CancellationTokenSource? Cancellation { get; set; }
 
         public static MutableState Idle()
             => new();
 
-        public static MutableState Start(string? userId, string? userName, CancellationTokenSource cancellation)
+        public static MutableState Start(string? userId, string? userName, int? targetVehicleId, CancellationTokenSource cancellation)
             => new()
             {
                 RunId = Guid.NewGuid(),
                 Status = R2VehicleImageSyncStatus.Pending,
                 StartedAtUtc = DateTimeOffset.UtcNow,
                 StartedBy = string.IsNullOrWhiteSpace(userName) ? userId : userName,
+                TargetVehicleId = targetVehicleId,
                 Cancellation = cancellation
             };
     }

@@ -56,6 +56,20 @@
             flex-wrap: wrap;
         }
 
+        .sync-vehicle-form {
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+            flex-wrap: nowrap;
+        }
+
+        .sync-vehicle-input {
+            width: 132px;
+            min-height: 40px;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+
         .btn-sync-primary,
         .btn-sync-secondary {
             min-height: 40px;
@@ -264,7 +278,16 @@
 
             .btn-sync-primary,
             .btn-sync-secondary,
+            .sync-vehicle-form,
             .sync-actions form {
+                width: 100%;
+            }
+
+            .sync-vehicle-form {
+                flex-wrap: wrap;
+            }
+
+            .sync-vehicle-input {
                 width: 100%;
             }
         }
@@ -282,6 +305,16 @@
         </div>
 
         <div class="sync-actions">
+            <form method="post" asp-page-handler="StartVehicle" class="sync-vehicle-form" data-sync-vehicle-form>
+                @Html.AntiForgeryToken()
+                <label class="visually-hidden" asp-for="VehicleId">Id do veiculo</label>
+                <input asp-for="VehicleId" type="number" min="1" step="1" class="form-control sync-vehicle-input" placeholder="Id do veiculo" data-sync-vehicle-id data-sync-vehicle-control disabled="@(snapshot.IsActive || !Model.R2Configured)" />
+                <button type="submit" class="btn-sync-secondary px-3" data-sync-vehicle-control disabled="@(snapshot.IsActive || !Model.R2Configured)">
+                    <i class="bi bi-car-front-fill"></i>
+                    Testar veiculo
+                </button>
+            </form>
+
             <form method="post" asp-page-handler="Start" data-sync-start-form>
                 @Html.AntiForgeryToken()
                 <button type="submit" class="btn-sync-primary px-3" data-sync-start disabled="@(snapshot.IsActive || !Model.R2Configured)">
@@ -362,6 +395,14 @@
                     <span class="sync-stat-value" data-sync-images-linked>@snapshot.ImagesLinked</span>
                 </div>
                 <div class="sync-stat">
+                    <span class="sync-stat-label">Midias criadas</span>
+                    <span class="sync-stat-value" data-sync-media-created>@snapshot.MediaCreated</span>
+                </div>
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Midias atualizadas</span>
+                    <span class="sync-stat-value" data-sync-media-updated>@snapshot.MediaUpdated</span>
+                </div>
+                <div class="sync-stat">
                     <span class="sync-stat-label">Registros corrigidos</span>
                     <span class="sync-stat-value" data-sync-corrected>@snapshot.RecordsCorrected</span>
                 </div>
@@ -404,6 +445,14 @@
                     <span class="sync-stat-value" data-summary-images-linked>@snapshot.ImagesLinked</span>
                 </div>
                 <div class="sync-stat">
+                    <span class="sync-stat-label">Midias criadas</span>
+                    <span class="sync-stat-value" data-summary-media-created>@snapshot.MediaCreated</span>
+                </div>
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Midias atualizadas</span>
+                    <span class="sync-stat-value" data-summary-media-updated>@snapshot.MediaUpdated</span>
+                </div>
+                <div class="sync-stat">
                     <span class="sync-stat-label">Total sem imagens</span>
                     <span class="sync-stat-value" data-summary-without>@snapshot.VehiclesWithoutImages</span>
                 </div>
@@ -432,8 +481,8 @@
                 <thead>
                     <tr>
                         <th>Hora</th>
-                        <th>Veiculo</th>
-                        <th>IdLegado</th>
+                        <th>Id do veiculo</th>
+                        <th>Pasta R2</th>
                         <th>Etapa</th>
                         <th>Status</th>
                         <th>Mensagem</th>
@@ -453,7 +502,7 @@
                             <tr data-log-index="@log.Index">
                                 <td>@log.TimestampUtc.ToLocalTime().ToString("HH:mm:ss")</td>
                                 <td>@(log.VehicleId?.ToString() ?? "-")</td>
-                                <td>@(log.LegacyVehicleId?.ToString() ?? "-")</td>
+                                <td>@(log.R2FolderId?.ToString() ?? "-")</td>
                                 <td>@log.Stage</td>
                                 <td>@log.Status</td>
                                 <td class="sync-message" title="@log.Message">@log.Message</td>
@@ -474,6 +523,7 @@
 
             const startButton = document.querySelector('[data-sync-start]');
             const cancelForm = document.querySelector('[data-sync-cancel-form]');
+            const vehicleControls = document.querySelectorAll('[data-sync-vehicle-control]');
             const logBody = document.querySelector('[data-sync-log-body]');
             const initialTotal = Number((document.querySelector('[data-sync-total]')?.textContent || '0').replace(/\D/g, '')) || 0;
             let lastLogIndex = Math.max(-1, ...Array.from(document.querySelectorAll('[data-log-index]')).map(x => Number(x.getAttribute('data-log-index'))));
@@ -481,6 +531,14 @@
 
             document.querySelector('[data-sync-start-form]')?.addEventListener('submit', function (event) {
                 const ok = window.confirm('Iniciar a sincronizacao das imagens ja existentes no Cloudflare R2? Nenhum arquivo sera enviado ou apagado.');
+                if (!ok) {
+                    event.preventDefault();
+                }
+            });
+
+            document.querySelector('[data-sync-vehicle-form]')?.addEventListener('submit', function (event) {
+                const vehicleId = document.querySelector('[data-sync-vehicle-id]')?.value || '';
+                const ok = window.confirm('Sincronizar somente o veiculo ' + vehicleId + ' com as imagens ja existentes no Cloudflare R2? Nenhum arquivo sera enviado ou apagado.');
                 if (!ok) {
                     event.preventDefault();
                 }
@@ -528,7 +586,7 @@
                 tr.innerHTML = '<td></td><td></td><td></td><td></td><td></td><td class="sync-message"></td>';
                 tr.children[0].textContent = time;
                 tr.children[1].textContent = log.vehicleId || '-';
-                tr.children[2].textContent = log.legacyVehicleId || '-';
+                tr.children[2].textContent = log.r2FolderId || '-';
                 tr.children[3].textContent = log.stage || '-';
                 tr.children[4].textContent = log.status || '-';
                 tr.children[5].textContent = message;
@@ -547,6 +605,8 @@
                 setText('[data-sync-without]', number(snapshot.vehiclesWithoutImages));
                 setText('[data-sync-synced]', number(snapshot.vehiclesSynchronized));
                 setText('[data-sync-images-linked]', number(snapshot.imagesLinked));
+                setText('[data-sync-media-created]', number(snapshot.mediaCreated));
+                setText('[data-sync-media-updated]', number(snapshot.mediaUpdated));
                 setText('[data-sync-corrected]', number(snapshot.recordsCorrected));
                 setText('[data-sync-errors]', number(snapshot.errors));
                 setText('[data-sync-elapsed]', duration(snapshot.elapsed));
@@ -565,6 +625,10 @@
                     startButton.disabled = Boolean(snapshot.isActive) || @((!Model.R2Configured).ToString().ToLowerInvariant());
                 }
 
+                vehicleControls.forEach(function (control) {
+                    control.disabled = Boolean(snapshot.isActive) || @((!Model.R2Configured).ToString().ToLowerInvariant());
+                });
+
                 setHidden(cancelForm, !snapshot.isActive);
 
                 const terminal = !snapshot.isActive && snapshot.status && snapshot.status !== 'Aguardando';
@@ -575,6 +639,8 @@
                     setText('[data-summary-total]', number(totalVehicles));
                     setText('[data-summary-synced]', number(snapshot.vehiclesSynchronized));
                     setText('[data-summary-images-linked]', number(snapshot.imagesLinked));
+                    setText('[data-summary-media-created]', number(snapshot.mediaCreated));
+                    setText('[data-summary-media-updated]', number(snapshot.mediaUpdated));
                     setText('[data-summary-without]', number(snapshot.vehiclesWithoutImages));
                     setText('[data-summary-errors]', number(snapshot.errors));
                     setText('[data-summary-elapsed]', duration(snapshot.elapsed));
