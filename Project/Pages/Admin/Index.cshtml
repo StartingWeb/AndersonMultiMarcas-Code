@@ -679,10 +679,11 @@
                             <div class="engagement-card-list">
                                 @foreach (var veiculo in Model.VeiculosMaisCliques)
                                 {
-                                    var imagem = string.IsNullOrWhiteSpace(veiculo.Imagem) ? "/img/carroDefault.png" : veiculo.Imagem;
+                                    var imagem = string.IsNullOrWhiteSpace(veiculo.Imagem) ? VehicleImageHelper.DefaultVehicleImage : veiculo.Imagem;
+                                    var imagemSrc = string.Equals(imagem, VehicleImageHelper.DefaultVehicleImage, StringComparison.OrdinalIgnoreCase) ? imagem : ImageUrlBuilder.Build(imagem, 240);
                                     <a class="engagement-item text-decoration-none" href="/Admin/Veiculo/Upsert/@veiculo.Id">
                                         <div class="engagement-thumb">
-                                            <img src="@ImageUrlBuilder.Build(imagem, 240)" alt="@veiculo.Nome" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='@ImageUrlBuilder.Build(VehicleImageHelper.DefaultVehicleImage, 240)';">
+                                            <img src="@imagemSrc" alt="@veiculo.Nome" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='@VehicleImageHelper.DefaultVehicleImage';">
                                         </div>
                                         <div class="engagement-copy">
                                             <strong>@veiculo.Nome</strong>
@@ -713,10 +714,11 @@
                             <div class="engagement-card-list">
                                 @foreach (var veiculo in Model.VeiculosMaisVisualizacoes)
                                 {
-                                    var imagem = string.IsNullOrWhiteSpace(veiculo.Imagem) ? "/img/carroDefault.png" : veiculo.Imagem;
+                                    var imagem = string.IsNullOrWhiteSpace(veiculo.Imagem) ? VehicleImageHelper.DefaultVehicleImage : veiculo.Imagem;
+                                    var imagemSrc = string.Equals(imagem, VehicleImageHelper.DefaultVehicleImage, StringComparison.OrdinalIgnoreCase) ? imagem : ImageUrlBuilder.Build(imagem, 240);
                                     <a class="engagement-item text-decoration-none" href="/Admin/Veiculo/Upsert/@veiculo.Id">
                                         <div class="engagement-thumb">
-                                            <img src="@ImageUrlBuilder.Build(imagem, 240)" alt="@veiculo.Nome" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='@ImageUrlBuilder.Build(VehicleImageHelper.DefaultVehicleImage, 240)';">
+                                            <img src="@imagemSrc" alt="@veiculo.Nome" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='@VehicleImageHelper.DefaultVehicleImage';">
                                         </div>
                                         <div class="engagement-copy">
                                             <strong>@veiculo.Nome</strong>
@@ -769,14 +771,16 @@
                         @foreach (var veiculo in Model.VeiculosNoPatio)
                         {
                             var tipClass = veiculo.DiasNoPatio >= 100 ? "danger" : string.Empty;
+                            var imagem = string.IsNullOrWhiteSpace(veiculo.Imagem) ? VehicleImageHelper.DefaultVehicleImage : veiculo.Imagem;
+                            var imagemSrc = string.Equals(imagem, VehicleImageHelper.DefaultVehicleImage, StringComparison.OrdinalIgnoreCase) ? imagem : ImageUrlBuilder.Build(imagem, 520);
                             <article class="stock-commercial-card">
                                 <img
-                                    src="@ImageUrlBuilder.Build(veiculo.Imagem, 520)"
+                                    src="@imagemSrc"
                                     alt="@veiculo.Nome"
                                     class="stock-commercial-image"
                                     loading="lazy"
                                     decoding="async"
-                                    onerror="this.onerror=null;this.src='@ImageUrlBuilder.Build(VehicleImageHelper.DefaultVehicleImage, 520)';">
+                                    onerror="this.onerror=null;this.src='@VehicleImageHelper.DefaultVehicleImage';">
                                 <div class="stock-commercial-body">
                                     <span class="stock-commercial-chip">
                                         <i class="bi bi-calendar2-week"></i>

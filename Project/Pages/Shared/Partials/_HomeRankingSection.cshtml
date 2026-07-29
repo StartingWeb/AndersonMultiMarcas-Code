@@ -20,18 +20,21 @@
                     @foreach (var item in items)
                     {
                         var imageSrc = VehicleImageHelper.Normalize(item.MidiaUrl);
-                        var optimizedFallback = ImageUrlBuilder.Build(VehicleImageHelper.DefaultVehicleImage, 320, 62);
+                        var isDefaultImage = string.Equals(imageSrc, VehicleImageHelper.DefaultVehicleImage, StringComparison.OrdinalIgnoreCase);
+                        var imageUrl = isDefaultImage ? imageSrc : ImageUrlBuilder.Build(imageSrc, 320, 62);
+                        var imageSrcSet = isDefaultImage ? string.Empty : ImageUrlBuilder.BuildSrcSet(imageSrc, 240, 320, 480);
+                        var fallbackImage = VehicleImageHelper.DefaultVehicleImage;
                         var metricValue = Model.MetricClass == "cliques" ? item.Cliques : item.Visualizacoes;
                         <a class="home-ranking-card" href="/veiculo/@item.Id/" data-track-vehicle-click="true" data-vehicle-id="@item.Id">
                             <div class="home-ranking-thumb is-loading">
-                                <img src="@ImageUrlBuilder.Build(imageSrc, 320, 62)"
-                                     srcset="@ImageUrlBuilder.BuildSrcSet(imageSrc, 240, 320, 480)"
+                                <img src="@imageUrl"
+                                     srcset="@imageSrcSet"
                                      alt="@item.Titulo"
                                      data-progressive-image="true"
                                      loading="lazy"
                                      decoding="async"
                                      fetchpriority="auto"
-                                     onerror="this.onerror=null;this.removeAttribute('srcset');this.src='@optimizedFallback';" />
+                                     onerror="this.onerror=null;this.removeAttribute('srcset');this.src='@fallbackImage';" />
                             </div>
                             <div class="home-ranking-copy">
                                 <div class="home-ranking-badge">@metricValue @Model.MetricLabel</div>
