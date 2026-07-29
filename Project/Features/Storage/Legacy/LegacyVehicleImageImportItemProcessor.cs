@@ -11,6 +11,7 @@ namespace Project.Features.Storage.Legacy;
 public sealed class LegacyVehicleImageImportItemProcessor(
     ApplicationDbContext db,
     IStorageService storage,
+    ILegacyImageStorageVerifier storageVerifier,
     IOptions<LegacyImageImportOptions> importOptions,
     IHttpClientFactory httpClientFactory,
     ILogger<LegacyVehicleImageImportItemProcessor> logger)
@@ -117,6 +118,16 @@ public sealed class LegacyVehicleImageImportItemProcessor(
         if (string.Equals(media.BlobName.Trim().Replace('\\', '/'), item.BlobNameDestino, StringComparison.OrdinalIgnoreCase))
         {
             return false;
+        }
+
+        if (storageVerifier.IsConfigured)
+        {
+            var verification = await storageVerifier.VerifyAsync(media, ct);
+            if (!verification.Exists)
+            {
+                AddLog(item, "Banco", "Reimportacao", $"Registro possui BlobName, mas o objeto esta ausente no R2 ({verification.Message}); reimportacao autorizada.");
+                return false;
+            }
         }
 
         item.MarkIgnored("Registro ja possui BlobName e sobrescrita esta desativada.");

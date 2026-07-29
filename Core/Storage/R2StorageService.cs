@@ -26,18 +26,29 @@ public sealed class R2StorageService : IStorageService, IDisposable
     {
         EnsureConfigured();
         var normalizedKey = StoragePath.NormalizeKey(key);
-        if (content.CanSeek)
+        Stream uploadContent = content;
+        await using var bufferedContent = content.CanSeek ? null : new MemoryStream();
+        if (bufferedContent is not null)
         {
-            content.Position = 0;
+            await content.CopyToAsync(bufferedContent, ct);
+            bufferedContent.Position = 0;
+            uploadContent = bufferedContent;
+        }
+        else if (uploadContent.CanSeek)
+        {
+            uploadContent.Position = 0;
         }
 
         var request = new PutObjectRequest
         {
             BucketName = BucketName,
             Key = normalizedKey,
-            InputStream = content,
+            InputStream = uploadContent,
             ContentType = string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType,
-            AutoCloseStream = false
+            AutoCloseStream = false,
+            UseChunkEncoding = false,
+            DisableDefaultChecksumValidation = true,
+            DisablePayloadSigning = true
         };
 
         var response = await client.Value.PutObjectAsync(request, ct);
@@ -55,7 +66,7 @@ public sealed class R2StorageService : IStorageService, IDisposable
             StoragePath.GetFileName(normalizedKey),
             BucketName,
             request.ContentType,
-            metadata.SizeBytes ?? (content.CanSeek ? content.Length : 0));
+            metadata.SizeBytes ?? (uploadContent.CanSeek ? uploadContent.Length : 0));
     }
 
     public async Task<bool> ExistsAsync(string key, CancellationToken ct)

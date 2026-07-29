@@ -16,12 +16,14 @@ public sealed class LegacyVehicleImageImportService(
     IOptions<LegacyImageImportOptions> importOptions,
     IHttpClientFactory httpClientFactory,
     LegacyVehicleJsonLdParser jsonLdParser,
+    ILegacyImageStorageVerifier storageVerifier,
     IServiceScopeFactory scopeFactory,
     LegacyImageImportReportService reportService,
     ILogger<LegacyVehicleImageImportService> logger)
 {
     public const string HttpClientName = "legacy-image-import";
     private const int MaxRedirects = 3;
+    private readonly Dictionary<int, LegacyImageStorageVerification> storageVerificationCache = [];
 
     public async Task RunAsync(int jobId, string workerId, CancellationToken ct)
     {
@@ -47,10 +49,10 @@ public sealed class LegacyVehicleImageImportService(
                 return;
             }
 
-            if (!job.DryRun && !storageOptions.Value.UseR2ForWrites)
+            if (!job.DryRun && (!storageOptions.Value.UseR2ForWrites || !storageOptions.Value.R2.IsConfigured))
             {
-                AddLog(job.Id, null, null, null, "Configuracao", "Erro", "Storage:Provider precisa ser R2 para executar importacao real.");
-                job.MarkFailed("Configure Storage:Provider=R2 antes de executar a importacao real.");
+                AddLog(job.Id, null, null, null, "Configuracao", "Erro", "Storage:Provider precisa ser R2 e Storage:R2 precisa estar configurado para executar importacao real.");
+                job.MarkFailed("Configure Storage:Provider=R2 e Storage:R2 antes de executar a importacao real.");
                 await db.SaveChangesAsync(ct);
                 return;
             }
@@ -151,21 +153,58 @@ public sealed class LegacyVehicleImageImportService(
             .ThenBy(x => x.Id)
             .ToList();
 
-        if (job.SomenteSemBlobName && activeImages.Any(x => !string.IsNullOrWhiteSpace(x.BlobName)))
+        var imagesWithBlobName = activeImages
+            .Where(x => !string.IsNullOrWhiteSpace(x.BlobName))
+            .ToList();
+
+        if (job.SomenteSemBlobName && imagesWithBlobName.Count > 0)
         {
-            AddLog(job.Id, null, vehicle.Id, null, "Veiculo", "Ignorado", "Veiculo ignorado porque ja possui BlobName.");
+            if (!storageVerifier.IsConfigured)
+            {
+                AddLog(job.Id, null, vehicle.Id, null, "Veiculo", "Ignorado", "Veiculo possui BlobName; validacao fisica no R2 indisponivel porque o R2 nao esta configurado.");
+                await db.SaveChangesAsync(ct);
+                return;
+            }
+
+            var missingImages = await FindMissingR2ImagesAsync(imagesWithBlobName, ct);
+            if (missingImages.Count == 0)
+            {
+                AddLog(job.Id, null, vehicle.Id, null, "Veiculo", "Ignorado", "Veiculo ignorado porque todos os BlobNames existem no R2.");
+                await db.SaveChangesAsync(ct);
+                return;
+            }
+
+            AddLog(job.Id, null, vehicle.Id, null, "Veiculo", "Reimportacao", $"Veiculo possui BlobName, mas {missingImages.Count} objeto(s) estao ausentes no R2; reimportacao automatica habilitada.");
             await db.SaveChangesAsync(ct);
-            return;
         }
 
-        if (!job.Sobrescrever && activeImages.Any(x => IsLegacyImported(vehicle.Id, x.BlobName)))
+        var legacyImportedImages = activeImages
+            .Where(x => IsLegacyImported(vehicle.Id, x.BlobName))
+            .ToList();
+
+        if (!job.Sobrescrever && legacyImportedImages.Count > 0)
         {
-            AddLog(job.Id, null, vehicle.Id, null, "Veiculo", "Ignorado", "Veiculo ja possui imagens importadas do legado.");
+            if (!storageVerifier.IsConfigured)
+            {
+                AddLog(job.Id, null, vehicle.Id, null, "Veiculo", "Ignorado", "Veiculo ja possui imagens importadas do legado; validacao fisica no R2 indisponivel porque o R2 nao esta configurado.");
+                await db.SaveChangesAsync(ct);
+                return;
+            }
+
+            var missingLegacyImages = await FindMissingR2ImagesAsync(legacyImportedImages, ct);
+            if (missingLegacyImages.Count == 0)
+            {
+                AddLog(job.Id, null, vehicle.Id, null, "Veiculo", "Ignorado", "Veiculo ja possui imagens importadas do legado e confirmadas no R2.");
+                await db.SaveChangesAsync(ct);
+                return;
+            }
+
+            AddLog(job.Id, null, vehicle.Id, null, "Veiculo", "Reimportacao", $"Veiculo ja possuia imagens importadas do legado, mas {missingLegacyImages.Count} objeto(s) estao ausentes no R2; reimportacao automatica habilitada.");
             await db.SaveChangesAsync(ct);
-            return;
         }
 
-        var pageUri = new Uri(baseUri, $"/veiculo/{vehicle.Id}/");
+        var legacyVehicleId = vehicle.IdLegado ?? vehicle.Id;
+        var pageUri = new Uri(baseUri, $"/veiculo/{legacyVehicleId.ToString(CultureInfo.InvariantCulture)}/");
         AddLog(job.Id, null, vehicle.Id, null, "Pagina", "Iniciado", $"GET {pageUri}");
         await db.SaveChangesAsync(ct);
 
@@ -254,6 +293,33 @@ public sealed class LegacyVehicleImageImportService(
         }
 
         await db.SaveChangesAsync(ct);
+    }
+
+    private async Task<IReadOnlyList<VeiculoMidia>> FindMissingR2ImagesAsync(IReadOnlyList<VeiculoMidia> images, CancellationToken ct)
+    {
+        var missing = new List<VeiculoMidia>();
+        foreach (var image in images)
+        {
+            var verification = await VerifyStorageAsync(image, ct);
+            if (!verification.Exists)
+            {
+                missing.Add(image);
+            }
+        }
+
+        return missing;
+    }
+
+    private async Task<LegacyImageStorageVerification> VerifyStorageAsync(VeiculoMidia image, CancellationToken ct)
+    {
+        if (storageVerificationCache.TryGetValue(image.Id, out var cached))
+        {
+            return cached;
+        }
+
+        var verification = await storageVerifier.VerifyAsync(image, ct);
+        storageVerificationCache[image.Id] = verification;
+        return verification;
     }
 
     private async Task ProcessPendingItemsAsync(int jobId, string workerId, CancellationToken ct)

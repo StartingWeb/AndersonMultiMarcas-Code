@@ -24,6 +24,7 @@ CultureInfo.DefaultThreadCurrentCulture = brCulture;
 CultureInfo.DefaultThreadCurrentUICulture = brCulture;
 
 var builder = WebApplication.CreateBuilder(args);
+AddLegacyStorageCompatibility(builder.Configuration);
 
 // ==============================
 // BANCO DE DADOS
@@ -107,6 +108,7 @@ builder.Services.AddSingleton<LegacyImageImportQueue>();
 builder.Services.AddSingleton<LegacyImportCancellationRegistry>();
 builder.Services.AddScoped<LegacyImageImportJobManager>();
 builder.Services.AddScoped<LegacyVehicleJsonLdParser>();
+builder.Services.AddScoped<ILegacyImageStorageVerifier, LegacyImageR2StorageVerifier>();
 builder.Services.AddScoped<LegacyVehicleImageImportService>();
 builder.Services.AddScoped<LegacyVehicleImageImportItemProcessor>();
 builder.Services.AddScoped<LegacyImageImportReportService>();
@@ -346,4 +348,34 @@ static bool IsLocalOrWindowsSqlServer(string connectionString)
         || dataSource.Equals(".", StringComparison.Ordinal)
         || dataSource.Equals("localhost", StringComparison.OrdinalIgnoreCase)
         || dataSource.StartsWith("127.", StringComparison.Ordinal);
+}
+
+static void AddLegacyStorageCompatibility(ConfigurationManager configuration)
+{
+    var values = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+    AddFallback(values, configuration, "Storage:R2:AccessKeyId", "Storage:AccessKey");
+    AddFallback(values, configuration, "Storage:R2:SecretAccessKey", "Storage:SecretKey");
+    AddFallback(values, configuration, "Storage:R2:BucketName", "Storage:Bucket");
+    AddFallback(values, configuration, "Storage:R2:ServiceUrl", "Storage:Endpoint");
+    AddFallback(values, configuration, "Storage:R2:PublicBaseUrl", "Storage:PublicBaseUrl");
+
+    if (values.Count > 0)
+    {
+        configuration.AddInMemoryCollection(values);
+    }
+}
+
+static void AddFallback(
+    IDictionary<string, string?> values,
+    IConfiguration configuration,
+    string targetKey,
+    string sourceKey)
+{
+    if (!string.IsNullOrWhiteSpace(configuration[targetKey])
+        || string.IsNullOrWhiteSpace(configuration[sourceKey]))
+    {
+        return;
+    }
+
+    values[targetKey] = configuration[sourceKey];
 }

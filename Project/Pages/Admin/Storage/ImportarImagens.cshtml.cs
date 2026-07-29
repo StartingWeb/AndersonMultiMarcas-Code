@@ -28,7 +28,7 @@ public sealed class ImportarImagensModel(
     public LegacyImageImportDashboardSnapshot? Dashboard { get; private set; }
     public LegacyImageImportJobDetails? CurrentDetails { get; private set; }
     public IReadOnlyList<LegacyImageImportJobListItem> Jobs { get; private set; } = [];
-    public bool R2WriteEnabled => storageOptions.Value.UseR2ForWrites;
+    public bool R2WriteEnabled => storageOptions.Value.UseR2ForWrites && storageOptions.Value.R2.IsConfigured;
 
     public async Task OnGet(CancellationToken ct)
     {
@@ -61,7 +61,7 @@ public sealed class ImportarImagensModel(
 
         if (!Input.DryRun && !R2WriteEnabled)
         {
-            ModelState.AddModelError(string.Empty, "Para executar a importacao real, configure Storage:Provider=R2.");
+            ModelState.AddModelError(string.Empty, "Para executar a importacao real, configure Storage:Provider=R2 e Storage:R2.");
         }
 
         if (!ModelState.IsValid)
@@ -228,7 +228,7 @@ public sealed class ImportarImagensModel(
         [Display(Name = "URL Base do Site Legado")]
         public string BaseUrl { get; set; } = "https://andersonmultimarcas.com.br";
 
-        [Display(Name = "Importar apenas veiculos sem BlobName")]
+        [Display(Name = "Importar apenas veiculos sem BlobName valido no R2")]
         public bool OnlyWithoutBlobName { get; set; } = true;
 
         [Display(Name = "Sobrescrever imagens existentes")]
