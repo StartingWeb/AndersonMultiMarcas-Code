@@ -2,9 +2,6 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
-using Amazon.Runtime;
-using Amazon.S3;
-using Amazon.S3.Model;
 using Core.Storage;
 using Data;
 using Domain.Enums;
@@ -136,23 +133,12 @@ public sealed class StorageAuditRunner(
     private async Task<IReadOnlyList<string>> ListBucketKeysAsync(string? prefix, CancellationToken ct)
     {
         var keys = new List<string>();
-        using var client = CreateS3Client();
-        string? continuationToken = null;
         var normalizedPrefix = NormalizeOptionalPrefix(prefix);
 
-        do
+        await foreach (var item in r2.ListAsync(normalizedPrefix ?? string.Empty, ct))
         {
-            var response = await client.ListObjectsV2Async(new ListObjectsV2Request
-            {
-                BucketName = RequiredBucketName(),
-                Prefix = string.IsNullOrWhiteSpace(normalizedPrefix) ? null : normalizedPrefix,
-                ContinuationToken = continuationToken
-            }, ct);
-
-            keys.AddRange(response.S3Objects.Select(x => x.Key));
-            continuationToken = response.IsTruncated ? response.NextContinuationToken : null;
+            keys.Add(item.Key);
         }
-        while (!string.IsNullOrWhiteSpace(continuationToken));
 
         return keys;
     }
@@ -557,26 +543,6 @@ public sealed class StorageAuditRunner(
                 report.TestImport.PersistedBlobRows,
                 report.TestImport.Success);
         }
-    }
-
-    private AmazonS3Client CreateS3Client()
-    {
-        var r2Options = storageOptions.Value.R2;
-        var credentials = new BasicAWSCredentials(r2Options.AccessKeyId, r2Options.SecretAccessKey);
-        return new AmazonS3Client(credentials, new AmazonS3Config
-        {
-            ServiceURL = r2Options.ResolveServiceUrl(),
-            ForcePathStyle = true,
-            AuthenticationRegion = string.IsNullOrWhiteSpace(r2Options.Region) ? "auto" : r2Options.Region.Trim()
-        });
-    }
-
-    private string RequiredBucketName()
-    {
-        var bucket = storageOptions.Value.R2.BucketName;
-        return string.IsNullOrWhiteSpace(bucket)
-            ? throw new InvalidOperationException("Storage:R2:BucketName obrigatorio.")
-            : bucket.Trim();
     }
 
     private IEnumerable<string?> PublicBaseUrls()

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Runtime.CompilerServices;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -98,6 +99,47 @@ public sealed class R2StorageService : IStorageService, IDisposable
         }
     }
 
+    public async IAsyncEnumerable<StorageObjectMetadata> ListAsync(
+        string prefix,
+        [EnumeratorCancellation] CancellationToken ct)
+    {
+        EnsureConfigured();
+        var bucketName = BucketName;
+        var normalizedPrefix = NormalizePrefix(prefix);
+        string? continuationToken = null;
+
+        do
+        {
+            var response = await client.Value.ListObjectsV2Async(new ListObjectsV2Request
+            {
+                BucketName = bucketName,
+                Prefix = normalizedPrefix,
+                ContinuationToken = continuationToken
+            }, ct);
+
+            foreach (var item in response.S3Objects)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                if (string.IsNullOrWhiteSpace(item.Key))
+                {
+                    continue;
+                }
+
+                yield return new StorageObjectMetadata(
+                    StoragePath.NormalizeKey(item.Key),
+                    bucketName,
+                    null,
+                    item.Size,
+                    item.LastModified == default ? null : item.LastModified,
+                    item.ETag);
+            }
+
+            continuationToken = response.IsTruncated ? response.NextContinuationToken : null;
+        }
+        while (!string.IsNullOrWhiteSpace(continuationToken));
+    }
+
     public async Task<Stream?> OpenReadAsync(string key, CancellationToken ct)
     {
         EnsureConfigured();
@@ -188,5 +230,18 @@ public sealed class R2StorageService : IStorageService, IDisposable
         {
             throw new InvalidOperationException("Cloudflare R2 nao esta configurado. Verifique Storage:R2.");
         }
+    }
+
+    private static string NormalizePrefix(string prefix)
+    {
+        if (string.IsNullOrWhiteSpace(prefix))
+        {
+            return string.Empty;
+        }
+
+        var normalized = StoragePath.NormalizeKey(prefix);
+        return prefix.Trim().Replace('\\', '/').EndsWith("/", StringComparison.Ordinal)
+            ? normalized + "/"
+            : normalized;
     }
 }

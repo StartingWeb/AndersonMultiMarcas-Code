@@ -1,5 +1,6 @@
 using Core.Storage;
 using Microsoft.Extensions.Options;
+using System.Runtime.CompilerServices;
 
 namespace Project.Infrastructure.Storage;
 
@@ -29,6 +30,26 @@ public sealed class ApplicationStorageService(
         }
 
         return await local.GetMetadataAsync(key, ct);
+    }
+
+    public async IAsyncEnumerable<StorageObjectMetadata> ListAsync(
+        string prefix,
+        [EnumeratorCancellation] CancellationToken ct)
+    {
+        if (ShouldReadR2First)
+        {
+            await foreach (var item in r2.ListAsync(prefix, ct))
+            {
+                yield return item;
+            }
+
+            yield break;
+        }
+
+        await foreach (var item in local.ListAsync(prefix, ct))
+        {
+            yield return item;
+        }
     }
 
     public async Task<Stream?> OpenReadAsync(string key, CancellationToken ct)

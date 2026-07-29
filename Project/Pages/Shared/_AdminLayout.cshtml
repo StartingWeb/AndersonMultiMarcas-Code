@@ -39,6 +39,12 @@
 
     bool CanShowMenu(AdminMenuItem item)
     {
+        if (item.RequiredRoles is { Count: > 0 }
+            && !roleNames.Any(role => item.RequiredRoles.Contains(role, StringComparer.OrdinalIgnoreCase)))
+        {
+            return false;
+        }
+
         if (hasAnyConfiguredMenu)
         {
             return allowedMenuIds.Contains(item.Id);
