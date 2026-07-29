@@ -96,6 +96,12 @@ public static class VehicleImageHelper
             path = path["wwwroot".Length..];
         }
 
+        if (path.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return path;
+        }
+
         var uploadsIndex = path.IndexOf("/uploads/veiculos/", StringComparison.OrdinalIgnoreCase);
         if (uploadsIndex >= 0)
         {

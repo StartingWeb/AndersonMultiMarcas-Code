@@ -129,7 +129,7 @@ public sealed class BuscarVeiculosQueryHandler(
                 PrecoVenda = x.PrecoVenda,
                 Destaque = x.Destaque,
                 EstaDisponivel = x.EstaDisponivel,
-                MidiaCapaUrl = await imageResolver.SelectVehicleCoverAsync(x.Midias.Select(ToStorageReference), cancellationToken),
+                MidiaCapaUrl = imageResolver.SelectVehicleCover(x.Midias.Select(ToStorageReference)),
                 MarcaNome = x.MarcaNome,
                 LojaNome = x.LojaNome
             });

@@ -1,13 +1,30 @@
 using Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Project.Infrastructure.Storage;
 
 namespace Project.ViewComponents;
 
-public sealed class SellerContactModalViewComponent(ApplicationDbContext db, IStorageImageResolver imageResolver) : ViewComponent
+public sealed class SellerContactModalViewComponent(
+    ApplicationDbContext db,
+    IStorageImageResolver imageResolver,
+    IMemoryCache cache) : ViewComponent
 {
+    private const string CacheKey = "seller-contact-modal:model:v1";
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(10);
+
     public async Task<IViewComponentResult> InvokeAsync()
+        => View(await GetModelAsync());
+
+    private async Task<IReadOnlyCollection<SellerContactModalStoreGroupViewModel>> GetModelAsync()
+        => await cache.GetOrCreateAsync(CacheKey, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await BuildModelAsync();
+        }) ?? [];
+
+    private async Task<IReadOnlyCollection<SellerContactModalStoreGroupViewModel>> BuildModelAsync()
     {
         var grupos = await db.Vendedores
             .AsNoTracking()
@@ -29,10 +46,10 @@ public sealed class SellerContactModalViewComponent(ApplicationDbContext db, ISt
                 new SellerContactModalSellerViewModel(
                     grupo.Nome,
                     grupo.Telefone,
-                    await imageResolver.ResolveSellerPhotoAsync(grupo.FotoUrl, HttpContext.RequestAborted))));
+                    imageResolver.ResolveSellerPhoto(grupo.FotoUrl))));
         }
 
-        var model = vendedores
+        return vendedores
             .GroupBy(x => string.IsNullOrWhiteSpace(x.LojaNome) ? "Sem loja vinculada" : x.LojaNome)
             .OrderBy(x => x.Key)
             .Select(x => new SellerContactModalStoreGroupViewModel(
@@ -40,8 +57,6 @@ public sealed class SellerContactModalViewComponent(ApplicationDbContext db, ISt
                 x.Select(v => v.Vendedor).OrderBy(v => v.Nome).ToList()))
             .Where(x => x.Vendedores.Count > 0)
             .ToList();
-
-        return View(model);
     }
 }
 

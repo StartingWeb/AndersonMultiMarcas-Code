@@ -152,7 +152,7 @@ public class IndexModel(ISender sender, ApplicationDbContext db, IStorageImageRe
         {
             Filtro = filtro,
             CondicaoSelecionada = Condicao,
-            Vendedores = await ToSellerViewModelsAsync(vendedores, ct),
+            Vendedores = ToSellerViewModels(vendedores),
             DestaquesRecentes = destaquesRecentes,
             OutrosVeiculos = outros,
             Marcas = facetasResult.Value?.Marcas ?? [],
@@ -208,7 +208,7 @@ public class IndexModel(ISender sender, ApplicationDbContext db, IStorageImageRe
         });
     }
 
-    private async Task<IReadOnlyList<HomeSellerViewModel>> ToSellerViewModelsAsync(IEnumerable<SellerProjection> sellers, CancellationToken ct)
+    private IReadOnlyList<HomeSellerViewModel> ToSellerViewModels(IEnumerable<SellerProjection> sellers)
     {
         var result = new List<HomeSellerViewModel>();
         foreach (var seller in sellers)
@@ -217,7 +217,7 @@ public class IndexModel(ISender sender, ApplicationDbContext db, IStorageImageRe
             {
                 Nome = seller.Nome,
                 Telefone = seller.Telefone,
-                FotoUrl = await imageResolver.ResolveSellerPhotoAsync(seller.FotoUrl, ct)
+                FotoUrl = imageResolver.ResolveSellerPhoto(seller.FotoUrl)
             });
         }
 

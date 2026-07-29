@@ -145,7 +145,7 @@ public sealed class VeiculoModel(
             .Take(12)
             .ToListAsync(ct);
 
-        Vendedores = await ToSellerViewModelsAsync(vendedores, ct);
+        Vendedores = ToSellerViewModels(vendedores);
 
         var nomeCompleto = BuildNomeCompleto(veiculo.Titulo, veiculo.Modelo, veiculo.Versao);
         var medias = new List<VehiclePhotoViewModel>
@@ -177,7 +177,7 @@ public sealed class VeiculoModel(
 
         if (vehicleMedia.Count > 0)
         {
-            medias = (await imageResolver.ResolveVehicleGalleryAsync(vehicleMedia.Select(ToStorageReference), includeDefault: true, ct))
+            medias = imageResolver.ResolveVehicleGallery(vehicleMedia.Select(ToStorageReference), includeDefault: true)
                 .Select(x => new VehiclePhotoViewModel
                 {
                     Url = x,
@@ -484,7 +484,7 @@ public sealed class VeiculoModel(
         _ => "Não informado"
     };
 
-    private async Task<IReadOnlyList<HomeSellerViewModel>> ToSellerViewModelsAsync(IEnumerable<SellerProjection> sellers, CancellationToken ct)
+    private IReadOnlyList<HomeSellerViewModel> ToSellerViewModels(IEnumerable<SellerProjection> sellers)
     {
         var result = new List<HomeSellerViewModel>();
         foreach (var seller in sellers)
@@ -493,7 +493,7 @@ public sealed class VeiculoModel(
             {
                 Nome = seller.Nome,
                 Telefone = seller.Telefone,
-                FotoUrl = await imageResolver.ResolveSellerPhotoAsync(seller.FotoUrl, ct)
+                FotoUrl = imageResolver.ResolveSellerPhoto(seller.FotoUrl)
             });
         }
 

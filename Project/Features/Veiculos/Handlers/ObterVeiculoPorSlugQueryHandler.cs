@@ -62,10 +62,9 @@ public sealed class ObterVeiculoPorSlugQueryHandler(
 
         var slug = slugService.CriarSlug(veiculo.Titulo, veiculo.Modelo, veiculo.Versao, veiculo.Id);
         var canonical = $"{request.BaseUrl.TrimEnd('/')}/api/veiculos/{slug}";
-        var vehicleMidias = await imageResolver.ResolveVehicleGalleryAsync(
+        var vehicleMidias = imageResolver.ResolveVehicleGallery(
             veiculo.Midias.Select(ToStorageReference),
-            includeDefault: false,
-            cancellationToken);
+            includeDefault: false);
 
         var image = vehicleMidias.FirstOrDefault() ?? string.Empty;
         var tituloSeo = $"{veiculo.Titulo} {veiculo.Modelo} {veiculo.Versao}".Trim();

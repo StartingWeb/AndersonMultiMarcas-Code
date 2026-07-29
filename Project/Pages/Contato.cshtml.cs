@@ -70,7 +70,7 @@ public class ContatoModel(ApplicationDbContext db, IStorageImageResolver imageRe
                     Telefone = vendedor.Telefone,
                     TelefoneExibicao = vendedor.TelefoneExibicao,
                     Cargo = vendedor.Cargo,
-                    FotoUrl = await imageResolver.ResolveSellerPhotoAsync(vendedor.FotoUrl, ct)
+                    FotoUrl = imageResolver.ResolveSellerPhoto(vendedor.FotoUrl)
                 });
             }
 
@@ -107,7 +107,7 @@ public class ContatoModel(ApplicationDbContext db, IStorageImageResolver imageRe
             {
                 Nome = vendedor.Nome,
                 Telefone = vendedor.Telefone,
-                FotoUrl = await imageResolver.ResolveSellerPhotoAsync(vendedor.FotoUrl, ct)
+                FotoUrl = imageResolver.ResolveSellerPhoto(vendedor.FotoUrl)
             });
         }
 

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
+using Project.Infrastructure.Storage;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
@@ -17,7 +18,8 @@ namespace Project.Controllers;
 [Route("media")]
 [ApiExplorerSettings(IgnoreApi = true)]
 public sealed class MediaController(
-    IStorageService storage,
+    LocalWebRootStorageService local,
+    R2StorageService r2,
     IOptions<StorageOptions> storageOptions,
     IMemoryCache cache) : ControllerBase
 {
@@ -35,10 +37,10 @@ public sealed class MediaController(
     [ResponseCache(Duration = 60 * 60 * 24 * 30, Location = ResponseCacheLocation.Any, NoStore = false, VaryByHeader = "Accept", VaryByQueryKeys = ["src", "w", "q"])]
     public async Task<IActionResult> GetImage([FromQuery] string src, [FromQuery] int? w, [FromQuery] int? q, CancellationToken ct)
     {
-        var storageKey = await ResolveExistingKeyAsync(src, ct);
+        var storageKey = ResolveKey(src);
         if (storageKey is null)
         {
-            storageKey = await ResolveExistingKeyAsync(DefaultImageVirtualPath, ct);
+            storageKey = ResolveKey(DefaultImageVirtualPath);
             if (storageKey is null)
             {
                 return NotFound();
@@ -48,7 +50,7 @@ public sealed class MediaController(
         var extension = Path.GetExtension(storageKey);
         if (!OptimizableExtensions.Contains(extension))
         {
-            var raw = await storage.OpenReadAsync(storageKey, ct);
+            var raw = await OpenRequestedOrDefaultAsync(storageKey, ct);
             return raw is null ? NotFound() : File(raw, GetContentType(storageKey));
         }
 
@@ -70,7 +72,7 @@ public sealed class MediaController(
         {
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(30);
 
-            await using var input = await storage.OpenReadAsync(storageKey, ct)
+            await using var input = await OpenRequestedOrDefaultAsync(storageKey, ct)
                 ?? throw new FileNotFoundException("Imagem nao encontrada no storage.", storageKey);
             using var image = await Image.LoadAsync(input, ct);
             image.Mutate(ctx =>
@@ -97,14 +99,46 @@ public sealed class MediaController(
         return File(payload!.Bytes, payload.ContentType);
     }
 
-    private async Task<string?> ResolveExistingKeyAsync(string? src, CancellationToken ct)
+    private string? ResolveKey(string? src)
     {
         if (!StoragePath.TryGetKeyFromSource(src, PublicBaseUrls(), out var key))
         {
             return null;
         }
 
-        return await storage.ExistsAsync(key, ct) ? key : null;
+        return key;
+    }
+
+    private async Task<Stream?> OpenReadForMediaAsync(string key, CancellationToken ct)
+    {
+        var normalizedKey = StoragePath.NormalizeKey(key);
+
+        if (!StoragePath.IsVehicleKey(normalizedKey) && !StoragePath.IsSellerKey(normalizedKey))
+        {
+            return await local.OpenReadAsync(normalizedKey, ct);
+        }
+
+        var localStream = await local.OpenReadAsync(normalizedKey, ct);
+        if (localStream is not null)
+        {
+            return localStream;
+        }
+
+        return r2.IsConfigured ? await r2.OpenReadAsync(normalizedKey, ct) : null;
+    }
+
+    private async Task<Stream?> OpenRequestedOrDefaultAsync(string key, CancellationToken ct)
+    {
+        var stream = await OpenReadForMediaAsync(key, ct);
+        if (stream is not null)
+        {
+            return stream;
+        }
+
+        var fallbackKey = ResolveKey(DefaultImageVirtualPath);
+        return fallbackKey is null || string.Equals(fallbackKey, key, StringComparison.OrdinalIgnoreCase)
+            ? null
+            : await OpenReadForMediaAsync(fallbackKey, ct);
     }
 
     private IEnumerable<string?> PublicBaseUrls()

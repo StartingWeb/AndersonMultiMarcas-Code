@@ -46,7 +46,7 @@ public class EmpresaModel(ApplicationDbContext db, IStorageImageResolver imageRe
             .Take(12)
             .ToListAsync(ct);
 
-        Vendedores = await ToSellerViewModelsAsync(vendedores, ct);
+        Vendedores = ToSellerViewModels(vendedores);
 
         ViewData["SeoTitle"] = "Quem somos | Anderson Multimarcas em Taquaritinga/SP";
         ViewData["MetaDescription"] = "Conheça a história da Anderson Multimarcas, nossas lojas em Taquaritinga/SP e o atendimento pensado para gerar confiança em cada negócio.";
@@ -57,7 +57,7 @@ public class EmpresaModel(ApplicationDbContext db, IStorageImageResolver imageRe
             ("A loja trabalha com quais tipos de veículo?", "O estoque inclui carros seminovos, opções 0 km, modelos eletrificados e motos elétricas conforme disponibilidade."));
     }
 
-    private async Task<IReadOnlyList<HomeSellerViewModel>> ToSellerViewModelsAsync(IEnumerable<SellerProjection> sellers, CancellationToken ct)
+    private IReadOnlyList<HomeSellerViewModel> ToSellerViewModels(IEnumerable<SellerProjection> sellers)
     {
         var result = new List<HomeSellerViewModel>();
         foreach (var seller in sellers)
@@ -66,7 +66,7 @@ public class EmpresaModel(ApplicationDbContext db, IStorageImageResolver imageRe
             {
                 Nome = seller.Nome,
                 Telefone = seller.Telefone,
-                FotoUrl = await imageResolver.ResolveSellerPhotoAsync(seller.FotoUrl, ct)
+                FotoUrl = imageResolver.ResolveSellerPhoto(seller.FotoUrl)
             });
         }
 

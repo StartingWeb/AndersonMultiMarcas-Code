@@ -9,6 +9,8 @@ public sealed class VehicleImageHelperTests
     [InlineData("uploads/veiculos/1/carro.webp", "/uploads/veiculos/1/carro.webp")]
     [InlineData("wwwroot/uploads/veiculos/2/carro.jpg", "/uploads/veiculos/2/carro.jpg")]
     [InlineData("/media/img?src=%2Fuploads%2Fveiculos%2F3%2Fcarro.png&w=520&q=68", "/uploads/veiculos/3/carro.png")]
+    [InlineData("https://cdn.example.com/uploads/veiculos/4/carro.webp", "https://cdn.example.com/uploads/veiculos/4/carro.webp")]
+    [InlineData("/media/img?src=https%3A%2F%2Fcdn.example.com%2Fuploads%2Fveiculos%2F5%2Fcarro.webp&w=520&q=68", "https://cdn.example.com/uploads/veiculos/5/carro.webp")]
     public void Normalize_DeveAceitarCaminhosValidosDeVeiculos(string source, string expected)
     {
         Assert.Equal(expected, VehicleImageHelper.Normalize(source));

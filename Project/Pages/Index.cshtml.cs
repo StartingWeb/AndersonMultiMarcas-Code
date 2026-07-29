@@ -10,18 +10,16 @@ using Project.Shared;
 
 namespace Project.Pages;
 
-public class IndexModel(ApplicationDbContext db, ILogger<IndexModel> logger, IStorageImageResolver imageResolver) : PageModel
+public class IndexModel(ApplicationDbContext db, IStorageImageResolver imageResolver) : PageModel
 {
     public IReadOnlyCollection<HomeVehicleCardViewModel> HeroDestaques { get; private set; } = [];
     public IReadOnlyCollection<HomeVehicleCardViewModel> PremiumZeroKm { get; private set; } = [];
     public IReadOnlyCollection<HomeVehicleCardViewModel> Eletrificados { get; private set; } = [];
     public IReadOnlyCollection<HomeVehicleCardViewModel> MotosEletricas { get; private set; } = [];
     public IReadOnlyCollection<HomeStoreViewModel> Lojas { get; private set; } = [];
-    public IReadOnlyCollection<HomeSellerViewModel> Vendedores { get; private set; } = [];
 
     public async Task OnGetAsync(CancellationToken ct)
     {
-        _ = logger;
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
         var query = db.Veiculos
@@ -58,13 +56,11 @@ public class IndexModel(ApplicationDbContext db, ILogger<IndexModel> logger, ISt
                     .ToList()
             });
 
-        HeroDestaques = await ToHomeVehicleCardsAsync(
-            await query.Where(x => x.Destaque).OrderByDescending(x => x.Id).Take(12).ToListAsync(ct),
-            ct);
-        PremiumZeroKm = await ToHomeVehicleCardsAsync(
-            await query.Where(x => x.AnoModelo >= DateTime.UtcNow.Year).OrderByDescending(x => x.Id).Take(4).ToListAsync(ct),
-            ct);
-        Eletrificados = await ToHomeVehicleCardsAsync(
+        HeroDestaques = ToHomeVehicleCards(
+            await query.Where(x => x.Destaque).OrderByDescending(x => x.Id).Take(12).ToListAsync(ct));
+        PremiumZeroKm = ToHomeVehicleCards(
+            await query.Where(x => x.AnoModelo >= DateTime.UtcNow.Year).OrderByDescending(x => x.Id).Take(4).ToListAsync(ct));
+        Eletrificados = ToHomeVehicleCards(
             await db.Veiculos.AsNoTracking()
             .Where(x => x.Ativo && !x.Vendido && (x.Combustivel == Combustivel.Eletrico || x.Combustivel == Combustivel.Hibrido))
             .Select(x => new VehicleCardProjection
@@ -99,9 +95,8 @@ public class IndexModel(ApplicationDbContext db, ILogger<IndexModel> logger, ISt
             })
             .OrderByDescending(x => x.Id)
             .Take(4)
-            .ToListAsync(ct),
-            ct);
-        MotosEletricas = await ToHomeVehicleCardsAsync(
+            .ToListAsync(ct));
+        MotosEletricas = ToHomeVehicleCards(
             await db.Veiculos.AsNoTracking()
             .Where(x => x.Ativo && !x.Vendido && x.MotoEletrica)
             .Select(x => new VehicleCardProjection
@@ -136,8 +131,7 @@ public class IndexModel(ApplicationDbContext db, ILogger<IndexModel> logger, ISt
             })
             .OrderByDescending(x => x.Id)
             .Take(4)
-            .ToListAsync(ct),
-            ct);
+            .ToListAsync(ct));
 
         Lojas = await db.Lojas.AsNoTracking().OrderBy(x => x.Id).Select(x => new HomeStoreViewModel
         {
@@ -145,15 +139,6 @@ public class IndexModel(ApplicationDbContext db, ILogger<IndexModel> logger, ISt
             EnderecoCompleto = $"{x.Endereco.Logradouro}, {x.Endereco.Numero}, {x.Endereco.Bairro}, {x.Endereco.Cidade} - {x.Endereco.Uf}, {x.Endereco.Cep}",
             MapsQuery = Uri.EscapeDataString($"{x.Endereco.Logradouro}, {x.Endereco.Numero}, {x.Endereco.Bairro}, {x.Endereco.Cidade} - {x.Endereco.Uf}, {x.Endereco.Cep}")
         }).Take(3).ToListAsync(ct);
-
-        var vendedores = await db.Vendedores.AsNoTracking().Where(x => x.Ativo).OrderBy(x => x.Nome).Select(x => new SellerProjection
-        {
-            Nome = x.Nome,
-            Telefone = x.Whatsapp.HasValue ? x.Whatsapp.Value.Valor : (x.Telefone.HasValue ? x.Telefone.Value.Valor : string.Empty),
-            FotoUrl = x.FotoUrl
-        }).Take(12).ToListAsync(ct);
-
-        Vendedores = await ToHomeSellerCardsAsync(vendedores, ct);
 
         ViewData["SeoTitle"] = "Carros seminovos e 0 km em Taquaritinga/SP | Anderson Multimarcas";
         ViewData["MetaDescription"] = "Compre carros seminovos, 0 km, híbridos, elétricos e motos elétricas em Taquaritinga/SP com atendimento consultivo, troca e financiamento.";
@@ -228,7 +213,7 @@ public class IndexModel(ApplicationDbContext db, ILogger<IndexModel> logger, ISt
         return new JsonResult(new { groups });
     }
 
-    private async Task<IReadOnlyList<HomeVehicleCardViewModel>> ToHomeVehicleCardsAsync(IEnumerable<VehicleCardProjection> vehicles, CancellationToken ct)
+    private IReadOnlyList<HomeVehicleCardViewModel> ToHomeVehicleCards(IEnumerable<VehicleCardProjection> vehicles)
     {
         var result = new List<HomeVehicleCardViewModel>();
         foreach (var vehicle in vehicles)
@@ -245,23 +230,7 @@ public class IndexModel(ApplicationDbContext db, ILogger<IndexModel> logger, ISt
                 Destaque = vehicle.Destaque,
                 Disponivel = vehicle.Disponivel,
                 Preco = vehicle.Preco,
-                MidiaUrl = await imageResolver.SelectVehicleCoverAsync(vehicle.Midias.Select(ToStorageReference), ct)
-            });
-        }
-
-        return result;
-    }
-
-    private async Task<IReadOnlyList<HomeSellerViewModel>> ToHomeSellerCardsAsync(IEnumerable<SellerProjection> sellers, CancellationToken ct)
-    {
-        var result = new List<HomeSellerViewModel>();
-        foreach (var seller in sellers)
-        {
-            result.Add(new HomeSellerViewModel
-            {
-                Nome = seller.Nome,
-                Telefone = seller.Telefone,
-                FotoUrl = await imageResolver.ResolveSellerPhotoAsync(seller.FotoUrl, ct)
+                MidiaUrl = imageResolver.SelectVehicleCover(vehicle.Midias.Select(ToStorageReference))
             });
         }
 
@@ -270,13 +239,6 @@ public class IndexModel(ApplicationDbContext db, ILogger<IndexModel> logger, ISt
 
     private static StorageImageReference ToStorageReference(MediaProjection media)
         => new(media.Url, media.BlobName, media.Container, media.NomeArquivo, media.ContentType, media.TamanhoBytes);
-
-    private sealed class SellerProjection
-    {
-        public string Nome { get; init; } = string.Empty;
-        public string Telefone { get; init; } = string.Empty;
-        public string? FotoUrl { get; init; }
-    }
 
     private sealed class MediaProjection
     {

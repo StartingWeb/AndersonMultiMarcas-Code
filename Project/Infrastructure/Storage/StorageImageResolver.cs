@@ -1,39 +1,28 @@
 using Core.Storage;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Project.Shared;
 
 namespace Project.Infrastructure.Storage;
 
-public sealed class StorageImageResolver(
-    LocalWebRootStorageService local,
-    R2StorageService r2,
-    IOptions<StorageOptions> options,
-    IMemoryCache cache,
-    ILogger<StorageImageResolver> logger) : IStorageImageResolver
+public sealed class StorageImageResolver(IOptions<StorageOptions> options) : IStorageImageResolver
 {
-    private static readonly TimeSpan PositiveRemoteCacheDuration = TimeSpan.FromMinutes(20);
-    private static readonly TimeSpan NegativeRemoteCacheDuration = TimeSpan.FromMinutes(3);
-
-    public async Task<IReadOnlyList<string>> ResolveVehicleGalleryAsync(
+    public IReadOnlyList<string> ResolveVehicleGallery(
         IEnumerable<StorageImageReference> references,
-        bool includeDefault,
-        CancellationToken ct)
+        bool includeDefault)
     {
         var images = new List<string>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var reference in references)
         {
-            var resolved = await ResolveImageAsync(reference, ImageKind.Vehicle, ct);
+            var resolved = ResolveVehicleImage(reference);
             if (string.IsNullOrWhiteSpace(resolved)
                 || string.Equals(resolved, VehicleImageHelper.DefaultVehicleImage, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
 
-            var key = GetDistinctKey(resolved);
-            if (seen.Add(key))
+            if (seen.Add(GetDistinctKey(resolved)))
             {
                 images.Add(resolved);
             }
@@ -47,10 +36,10 @@ public sealed class StorageImageResolver(
         return images;
     }
 
-    public async Task<string> SelectVehicleCoverAsync(IEnumerable<StorageImageReference> references, CancellationToken ct)
-        => (await ResolveVehicleGalleryAsync(references, includeDefault: true, ct)).First();
+    public string SelectVehicleCover(IEnumerable<StorageImageReference> references)
+        => ResolveVehicleGallery(references, includeDefault: true).First();
 
-    public async Task<string?> ResolveSellerPhotoAsync(string? source, CancellationToken ct)
+    public string? ResolveSellerPhoto(string? source)
     {
         var normalized = SellerImageHelper.Normalize(source);
         if (string.IsNullOrWhiteSpace(normalized))
@@ -58,84 +47,117 @@ public sealed class StorageImageResolver(
             return null;
         }
 
-        return await ResolveImageAsync(new StorageImageReference(normalized), ImageKind.Seller, ct);
+        return ResolveSellerImage(new StorageImageReference(normalized));
     }
 
-    private async Task<string?> ResolveImageAsync(StorageImageReference reference, ImageKind kind, CancellationToken ct)
+    public Task<IReadOnlyList<string>> ResolveVehicleGalleryAsync(
+        IEnumerable<StorageImageReference> references,
+        bool includeDefault,
+        CancellationToken ct)
     {
-        var normalized = kind == ImageKind.Vehicle
-            ? (VehicleImageHelper.TryNormalize(reference.Url, out var vehicleUrl) ? vehicleUrl : null)
-            : SellerImageHelper.Normalize(reference.Url);
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult(ResolveVehicleGallery(references, includeDefault));
+    }
 
-        var lookupReference = reference with { Url = normalized ?? reference.Url };
-        if (!StoragePath.TryGetKey(lookupReference, PublicBaseUrls(), out var key))
+    public Task<string> SelectVehicleCoverAsync(IEnumerable<StorageImageReference> references, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult(SelectVehicleCover(references));
+    }
+
+    public Task<string?> ResolveSellerPhotoAsync(string? source, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult(ResolveSellerPhoto(source));
+    }
+
+    private string? ResolveVehicleImage(StorageImageReference reference)
+    {
+        if (TryGetExplicitStorageKey(reference, out var key) && StoragePath.IsVehicleKey(key))
         {
-            return IsAbsoluteHttpUrl(normalized) ? normalized : null;
+            return BuildPublicUrl(key);
         }
 
-        if (kind == ImageKind.Vehicle && !StoragePath.IsVehicleKey(key))
+        if (!VehicleImageHelper.TryNormalize(reference.Url, out var normalized))
         {
             return null;
         }
 
-        if (kind == ImageKind.Seller && !StoragePath.IsSellerKey(key))
-        {
-            return IsAbsoluteHttpUrl(normalized) ? normalized : null;
-        }
-
-        if (await RemoteExistsAsync(key, ct))
-        {
-            return r2.GetPublicUrl(key);
-        }
-
-        if (await local.ExistsAsync(key, ct))
-        {
-            return local.GetPublicUrl(key);
-        }
-
-        return IsAbsoluteHttpUrl(normalized) ? normalized : null;
+        return normalized;
     }
 
-    private async Task<bool> RemoteExistsAsync(string key, CancellationToken ct)
+    private string? ResolveSellerImage(StorageImageReference reference)
     {
-        if (!ShouldReadR2First)
+        if (TryGetExplicitStorageKey(reference, out var key) && StoragePath.IsSellerKey(key))
         {
-            return false;
+            return BuildPublicUrl(key);
         }
 
+        var normalized = SellerImageHelper.Normalize(reference.Url);
+        if (string.IsNullOrWhiteSpace(normalized) || IsAbsoluteHttpUrl(normalized))
+        {
+            return normalized;
+        }
+
+        return StoragePath.TryGetKeyFromSource(normalized, [], out key) && StoragePath.IsSellerKey(key)
+            ? BuildPublicUrl(key)
+            : normalized;
+    }
+
+    private string BuildPublicUrl(string key)
+    {
         var normalizedKey = StoragePath.NormalizeKey(key);
-        var cacheKey = $"storage:r2:exists:{normalizedKey}";
+        var publicBaseUrl = options.Value.R2.PublicBaseUrl;
+        if (string.IsNullOrWhiteSpace(publicBaseUrl))
+        {
+            publicBaseUrl = options.Value.PublicBaseUrl;
+        }
+
+        return string.IsNullOrWhiteSpace(publicBaseUrl)
+            ? StoragePath.ToPublicPath(normalizedKey)
+            : $"{publicBaseUrl.TrimEnd('/')}/{normalizedKey}";
+    }
+
+    private static bool TryGetExplicitStorageKey(StorageImageReference reference, out string key)
+    {
+        key = string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(reference.BlobName))
+        {
+            var blobName = reference.BlobName.Trim();
+            if (blobName.Contains('/') || blobName.Contains('\\'))
+            {
+                return TryNormalizeKey(blobName, out key);
+            }
+
+            if (!string.IsNullOrWhiteSpace(reference.Container))
+            {
+                return TryNormalizeKey(StoragePath.Combine(reference.Container, blobName), out key);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(reference.NomeArquivo)
+            && !string.IsNullOrWhiteSpace(reference.Container))
+        {
+            return TryNormalizeKey(StoragePath.Combine(reference.Container, reference.NomeArquivo), out key);
+        }
+
+        return false;
+    }
+
+    private static bool TryNormalizeKey(string value, out string key)
+    {
+        key = string.Empty;
         try
         {
-            return await cache.GetOrCreateAsync(cacheKey, async entry =>
-            {
-                var exists = await r2.ExistsAsync(normalizedKey, ct);
-                entry.AbsoluteExpirationRelativeToNow = exists
-                    ? PositiveRemoteCacheDuration
-                    : NegativeRemoteCacheDuration;
-                return exists;
-            });
+            key = StoragePath.NormalizeKey(value);
+            return true;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (ArgumentException)
         {
-            logger.LogWarning(ex, "Nao foi possivel validar {StorageKey} no R2. Usando fallback local.", normalizedKey);
             return false;
         }
     }
-
-    private IEnumerable<string?> PublicBaseUrls()
-    {
-        yield return options.Value.PublicBaseUrl;
-        yield return options.Value.R2.PublicBaseUrl;
-        yield return options.Value.R2.ServiceUrl;
-    }
-
-    private bool ShouldReadR2First => r2.IsConfigured && (options.Value.DualReadEnabled || options.Value.UseR2ForWrites);
-
-    private static bool IsAbsoluteHttpUrl(string? source)
-        => !string.IsNullOrWhiteSpace(source)
-            && (source.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
-                || source.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
 
     private static string GetDistinctKey(string source)
     {
@@ -147,9 +169,8 @@ public sealed class StorageImageResolver(
         return source.Split('?', '#')[0].TrimEnd('/').ToUpperInvariant();
     }
 
-    private enum ImageKind
-    {
-        Vehicle,
-        Seller
-    }
+    private static bool IsAbsoluteHttpUrl(string? source)
+        => !string.IsNullOrWhiteSpace(source)
+            && (source.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                || source.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
 }
