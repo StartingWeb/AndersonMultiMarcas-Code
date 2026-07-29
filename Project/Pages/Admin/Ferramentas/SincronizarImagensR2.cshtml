@@ -1,0 +1,615 @@
+@page "/Admin/Ferramentas/SincronizarImagensR2"
+@model Project.Pages.Admin.Ferramentas.SincronizarImagensR2Model
+
+@{
+    ViewData["Title"] = "Sincronizar Imagens R2";
+    var snapshot = Model.Snapshot;
+    var totalVehicles = snapshot.TotalVehicles > 0 ? snapshot.TotalVehicles : Model.TotalVehiclesPreview;
+    var progress = snapshot.TotalVehicles > 0 ? snapshot.ProgressPercent : 0;
+    var terminal = !snapshot.IsActive && snapshot.Status != Project.Features.Storage.R2Sync.R2VehicleImageSyncStatus.Idle;
+}
+
+@section Styles {
+    <style>
+        .sync-page {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .sync-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .sync-title {
+            margin: 0;
+            color: #222;
+            font-size: 1.28rem;
+            font-weight: 800;
+        }
+
+        .sync-subtitle {
+            margin: .18rem 0 0;
+            color: #69727d;
+            font-size: .88rem;
+        }
+
+        .sync-panel {
+            background: #fff;
+            border: 1px solid #e7e2dc;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .05);
+            overflow: hidden;
+        }
+
+        .sync-panel-body {
+            padding: 1rem;
+        }
+
+        .sync-actions {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-sync-primary,
+        .btn-sync-secondary {
+            min-height: 40px;
+            border-radius: 8px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .45rem;
+            text-decoration: none;
+        }
+
+        .btn-sync-primary {
+            border: 1px solid #9f0a10;
+            background: #9f0a10;
+            color: #fff;
+        }
+
+        .btn-sync-primary:hover {
+            border-color: #86080d;
+            background: #86080d;
+            color: #fff;
+        }
+
+        .btn-sync-primary:disabled,
+        .btn-sync-secondary:disabled {
+            opacity: .62;
+            cursor: not-allowed;
+        }
+
+        .btn-sync-secondary {
+            border: 1px solid #e7e2dc;
+            background: #fff;
+            color: #222;
+        }
+
+        .btn-sync-secondary:hover {
+            background: #f8f8f8;
+            color: #222;
+        }
+
+        .sync-config {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            flex-wrap: wrap;
+            color: #69727d;
+            font-size: .82rem;
+            font-weight: 700;
+        }
+
+        .sync-config code {
+            color: #222;
+            background: #f7f7f7;
+            border: 1px solid #ececec;
+            border-radius: 6px;
+            padding: .2rem .42rem;
+        }
+
+        .sync-progress-block {
+            display: grid;
+            gap: .45rem;
+        }
+
+        .sync-progress-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .8rem;
+            color: #222;
+            font-size: .82rem;
+            font-weight: 800;
+        }
+
+        .progress {
+            height: 12px;
+            border-radius: 999px;
+            background: #f1f1f1;
+        }
+
+        .progress-bar {
+            background: #9f0a10;
+        }
+
+        .sync-stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: .75rem;
+        }
+
+        .sync-stat {
+            min-height: 82px;
+            border: 1px solid #e7e2dc;
+            border-radius: 8px;
+            padding: .85rem;
+            display: grid;
+            align-content: center;
+            gap: .25rem;
+        }
+
+        .sync-stat-label {
+            color: #69727d;
+            font-size: .74rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .sync-stat-value {
+            color: #222;
+            font-size: 1.18rem;
+            font-weight: 900;
+            line-height: 1.1;
+        }
+
+        .sync-status {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            min-height: 34px;
+            border-radius: 999px;
+            padding: .35rem .65rem;
+            background: rgba(159, 10, 16, .08);
+            color: #9f0a10;
+            font-size: .84rem;
+            font-weight: 800;
+        }
+
+        .sync-status-dot {
+            width: .72rem;
+            height: .72rem;
+            border-radius: 999px;
+            background: #4f8cff;
+        }
+
+        .sync-status-dot.running {
+            background: #f0ad4e;
+        }
+
+        .sync-status-dot.success {
+            background: #1f9d55;
+        }
+
+        .sync-status-dot.error {
+            background: #c91f37;
+        }
+
+        .sync-status-dot.cancelled {
+            background: #555;
+        }
+
+        .sync-summary[hidden] {
+            display: none;
+        }
+
+        .sync-log-wrap {
+            max-height: 440px;
+            overflow: auto;
+            border-top: 1px solid #e7e2dc;
+        }
+
+        .sync-log-table {
+            min-width: 860px;
+            margin: 0;
+        }
+
+        .sync-log-table th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #f8f8f8;
+            color: #222;
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            white-space: nowrap;
+        }
+
+        .sync-log-table td {
+            font-size: .82rem;
+            vertical-align: middle;
+        }
+
+        .sync-message {
+            max-width: 520px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @@media (max-width: 980px) {
+            .sync-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @@media (max-width: 560px) {
+            .sync-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .sync-actions {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .btn-sync-primary,
+            .btn-sync-secondary,
+            .sync-actions form {
+                width: 100%;
+            }
+        }
+    </style>
+}
+
+<div class="container-fluid sync-page" data-sync-page>
+    <div class="sync-header">
+        <div>
+            <h1 class="sync-title">
+                <i class="bi bi-cloud-check-fill me-2"></i>
+                Sincronizar Imagens R2
+            </h1>
+            <p class="sync-subtitle">Admin &gt; Ferramentas</p>
+        </div>
+
+        <div class="sync-actions">
+            <form method="post" asp-page-handler="Start" data-sync-start-form>
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-sync-primary px-3" data-sync-start disabled="@(snapshot.IsActive || !Model.R2Configured)">
+                    <i class="bi bi-play-fill"></i>
+                    Iniciar Sincroniza&ccedil;&atilde;o
+                </button>
+            </form>
+
+            <form method="post" asp-page-handler="Cancel" data-sync-cancel-form hidden="@(!snapshot.IsActive)">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-sync-secondary px-3">
+                    <i class="bi bi-stop-circle"></i>
+                    Cancelar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    @if (!Model.R2Configured)
+    {
+        <div class="alert alert-warning mb-0">
+            Cloudflare R2 nao esta configurado. Verifique <strong>Storage:R2</strong>.
+        </div>
+    }
+
+    <section class="sync-panel">
+        <div class="sync-panel-body">
+            <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
+                <span class="sync-status">
+                    <span class="sync-status-dot" data-sync-status-dot></span>
+                    <span data-sync-status>@snapshot.Status</span>
+                </span>
+                <div class="sync-config">
+                    <span>Bucket</span>
+                    <code>@Model.BucketName</code>
+                    <span>Prefixo</span>
+                    <code>@Model.Prefix</code>
+                </div>
+            </div>
+
+            <div class="sync-progress-block">
+                <div class="sync-progress-label">
+                    <span>Progresso</span>
+                    <span data-sync-progress-text>@progress.ToString("N1")%</span>
+                </div>
+                <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar" data-sync-progress-bar style="width: @progress.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="sync-panel">
+        <div class="sync-panel-body">
+            <div class="sync-stats">
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Total de veiculos</span>
+                    <span class="sync-stat-value" data-sync-total>@totalVehicles</span>
+                </div>
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Processados</span>
+                    <span class="sync-stat-value" data-sync-processed>@snapshot.VehiclesProcessed</span>
+                </div>
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Encontrados</span>
+                    <span class="sync-stat-value" data-sync-found>@snapshot.VehiclesFound</span>
+                </div>
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Sem imagens</span>
+                    <span class="sync-stat-value" data-sync-without>@snapshot.VehiclesWithoutImages</span>
+                </div>
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Sincronizados</span>
+                    <span class="sync-stat-value" data-sync-synced>@snapshot.VehiclesSynchronized</span>
+                </div>
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Registros corrigidos</span>
+                    <span class="sync-stat-value" data-sync-corrected>@snapshot.RecordsCorrected</span>
+                </div>
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Erros encontrados</span>
+                    <span class="sync-stat-value" data-sync-errors>@snapshot.Errors</span>
+                </div>
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Tempo de execucao</span>
+                    <span class="sync-stat-value" data-sync-elapsed>@snapshot.Elapsed.ToString(@"hh\:mm\:ss")</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="sync-panel sync-summary" data-sync-summary hidden="@(!terminal)">
+        <div class="sync-panel-body">
+            <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
+                <div>
+                    <h2 class="sync-title fs-6">Resumo final</h2>
+                    <div class="text-muted small">Ultima sincronizacao executada</div>
+                </div>
+                <span class="sync-status">
+                    <i class="bi bi-clipboard-data"></i>
+                    <span data-sync-summary-status>@snapshot.Status</span>
+                </span>
+            </div>
+
+            <div class="sync-stats">
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Total analisados</span>
+                    <span class="sync-stat-value" data-summary-total>@totalVehicles</span>
+                </div>
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Total sincronizados</span>
+                    <span class="sync-stat-value" data-summary-synced>@snapshot.VehiclesSynchronized</span>
+                </div>
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Total sem imagens</span>
+                    <span class="sync-stat-value" data-summary-without>@snapshot.VehiclesWithoutImages</span>
+                </div>
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Total de erros</span>
+                    <span class="sync-stat-value" data-summary-errors>@snapshot.Errors</span>
+                </div>
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Tempo total</span>
+                    <span class="sync-stat-value" data-summary-elapsed>@snapshot.Elapsed.ToString(@"hh\:mm\:ss")</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="sync-panel">
+        <div class="sync-panel-body d-flex justify-content-between align-items-center gap-3 flex-wrap">
+            <div>
+                <h2 class="sync-title fs-6">Log da sincronizacao</h2>
+                <div class="text-muted small">Registros recentes da execucao atual</div>
+            </div>
+            <span class="text-muted fw-bold">Veiculo atual: <span data-sync-current>@(snapshot.CurrentVehicleId?.ToString() ?? "-")</span></span>
+        </div>
+        <div class="sync-log-wrap">
+            <table class="table sync-log-table">
+                <thead>
+                    <tr>
+                        <th>Hora</th>
+                        <th>Veiculo</th>
+                        <th>IdLegado</th>
+                        <th>Etapa</th>
+                        <th>Status</th>
+                        <th>Mensagem</th>
+                    </tr>
+                </thead>
+                <tbody data-sync-log-body>
+                    @if (snapshot.Logs.Count == 0)
+                    {
+                        <tr data-empty-log>
+                            <td colspan="6" class="text-muted text-center py-4">Nenhum log para exibir.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var log in snapshot.Logs)
+                        {
+                            <tr data-log-index="@log.Index">
+                                <td>@log.TimestampUtc.ToLocalTime().ToString("HH:mm:ss")</td>
+                                <td>@(log.VehicleId?.ToString() ?? "-")</td>
+                                <td>@(log.LegacyVehicleId?.ToString() ?? "-")</td>
+                                <td>@log.Stage</td>
+                                <td>@log.Status</td>
+                                <td class="sync-message" title="@log.Message">@log.Message</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const root = document.querySelector('[data-sync-page]');
+            if (!root) return;
+
+            const startButton = document.querySelector('[data-sync-start]');
+            const cancelForm = document.querySelector('[data-sync-cancel-form]');
+            const logBody = document.querySelector('[data-sync-log-body]');
+            const initialTotal = Number((document.querySelector('[data-sync-total]')?.textContent || '0').replace(/\D/g, '')) || 0;
+            let lastLogIndex = Math.max(-1, ...Array.from(document.querySelectorAll('[data-log-index]')).map(x => Number(x.getAttribute('data-log-index'))));
+            let timer = null;
+
+            document.querySelector('[data-sync-start-form]')?.addEventListener('submit', function (event) {
+                const ok = window.confirm('Iniciar a sincronizacao das imagens ja existentes no Cloudflare R2? Nenhum arquivo sera enviado ou apagado.');
+                if (!ok) {
+                    event.preventDefault();
+                }
+            });
+
+            function setText(selector, value) {
+                const element = document.querySelector(selector);
+                if (element) element.textContent = value;
+            }
+
+            function setHidden(element, hidden) {
+                if (element) element.hidden = hidden;
+            }
+
+            function duration(value) {
+                if (!value) return '00:00:00';
+                return String(value).split('.')[0].padStart(8, '0');
+            }
+
+            function number(value) {
+                return Number(value || 0).toLocaleString('pt-BR');
+            }
+
+            function percent(value) {
+                return Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+            }
+
+            function statusDotClass(status) {
+                if (status === 'EmExecucao' || status === 'Pendente' || status === 'CancelamentoSolicitado') return 'running';
+                if (status === 'Concluido') return 'success';
+                if (status === 'Falha' || status === 'ConcluidoComErros') return 'error';
+                if (status === 'Cancelado') return 'cancelled';
+                return '';
+            }
+
+            function appendLog(log) {
+                if (!logBody) return;
+
+                document.querySelector('[data-empty-log]')?.remove();
+
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-log-index', log.index);
+                const time = new Date(log.timestampUtc).toLocaleTimeString('pt-BR');
+                const message = log.message || '';
+                tr.innerHTML = '<td></td><td></td><td></td><td></td><td></td><td class="sync-message"></td>';
+                tr.children[0].textContent = time;
+                tr.children[1].textContent = log.vehicleId || '-';
+                tr.children[2].textContent = log.legacyVehicleId || '-';
+                tr.children[3].textContent = log.stage || '-';
+                tr.children[4].textContent = log.status || '-';
+                tr.children[5].textContent = message;
+                tr.children[5].setAttribute('title', message);
+                logBody.appendChild(tr);
+                lastLogIndex = Math.max(lastLogIndex, Number(log.index));
+            }
+
+            function update(snapshot) {
+                setText('[data-sync-status]', snapshot.status || 'Aguardando');
+                setText('[data-sync-current]', snapshot.currentVehicleId || '-');
+                const totalVehicles = snapshot.totalVehicles || initialTotal;
+                setText('[data-sync-total]', number(totalVehicles));
+                setText('[data-sync-processed]', number(snapshot.vehiclesProcessed));
+                setText('[data-sync-found]', number(snapshot.vehiclesFound));
+                setText('[data-sync-without]', number(snapshot.vehiclesWithoutImages));
+                setText('[data-sync-synced]', number(snapshot.vehiclesSynchronized));
+                setText('[data-sync-corrected]', number(snapshot.recordsCorrected));
+                setText('[data-sync-errors]', number(snapshot.errors));
+                setText('[data-sync-elapsed]', duration(snapshot.elapsed));
+
+                const progress = Math.min(100, Math.max(0, Number(snapshot.progressPercent || 0)));
+                const bar = document.querySelector('[data-sync-progress-bar]');
+                if (bar) bar.style.width = progress + '%';
+                setText('[data-sync-progress-text]', percent(progress));
+
+                const dot = document.querySelector('[data-sync-status-dot]');
+                if (dot) {
+                    dot.className = 'sync-status-dot ' + statusDotClass(snapshot.status);
+                }
+
+                if (startButton) {
+                    startButton.disabled = Boolean(snapshot.isActive) || @((!Model.R2Configured).ToString().ToLowerInvariant());
+                }
+
+                setHidden(cancelForm, !snapshot.isActive);
+
+                const terminal = !snapshot.isActive && snapshot.status && snapshot.status !== 'Aguardando';
+                const summary = document.querySelector('[data-sync-summary]');
+                setHidden(summary, !terminal);
+                if (terminal) {
+                    setText('[data-sync-summary-status]', snapshot.status);
+                    setText('[data-summary-total]', number(totalVehicles));
+                    setText('[data-summary-synced]', number(snapshot.vehiclesSynchronized));
+                    setText('[data-summary-without]', number(snapshot.vehiclesWithoutImages));
+                    setText('[data-summary-errors]', number(snapshot.errors));
+                    setText('[data-summary-elapsed]', duration(snapshot.elapsed));
+                }
+
+                (snapshot.logs || []).forEach(appendLog);
+                schedule(snapshot.isActive ? 2500 : 10000);
+            }
+
+            async function poll() {
+                if (document.hidden) {
+                    schedule(15000);
+                    return;
+                }
+
+                const query = new URLSearchParams();
+                query.set('handler', 'Status');
+                query.set('afterLogIndex', String(lastLogIndex));
+
+                try {
+                    const response = await fetch('?' + query.toString(), { headers: { Accept: 'application/json' } });
+                    if (response.ok) {
+                        update(await response.json());
+                        return;
+                    }
+                } catch {
+                    schedule(12000);
+                    return;
+                }
+
+                schedule(12000);
+            }
+
+            function schedule(delay) {
+                window.clearTimeout(timer);
+                timer = window.setTimeout(poll, delay);
+            }
+
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) {
+                    schedule(500);
+                }
+            });
+
+            schedule(1000);
+        })();
+    </script>
+}

@@ -11,6 +11,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Project.Features.Storage.Legacy;
+using Project.Features.Storage.R2Sync;
 using Project.Features.Storage.Validation;
 using Project.Features.Veiculos.Services;
 using Project.Infrastructure.Storage;
@@ -111,6 +112,8 @@ builder.Services.AddScoped<LegacyVehicleImageImportService>();
 builder.Services.AddScoped<LegacyVehicleImageImportItemProcessor>();
 builder.Services.AddScoped<LegacyImageImportReportService>();
 builder.Services.AddScoped<StorageImportValidationService>();
+builder.Services.AddSingleton<R2VehicleImageSyncJobManager>();
+builder.Services.AddScoped<R2VehicleImageSyncService>();
 builder.Services.AddHostedService<LegacyImageImportWorker>();
 builder.Services.AddHttpClient(LegacyVehicleImageImportService.HttpClientName, client =>
 {

@@ -1,4 +1,5 @@
 using Core.Storage;
+using System.Runtime.CompilerServices;
 
 namespace Project.Infrastructure.Storage;
 
@@ -62,6 +63,39 @@ public sealed class LocalWebRootStorageService(IWebHostEnvironment environment) 
         return Task.FromResult<StorageObjectMetadata?>(metadata);
     }
 
+    public async IAsyncEnumerable<StorageObjectMetadata> ListAsync(
+        string prefix,
+        [EnumeratorCancellation] CancellationToken ct)
+    {
+        var root = Path.GetFullPath(environment.WebRootPath ?? Path.Combine(environment.ContentRootPath, "wwwroot"));
+        var normalizedPrefix = NormalizePrefix(prefix);
+        var prefixPath = string.IsNullOrWhiteSpace(normalizedPrefix)
+            ? root
+            : ResolveFullPath(normalizedPrefix.TrimEnd('/'));
+
+        if (!Directory.Exists(prefixPath))
+        {
+            yield break;
+        }
+
+        await Task.Yield();
+
+        foreach (var file in Directory.EnumerateFiles(prefixPath, "*", SearchOption.AllDirectories))
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var relative = Path.GetRelativePath(root, file).Replace(Path.DirectorySeparatorChar, '/');
+            var info = new FileInfo(file);
+            yield return new StorageObjectMetadata(
+                StoragePath.NormalizeKey(relative),
+                StoragePath.GetContainer(relative),
+                null,
+                info.Length,
+                info.LastWriteTimeUtc,
+                null);
+        }
+    }
+
     public Task<Stream?> OpenReadAsync(string key, CancellationToken ct)
     {
         _ = ct;
@@ -103,5 +137,18 @@ public sealed class LocalWebRootStorageService(IWebHostEnvironment environment) 
         }
 
         return fullPath;
+    }
+
+    private static string NormalizePrefix(string prefix)
+    {
+        if (string.IsNullOrWhiteSpace(prefix))
+        {
+            return string.Empty;
+        }
+
+        var normalized = StoragePath.NormalizeKey(prefix);
+        return prefix.Trim().Replace('\\', '/').EndsWith("/", StringComparison.Ordinal)
+            ? normalized + "/"
+            : normalized;
     }
 }

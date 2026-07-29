@@ -5,6 +5,7 @@ public interface IStorageService
     Task<StoredFile> SaveAsync(string key, Stream content, string contentType, CancellationToken ct);
     Task<bool> ExistsAsync(string key, CancellationToken ct);
     Task<StorageObjectMetadata?> GetMetadataAsync(string key, CancellationToken ct);
+    IAsyncEnumerable<StorageObjectMetadata> ListAsync(string prefix, CancellationToken ct);
     Task<Stream?> OpenReadAsync(string key, CancellationToken ct);
     Task DeleteAsync(string key, CancellationToken ct);
     string GetPublicUrl(string key);
