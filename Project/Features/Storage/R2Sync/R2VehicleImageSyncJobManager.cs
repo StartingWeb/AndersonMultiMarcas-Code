@@ -86,6 +86,7 @@ public sealed class R2VehicleImageSyncJobManager(
                 state.VehiclesFound,
                 state.VehiclesWithoutImages,
                 state.VehiclesSynchronized,
+                state.ImagesLinked,
                 state.RecordsCorrected,
                 state.Errors,
                 elapsed,
@@ -143,6 +144,7 @@ public sealed class R2VehicleImageSyncJobManager(
             state.VehiclesFound = progress.VehiclesFound;
             state.VehiclesWithoutImages = progress.VehiclesWithoutImages;
             state.VehiclesSynchronized = progress.VehiclesSynchronized;
+            state.ImagesLinked = progress.ImagesLinked;
             state.RecordsCorrected = progress.RecordsCorrected;
             state.Errors = progress.Errors;
             state.CurrentVehicleId = progress.CurrentVehicleId;
@@ -232,6 +234,7 @@ public sealed class R2VehicleImageSyncJobManager(
         public int VehiclesFound { get; set; }
         public int VehiclesWithoutImages { get; set; }
         public int VehiclesSynchronized { get; set; }
+        public int ImagesLinked { get; set; }
         public int RecordsCorrected { get; set; }
         public int Errors { get; set; }
         public int LastLogIndex { get; set; }

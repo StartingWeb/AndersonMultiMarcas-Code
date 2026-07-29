@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.RegularExpressions;
 using Core.Storage;
 using Data;
 using Domain.Entities;
@@ -48,25 +47,39 @@ public sealed partial class R2VehicleImageSyncService(
         {
             ct.ThrowIfCancellationRequested();
 
-            var vehicleIds = await db.Veiculos
+            var vehicles = await db.Veiculos
                 .AsNoTracking()
                 .Where(x => x.Id > lastId)
                 .OrderBy(x => x.Id)
-                .Select(x => x.Id)
+                .Select(x => new VehicleSyncRow(x.Id, x.IdLegado))
                 .Take(PageSize)
                 .ToListAsync(ct);
 
-            if (vehicleIds.Count == 0)
+            if (vehicles.Count == 0)
             {
                 break;
             }
 
-            foreach (var vehicleId in vehicleIds)
+            var vehicleIds = vehicles.Select(x => x.Id).ToList();
+            var mediaByVehicle = (await db.VeiculoMidias
+                    .Where(x => vehicleIds.Contains(x.VeiculoId) && x.Tipo == TipoMidia.Imagem)
+                    .OrderBy(x => x.VeiculoId)
+                    .ThenByDescending(x => x.Ativo)
+                    .ThenBy(x => x.Ordem)
+                    .ThenBy(x => x.Id)
+                    .ToListAsync(ct))
+                .GroupBy(x => x.VeiculoId)
+                .ToDictionary(x => x.Key, x => x.ToList());
+
+            foreach (var vehicle in vehicles)
             {
                 ct.ThrowIfCancellationRequested();
-                lastId = vehicleId;
-                await ProcessVehicleAsync(vehicleId, stats, onProgress, onLog, ct);
+                lastId = vehicle.Id;
+                mediaByVehicle.TryGetValue(vehicle.Id, out var media);
+                await ProcessVehicleAsync(vehicle, media ?? [], stats, onProgress, onLog, ct);
             }
+
+            db.ChangeTracker.Clear();
         }
 
         onProgress(stats.ToProgress(null));
@@ -82,21 +95,15 @@ public sealed partial class R2VehicleImageSyncService(
     }
 
     private async Task ProcessVehicleAsync(
-        int vehicleId,
+        VehicleSyncRow vehicle,
+        IReadOnlyList<VeiculoMidia> media,
         SyncStats stats,
         Action<R2VehicleImageSyncProgress> onProgress,
         Action<int?, int?, string, string, string> onLog,
         CancellationToken ct)
     {
-        int? legacyId = null;
-
         try
         {
-            var vehicle = await db.Veiculos
-                .Include(x => x.Midias)
-                .FirstAsync(x => x.Id == vehicleId, ct);
-            legacyId = vehicle.IdLegado;
-
             onProgress(stats.ToProgress(vehicle.Id));
 
             if (!vehicle.IdLegado.HasValue)
@@ -119,23 +126,23 @@ public sealed partial class R2VehicleImageSyncService(
             onLog(vehicle.Id, vehicle.IdLegado, "R2", "Encontrado", $"{objects.Count} imagem(ns) encontrada(s) em {prefix}.");
             onLog(vehicle.Id, vehicle.IdLegado, "R2", "Capa", BuildObjectListMessage(objects));
 
-            var corrected = ApplyMediaUpdates(vehicle, objects);
+            var corrected = ApplyMediaUpdates(vehicle.Id, media, objects);
             await db.SaveChangesAsync(ct);
 
             stats.VehiclesSynchronized++;
+            stats.ImagesLinked += objects.Count;
             stats.RecordsCorrected += corrected;
-            onLog(vehicle.Id, vehicle.IdLegado, "Banco", "Sucesso", $"Veiculo sincronizado. Registros corrigidos: {corrected}.");
+            onLog(vehicle.Id, vehicle.IdLegado, "Banco", "Sucesso", $"Veiculo sincronizado. Imagens vinculadas: {objects.Count}; registros corrigidos: {corrected}.");
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             stats.Errors++;
-            logger.LogError(ex, "Erro ao sincronizar imagens R2 do veiculo {VehicleId}. IdLegado={LegacyVehicleId}", vehicleId, legacyId);
-            onLog(vehicleId, legacyId, "Veiculo", "Erro", ex.Message);
+            logger.LogError(ex, "Erro ao sincronizar imagens R2 do veiculo {VehicleId}. IdLegado={LegacyVehicleId}", vehicle.Id, vehicle.IdLegado);
+            onLog(vehicle.Id, vehicle.IdLegado, "Veiculo", "Erro", ex.Message);
         }
         finally
         {
             stats.VehiclesProcessed++;
-            db.ChangeTracker.Clear();
             onProgress(stats.ToProgress(null));
         }
     }
@@ -172,50 +179,42 @@ public sealed partial class R2VehicleImageSyncService(
             onLog(vehicleId, legacyVehicleId, "R2", "Ignorado", $"{ignored} arquivo(s) nao reconhecido(s) como imagem no prefixo.");
         }
 
-        return objects
-            .OrderBy(x => NaturalSortKey(StoragePath.GetFileName(x.Key)), StringComparer.OrdinalIgnoreCase)
-            .ThenBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        return objects;
     }
 
-    private int ApplyMediaUpdates(Veiculo vehicle, IReadOnlyList<StorageObjectMetadata> objects)
+    private int ApplyMediaUpdates(int vehicleId, IReadOnlyList<VeiculoMidia> media, IReadOnlyList<StorageObjectMetadata> objects)
     {
         var corrected = 0;
-        var activeImages = vehicle.Midias
-            .Where(x => x.Ativo && x.Tipo == TipoMidia.Imagem)
-            .OrderBy(x => x.Ordem)
-            .ThenBy(x => x.Id)
-            .ToList();
-        var allImages = vehicle.Midias
-            .Where(x => x.Tipo == TipoMidia.Imagem)
+        ValidateObjects(objects);
+        var slots = media
             .OrderByDescending(x => x.Ativo)
             .ThenBy(x => x.Ordem)
             .ThenBy(x => x.Id)
             .ToList();
-        var assigned = new HashSet<int>();
 
         for (var index = 0; index < objects.Count; index++)
         {
             var item = objects[index];
-            var target = FindTargetMedia(allImages, activeImages, assigned, item);
+            var target = index < slots.Count ? slots[index] : null;
             if (target is null)
             {
-                db.VeiculoMidias.Add(CreateMedia(vehicle.Id, item, index));
+                db.VeiculoMidias.Add(CreateMedia(vehicleId, item, index));
                 corrected++;
                 continue;
             }
 
-            assigned.Add(target.Id);
             if (ApplyMediaUpdate(target, item, index))
             {
                 corrected++;
             }
         }
 
-        foreach (var media in activeImages.Where(x => !assigned.Contains(x.Id)))
+        foreach (var extra in slots.Skip(objects.Count))
         {
-            media.Desativar();
-            corrected++;
+            if (DeactivateMedia(extra))
+            {
+                corrected++;
+            }
         }
 
         return corrected;
@@ -223,11 +222,8 @@ public sealed partial class R2VehicleImageSyncService(
 
     private VeiculoMidia CreateMedia(int vehicleId, StorageObjectMetadata item, int index)
     {
-        ValidateDatabaseLengths(item);
-
         var fileName = StoragePath.GetFileName(item.Key);
         var url = r2.GetPublicUrl(item.Key);
-        ValidateUrlLength(url);
         var media = new VeiculoMidia(vehicleId, fileName, url, TipoMidia.Imagem, index);
         if (index == 0)
         {
@@ -240,14 +236,11 @@ public sealed partial class R2VehicleImageSyncService(
 
     private bool ApplyMediaUpdate(VeiculoMidia media, StorageObjectMetadata item, int index)
     {
-        ValidateDatabaseLengths(item);
-
         var changed = false;
         var fileName = StoragePath.GetFileName(item.Key);
         var url = r2.GetPublicUrl(item.Key);
         var contentType = ResolveContentType(item.Key);
         var isCover = index == 0;
-        ValidateUrlLength(url);
 
         if (!media.Ativo)
         {
@@ -303,36 +296,32 @@ public sealed partial class R2VehicleImageSyncService(
         return changed;
     }
 
-    private static VeiculoMidia? FindTargetMedia(
-        IReadOnlyList<VeiculoMidia> allImages,
-        IReadOnlyList<VeiculoMidia> activeImages,
-        ISet<int> assigned,
-        StorageObjectMetadata item)
+    private bool DeactivateMedia(VeiculoMidia media)
     {
-        var key = item.Key;
-        var fileName = StoragePath.GetFileName(key);
+        var changed = false;
 
-        var byBlob = allImages.FirstOrDefault(x =>
-            x.Id > 0
-            && !assigned.Contains(x.Id)
-            && string.Equals(NormalizeStorageKey(x.BlobName), key, StringComparison.OrdinalIgnoreCase));
-        if (byBlob is not null)
+        if (media.Capa)
         {
-            return byBlob;
+            db.Entry(media).Property(nameof(VeiculoMidia.Capa)).CurrentValue = false;
+            changed = true;
         }
 
-        var byFile = allImages.FirstOrDefault(x =>
-            x.Id > 0
-            && !assigned.Contains(x.Id)
-            && (string.Equals(NormalizeFileName(x.NomeArquivo), fileName, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(NormalizeFileNameFromSource(x.Url), fileName, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(NormalizeFileNameFromSource(x.BlobName), fileName, StringComparison.OrdinalIgnoreCase)));
-        if (byFile is not null)
+        if (media.Ativo)
         {
-            return byFile;
+            media.Desativar();
+            changed = true;
         }
 
-        return activeImages.FirstOrDefault(x => x.Id > 0 && !assigned.Contains(x.Id));
+        return changed;
+    }
+
+    private void ValidateObjects(IReadOnlyList<StorageObjectMetadata> objects)
+    {
+        foreach (var item in objects)
+        {
+            ValidateDatabaseLengths(item);
+            ValidateUrlLength(r2.GetPublicUrl(item.Key));
+        }
     }
 
     private static void ValidateDatabaseLengths(StorageObjectMetadata item)
@@ -377,33 +366,6 @@ public sealed partial class R2VehicleImageSyncService(
         return $"Imagem principal: {names[0]}. Arquivos: {listed}.";
     }
 
-    private static string NaturalSortKey(string value)
-        => NumberRegex().Replace(value, match => match.Value.PadLeft(12, '0'));
-
-    private static string NormalizeStorageKey(string? value)
-        => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().Replace('\\', '/');
-
-    private static string NormalizeFileName(string? value)
-        => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
-
-    private static string NormalizeFileNameFromSource(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return string.Empty;
-        }
-
-        if (Uri.TryCreate(value, UriKind.Absolute, out var uri))
-        {
-            return NormalizeFileName(Uri.UnescapeDataString(Path.GetFileName(uri.AbsolutePath)));
-        }
-
-        return NormalizeFileName(Path.GetFileName(value.Replace('\\', '/')));
-    }
-
-    [GeneratedRegex(@"\d+")]
-    private static partial Regex NumberRegex();
-
     private sealed class SyncStats
     {
         public int TotalVehicles { get; set; }
@@ -411,6 +373,7 @@ public sealed partial class R2VehicleImageSyncService(
         public int VehiclesFound { get; set; }
         public int VehiclesWithoutImages { get; set; }
         public int VehiclesSynchronized { get; set; }
+        public int ImagesLinked { get; set; }
         public int RecordsCorrected { get; set; }
         public int Errors { get; set; }
 
@@ -421,8 +384,11 @@ public sealed partial class R2VehicleImageSyncService(
                 VehiclesFound,
                 VehiclesWithoutImages,
                 VehiclesSynchronized,
+                ImagesLinked,
                 RecordsCorrected,
                 Errors,
                 currentVehicleId);
     }
+
+    private sealed record VehicleSyncRow(int Id, int? IdLegado);
 }

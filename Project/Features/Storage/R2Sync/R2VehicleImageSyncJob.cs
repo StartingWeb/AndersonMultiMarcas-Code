@@ -21,6 +21,7 @@ public sealed record R2VehicleImageSyncProgress(
     int VehiclesFound,
     int VehiclesWithoutImages,
     int VehiclesSynchronized,
+    int ImagesLinked,
     int RecordsCorrected,
     int Errors,
     int? CurrentVehicleId);
@@ -47,6 +48,7 @@ public sealed record R2VehicleImageSyncSnapshot(
     int VehiclesFound,
     int VehiclesWithoutImages,
     int VehiclesSynchronized,
+    int ImagesLinked,
     int RecordsCorrected,
     int Errors,
     TimeSpan Elapsed,

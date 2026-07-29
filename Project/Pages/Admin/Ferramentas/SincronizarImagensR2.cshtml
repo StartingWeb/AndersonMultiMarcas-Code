@@ -358,6 +358,10 @@
                     <span class="sync-stat-value" data-sync-synced>@snapshot.VehiclesSynchronized</span>
                 </div>
                 <div class="sync-stat">
+                    <span class="sync-stat-label">Imagens vinculadas</span>
+                    <span class="sync-stat-value" data-sync-images-linked>@snapshot.ImagesLinked</span>
+                </div>
+                <div class="sync-stat">
                     <span class="sync-stat-label">Registros corrigidos</span>
                     <span class="sync-stat-value" data-sync-corrected>@snapshot.RecordsCorrected</span>
                 </div>
@@ -394,6 +398,10 @@
                 <div class="sync-stat">
                     <span class="sync-stat-label">Total sincronizados</span>
                     <span class="sync-stat-value" data-summary-synced>@snapshot.VehiclesSynchronized</span>
+                </div>
+                <div class="sync-stat">
+                    <span class="sync-stat-label">Imagens vinculadas</span>
+                    <span class="sync-stat-value" data-summary-images-linked>@snapshot.ImagesLinked</span>
                 </div>
                 <div class="sync-stat">
                     <span class="sync-stat-label">Total sem imagens</span>
@@ -538,6 +546,7 @@
                 setText('[data-sync-found]', number(snapshot.vehiclesFound));
                 setText('[data-sync-without]', number(snapshot.vehiclesWithoutImages));
                 setText('[data-sync-synced]', number(snapshot.vehiclesSynchronized));
+                setText('[data-sync-images-linked]', number(snapshot.imagesLinked));
                 setText('[data-sync-corrected]', number(snapshot.recordsCorrected));
                 setText('[data-sync-errors]', number(snapshot.errors));
                 setText('[data-sync-elapsed]', duration(snapshot.elapsed));
@@ -565,6 +574,7 @@
                     setText('[data-sync-summary-status]', snapshot.status);
                     setText('[data-summary-total]', number(totalVehicles));
                     setText('[data-summary-synced]', number(snapshot.vehiclesSynchronized));
+                    setText('[data-summary-images-linked]', number(snapshot.imagesLinked));
                     setText('[data-summary-without]', number(snapshot.vehiclesWithoutImages));
                     setText('[data-summary-errors]', number(snapshot.errors));
                     setText('[data-summary-elapsed]', duration(snapshot.elapsed));
